@@ -67,7 +67,7 @@ There are 3 demo PDFs already generated in `examples/demo-docs/` (fictional "Nor
 ### Step 1 — Install
 ```bash
 # the one-liner your manager asked for (once the repo URL is filled in):
-curl -fsSL https://raw.githubusercontent.com/YOUR_ORG/context-graph-engine/main/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/NanoNets/context-graph-engine/main/install.sh | sh
 
 # …or, from this checkout, for today:
 npm install && npm run build && npm link
@@ -137,15 +137,19 @@ context-graph --db ./northwind-demo.db stats
 
 ---
 
-## 6. One loose end before publishing
+## 6. Repository & install
 
-`install.sh` and the README's `curl` command still contain a placeholder repo URL:
+Published to **`github.com/NanoNets/context-graph-engine`** (private, branch `main`).
 
+```bash
+git clone git@github.com:NanoNets/context-graph-engine.git
+cd context-graph-engine && ./install.sh   # build + link the local checkout
 ```
-https://github.com/YOUR_ORG/context-graph-engine.git
-```
 
-Once this is pushed to GitHub, replace `YOUR_ORG/context-graph-engine` in **`install.sh`** and **`README.md`** (the local branch is `master`; the installer/README reference `main` — align those too). After that the one-line install is live. Not needed for today's demo — the library/CLI/MCP paths all run straight from the repo.
+> ⚠️ The `curl … | sh` one-liner in the README fetches `install.sh` over an
+> anonymous URL, which only works once the repo is **public** (or with a token).
+> While the repo is private, use the clone + `./install.sh` path above. Flip the
+> repo to public when you're ready and the curl one-liner goes live as-is.
 
 ---
 

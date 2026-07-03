@@ -17,7 +17,7 @@ Access it three ways: as a **library**, a **CLI**, or an **MCP server** that any
 **One line, runs locally, no API keys required:**
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/YOUR_ORG/context-graph-engine/main/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/NanoNets/context-graph-engine/main/install.sh | sh
 ```
 
 This puts `context-graph` and `context-graph-mcp` on your PATH. Requires git and Node ≥ 20.
