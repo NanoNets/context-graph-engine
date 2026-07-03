@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { basename } from "node:path";
+import { extractPdfText, isPdfPath } from "./ingest/pdf.js";
 import type { GraphStore } from "./graph/store.js";
 import { SqliteStore } from "./graph/sqlite-store.js";
 import type { Embedder, EngineConfig, Extractor, ResolvedConfig } from "./ai/providers.js";
@@ -108,9 +109,12 @@ export class ContextGraphEngine {
     return this._extractor;
   }
 
-  /** Ingest a document from disk. Title defaults to the file name. */
+  /**
+   * Ingest a document from disk. PDFs (`.pdf`) are parsed to text automatically;
+   * anything else is read as UTF-8. Title defaults to the file name.
+   */
   async ingestFile(path: string, opts: IngestOptions = {}): Promise<IngestResult> {
-    const text = readFileSync(path, "utf8");
+    const text = isPdfPath(path) ? await extractPdfText(path) : readFileSync(path, "utf8");
     return this.ingest(text, { title: opts.title ?? basename(path), source: opts.source ?? path });
   }
 

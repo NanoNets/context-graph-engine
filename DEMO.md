@@ -23,7 +23,9 @@ Think "durable, structured memory for a team of agents" — the same integration
 | **Storage** (`src/graph/sqlite-store.ts`) | Embedded SQLite (`better-sqlite3`), zero infra; swappable behind a `GraphStore` interface | ✅ Done |
 | **Local-first providers** (`src/ai/local.ts`) | In-process embeddings (transformers.js) + local extraction (Ollama) — **runs with no API keys** | ✅ Done |
 | **Cloud auto-upgrade** (`src/engine.ts`) | If `OPENROUTER_API_KEY` is set, uses OpenRouter for extraction automatically (any tool-calling model) for higher quality | ✅ Done |
-| **Three access modes** | Library, `context-graph` CLI, and `context-graph-mcp` MCP server for any agent | ✅ Done |
+| **PDF ingestion** (`src/ingest/pdf.ts`) | `.pdf` files parsed to text automatically (pure-JS `unpdf`, no native deps) — via CLI, library, or the `context_ingest_file` MCP tool | ✅ Done |
+| **Three access modes** | Library, `context-graph` CLI, and `context-graph-mcp` MCP server (5 tools) for any agent | ✅ Done |
+| **Demo PDFs** (`examples/demo-docs/`) | 3 detail-rich fictional docs + a generator script | ✅ Done |
 | **One-line installer** (`install.sh`) | `curl … | sh` clones, builds, and puts both commands on PATH | ✅ Done |
 | Update modes (silent vs. flagged) | Deferred per your call — needs discussion | ⏸ Deferred |
 | Delete / decay of stale nodes | In the spec, not yet built | ⬜ Not started |
@@ -56,43 +58,72 @@ No accounts, nothing leaves the machine. Slightly coarser graph and a one-time m
 
 ---
 
-## 4. The demo (60 seconds)
+## 4. The MCP demo (the main event)
 
-The cleanest thing to show is the **library quickstart** — it's self-contained, uses an in-memory graph (leaves nothing behind), and tells the whole story in one run:
+This is the flow to show: **install → point an MCP client at it → ingest PDFs → ask questions → the facts from the PDFs come back.** Verified end-to-end (OpenRouter extraction + local embeddings).
 
+There are 3 demo PDFs already generated in `examples/demo-docs/` (fictional "Northwind" company — architecture, billing runbook, onboarding). Regenerate them any time with `node scripts/make-demo-pdfs.mjs`.
+
+### Step 1 — Install
 ```bash
-npm install
-npm run example
+# the one-liner your manager asked for (once the repo URL is filled in):
+curl -fsSL https://raw.githubusercontent.com/YOUR_ORG/context-graph-engine/main/install.sh | sh
+
+# …or, from this checkout, for today:
+npm install && npm run build && npm link
 ```
+`npm link` puts `context-graph` and `context-graph-mcp` on your PATH.
 
-It walks through, live:
-1. **Ingest** a small "Payments Platform" doc → builds a graph of services and how they relate.
-2. **Read** `"what happens when a charge fails?"` → prints a structured context block (entities + relationships + sources) ready to drop into an agent prompt.
-3. **Contribute** a new learning (`"the Dunning Worker sends a Slack alert to #billing…"`) as if an agent discovered it mid-task.
-4. **Read again** → the new knowledge is now part of the graph.
+### Step 2 — Point your MCP client at it
+Add this to your Claude Code / Cursor MCP config (`.mcp.json` or the client's settings). Set a DB path for the demo graph and your OpenRouter key:
 
-**The money moment:** step 3 doesn't just append text — the learning is extracted, deduped against existing entities, and merged. Re-observed facts get their `confidence` and `observation` count bumped instead of creating duplicates. That's the "gets smarter over time" claim, demonstrated.
+```json
+{
+  "mcpServers": {
+    "context-graph": {
+      "command": "context-graph-mcp",
+      "env": {
+        "CONTEXT_GRAPH_DB": "/absolute/path/to/northwind-demo.db",
+        "OPENROUTER_API_KEY": "sk-or-..."
+      }
+    }
+  }
+}
+```
+Restart the client so it picks up the server. The agent now has 5 tools: `context_read`, `context_contribute`, `context_ingest`, `context_ingest_file`, `context_stats`.
 
-### CLI version (if you'd rather show the shell)
+### Step 3 — Ingest the PDFs (say this to the agent)
+> "Ingest these files into the context graph:
+> /abs/path/examples/demo-docs/northwind-architecture.pdf,
+> /abs/path/examples/demo-docs/northwind-billing-runbook.pdf,
+> /abs/path/examples/demo-docs/northwind-onboarding.pdf"
+
+The agent calls `context_ingest_file`. The PDFs are parsed, chunked, embedded, and extracted into the graph. You'll see something like "✓ 3 chunks, +23 entities, +35 relationships" per file. Then ask it to run `context_stats` — ~58 entities, ~70 relationships across 3 documents.
+
+### Step 4 — Ask questions (the payoff)
+Ask the agent things that only live inside the PDFs. It calls `context_read` and gets the answer back — as structured entities/relationships **and** the exact source passages:
+
+- *"How are failed charges retried, and when does an account get suspended?"*
+  → 3 retries with exponential backoff (1h / 6h / 24h) → `past_due` → suspended after 7 days.
+- *"How long do access tokens last and what backs the Auth Service?"*
+  → access tokens expire after 15 minutes; Auth Service is backed by Redis for token revocation.
+- *"Who do I escalate a Stripe outage to?"*
+  → Dana Whitfield (Payments team lead), post in `#billing-incidents`, page PagerDuty service `northwind-billing`.
+- *"What do I do in my first week as a new hire?"*
+  → security training, ship one small prod change, on-call shadow; buddy assigned day one.
+
+**The point to land:** these facts came from three separate PDFs, and the agent gets a *structured, cross-referenced* answer with the source text as evidence — not a blind vector-snippet dump.
+
+### Step 5 (optional) — Show it getting smarter
+Tell the agent: *"Contribute this learning: the Dunning Worker also posts to #billing-alerts after the final retry."* It calls `context_contribute`. Ask the billing question again — the new fact is now merged into the graph, and re-stated facts reinforce (bump confidence) rather than duplicate.
+
+### Fallback (no MCP client handy) — same thing via CLI
 ```bash
-npm run build
-
-echo "Our billing worker retries failed charges 3x, then marks the subscription past_due." \
-  | node dist/cli.js --db ./demo.db ingest-text --title "Billing"
-
-node dist/cli.js --db ./demo.db query "how are failed charges handled?"
-
-node dist/cli.js --db ./demo.db contribute \
-  "After the final retry the billing worker posts a Slack alert to #billing." --agent oncall
-
-node dist/cli.js --db ./demo.db query "how does the team find out about failed charges?"
-
-node dist/cli.js --db ./demo.db stats
+context-graph --db ./northwind-demo.db ingest examples/demo-docs/*.pdf
+context-graph --db ./northwind-demo.db query "how are failed charges retried?"
+context-graph --db ./northwind-demo.db stats
 ```
-(Delete `demo.db*` afterward to reset.)
-
-### MCP version (if the audience cares about agent integration)
-Point Claude Code / Cursor at the server and the agent gets four tools — `context_read`, `context_contribute`, `context_ingest`, `context_stats`. The pitch: **read context → do the task → contribute what you learned**, on a shared team graph. Config is in the README.
+(Delete `northwind-demo.db*` to reset.)
 
 ---
 
@@ -132,8 +163,14 @@ src/
     types.ts           ← the data model (nodes, edges, chunks) — read this to grok the domain
     merge.ts           ← dedup + reinforcement (the "gets smarter" logic)
     sqlite-store.ts    ← the embedded storage backend
+  ingest/
+    chunker.ts         ← paragraph-aware chunking with overlap
+    pdf.ts             ← PDF → text extraction (unpdf)
   retrieval/retriever.ts ← semantic match + one-hop expansion + prompt rendering
   cli.ts               ← the CLI
-  mcp.ts               ← the MCP server
-examples/quickstart.ts ← the demo script from §4
+  mcp.ts               ← the MCP server (context_read / _contribute / _ingest / _ingest_file / _stats)
+examples/
+  quickstart.ts        ← library quickstart
+  demo-docs/*.pdf      ← the 3 demo PDFs used in §4
+scripts/make-demo-pdfs.mjs ← regenerates the demo PDFs
 ```

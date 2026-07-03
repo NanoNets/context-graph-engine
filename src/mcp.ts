@@ -87,6 +87,37 @@ server.registerTool(
 );
 
 server.registerTool(
+  "context_ingest_file",
+  {
+    title: "Ingest a file (incl. PDFs)",
+    description:
+      "Ingest one or more files from disk into the shared context graph. PDF files are parsed to text automatically. Accepts absolute paths.",
+    inputSchema: {
+      paths: z
+        .array(z.string())
+        .min(1)
+        .describe("Absolute file paths to ingest (e.g. PDFs)."),
+    },
+  },
+  async ({ paths }) => {
+    const lines: string[] = [];
+    for (const path of paths) {
+      try {
+        const r = await engine.ingestFile(path);
+        lines.push(
+          r.skipped
+            ? `• ${r.title}: already ingested, skipped`
+            : `✓ ${r.title}: ${r.chunks} chunks, +${r.nodesCreated} entities (${r.nodesUpdated} reinforced), +${r.edgesCreated} relationships`,
+        );
+      } catch (err) {
+        lines.push(`✗ ${path}: ${err instanceof Error ? err.message : String(err)}`);
+      }
+    }
+    return { content: [{ type: "text", text: lines.join("\n") }] };
+  },
+);
+
+server.registerTool(
   "context_stats",
   {
     title: "Graph statistics",

@@ -49,11 +49,13 @@
     "commander": "^15.0.0",
     "dotenv": "^17.4.2",
     "openai": "^6.45.0",
+    "unpdf": "^1.6.2",
     "zod": "^4.4.3"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^26.1.0",
+    "pdfkit": "^0.17.2",
     "tsx": "^4.22.4",
     "typescript": "^6.0.3"
   }

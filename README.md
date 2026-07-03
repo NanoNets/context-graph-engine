@@ -84,8 +84,8 @@ npm run example
 ## CLI
 
 ```bash
-# Ingest documents
-context-graph ingest ./docs/*.md
+# Ingest documents (Markdown, text, and PDFs — PDFs are parsed automatically)
+context-graph ingest ./docs/*.md ./handbook.pdf
 echo "some notes" | context-graph ingest-text --title "Notes"
 
 # Read the graph
@@ -131,7 +131,8 @@ Tools exposed:
 |------|--------------|
 | `context_read` | Read relevant context for a query before working |
 | `context_contribute` | Write a learning back into the shared graph |
-| `context_ingest` | Ingest a document into the graph |
+| `context_ingest` | Ingest a document (raw text) into the graph |
+| `context_ingest_file` | Ingest files from disk, including **PDFs** (parsed automatically) |
 | `context_stats` | Report how much the graph currently holds |
 
 A natural agent workflow: **read context → do the task → contribute what you learned.**
