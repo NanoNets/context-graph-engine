@@ -1,9 +1,11 @@
 /**
- * Quickstart — run with real Claude + OpenAI keys:
+ * Quickstart. Runs with either cloud or fully-local providers:
  *
- *   export ANTHROPIC_API_KEY=sk-ant-...
- *   export OPENAI_API_KEY=sk-...
+ *   # Cloud extraction via OpenRouter (embeddings stay local unless OPENAI_API_KEY is set):
+ *   export OPENROUTER_API_KEY=sk-or-...
  *   npm run example
+ *
+ *   # Or fully local — no keys — with a running Ollama (`ollama pull llama3.2`).
  *
  * Uses an in-memory graph so it leaves nothing behind.
  */

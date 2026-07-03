@@ -38,11 +38,11 @@ Out of the box the engine needs **no accounts and no cloud calls**:
   ollama pull llama3.2
   ```
 
-Want higher-quality cloud models instead? Set either key and the engine uses it **automatically** (local remains the fallback):
+Want higher-quality cloud models instead? Set a key and the engine uses it **automatically** (local remains the fallback):
 
 ```bash
-export ANTHROPIC_API_KEY=sk-ant-...   # cloud extraction (Claude)
-export OPENAI_API_KEY=sk-...          # cloud embeddings (OpenAI)
+export OPENROUTER_API_KEY=sk-or-...   # cloud extraction via OpenRouter
+export OPENAI_API_KEY=sk-...          # cloud embeddings (optional; local otherwise)
 ```
 
 Force local even when keys are present with `CONTEXT_GRAPH_LOCAL=1`.
@@ -73,7 +73,7 @@ await engine.contribute(
 );
 ```
 
-Run the full working demo (needs both keys):
+Run the full working demo (set `OPENROUTER_API_KEY`, or run a local Ollama):
 
 ```bash
 npm run example
@@ -123,7 +123,7 @@ Add to your Claude Code / MCP client config:
 }
 ```
 
-The API-key env vars are optional — add `ANTHROPIC_API_KEY` / `OPENAI_API_KEY` only if you want cloud models instead of the local defaults.
+The API-key env vars are optional — add `OPENROUTER_API_KEY` (and optionally `OPENAI_API_KEY` for embeddings) only if you want cloud models instead of the local defaults.
 
 Tools exposed:
 
@@ -157,7 +157,7 @@ This is what makes contributions compound: the tenth agent to confirm a fact str
         ingest / contribute                         read
    ┌──────────────────────────┐            ┌────────────────────────┐
    │ text → chunk → embed      │            │ query → embed           │
-   │      → extract (Claude)   │            │  → semantic match nodes │
+   │      → extract (LLM)      │            │  → semantic match nodes │
    │      → MERGE (dedup +     │───────────▶│  → expand 1 hop (edges) │
    │        reinforce)         │  graph     │  → gather source chunks │
    └──────────────────────────┘  (SQLite)  │  → render context bundle│
@@ -165,7 +165,7 @@ This is what makes contributions compound: the tenth agent to confirm a fact str
 ```
 
 - **Storage** — SQLite (via `better-sqlite3`) by default; swap in your own `GraphStore`.
-- **Extraction** — local **Ollama** (`llama3.2` by default) using structured JSON output; automatically upgrades to **Claude** (`claude-haiku-4-5`) if `ANTHROPIC_API_KEY` is set.
+- **Extraction** — local **Ollama** (`llama3.2` by default) using structured JSON output; automatically upgrades to **OpenRouter** (`openai/gpt-4o-mini` by default, any tool-calling model) if `OPENROUTER_API_KEY` is set.
 - **Embeddings** — local **in-process** model (`Xenova/all-MiniLM-L6-v2`, 384-dim) by default; automatically upgrades to **OpenAI** (`text-embedding-3-small`) if `OPENAI_API_KEY` is set.
 - **Retrieval** — semantic match over entities + one-hop graph expansion + supporting source passages.
 
@@ -181,9 +181,9 @@ Everything is configurable via constructor options, environment variables, or de
 new ContextGraphEngine({
   dbPath: "./.context-graph/graph.db",          // CONTEXT_GRAPH_DB
   // Cloud (used automatically when set):
-  anthropicApiKey: process.env.ANTHROPIC_API_KEY,
-  openaiApiKey: process.env.OPENAI_API_KEY,
-  extractionModel: "claude-haiku-4-5-20251001", // CONTEXT_GRAPH_EXTRACTION_MODEL
+  openrouterApiKey: process.env.OPENROUTER_API_KEY,
+  openrouterModel: "openai/gpt-4o-mini",         // CONTEXT_GRAPH_OPENROUTER_MODEL
+  openaiApiKey: process.env.OPENAI_API_KEY,      // optional, embeddings only
   embeddingModel: "text-embedding-3-small",      // CONTEXT_GRAPH_EMBEDDING_MODEL
   // Local (the zero-key fallback):
   forceLocal: false,                             // CONTEXT_GRAPH_LOCAL=1 forces local

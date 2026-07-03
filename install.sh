@@ -64,8 +64,8 @@ cat <<'NEXT'
     • Extraction defaults to a local Ollama model. Install Ollama and pull one:
           https://ollama.com   then   ollama pull llama3.2
 
-  Prefer higher-quality cloud extraction? Set keys and it's used automatically:
-          export ANTHROPIC_API_KEY=sk-ant-...     # extraction
+  Prefer higher-quality cloud extraction? Set a key and it's used automatically:
+          export OPENROUTER_API_KEY=sk-or-...     # extraction via OpenRouter
           export OPENAI_API_KEY=sk-...            # embeddings (optional)
 
   Quick start:

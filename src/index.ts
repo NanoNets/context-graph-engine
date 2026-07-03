@@ -54,6 +54,6 @@ export type {
 } from "./graph/types.js";
 
 // Providers, for advanced/custom setups.
-export { AnthropicExtractor } from "./ai/anthropic.js";
+export { OpenRouterExtractor } from "./ai/openrouter.js";
 export { OpenAIEmbedder } from "./ai/openai.js";
 export { LocalEmbedder, OllamaExtractor } from "./ai/local.js";

@@ -22,19 +22,24 @@ export interface EngineConfig {
   /** Path to the SQLite graph file. Env: CONTEXT_GRAPH_DB. Default: ./.context-graph/graph.db */
   dbPath?: string;
 
-  /** Anthropic key for extraction. Env: ANTHROPIC_API_KEY. */
-  anthropicApiKey?: string;
-  /** Extraction model. Env: CONTEXT_GRAPH_EXTRACTION_MODEL. Default: claude-haiku-4-5-20251001 */
-  extractionModel?: string;
+  /** OpenRouter key for extraction. Env: OPENROUTER_API_KEY. */
+  openrouterApiKey?: string;
+  /** Extraction model (an OpenRouter model id). Env: CONTEXT_GRAPH_OPENROUTER_MODEL. Default: openai/gpt-4o-mini */
+  openrouterModel?: string;
+  /** OpenRouter API base URL. Env: OPENROUTER_BASE_URL. Default: https://openrouter.ai/api/v1 */
+  openrouterBaseUrl?: string;
 
-  /** OpenAI key for embeddings. Env: OPENAI_API_KEY. */
+  /**
+   * OpenAI key for embeddings (optional — OpenRouter has no embeddings endpoint,
+   * so embeddings run locally unless this is set). Env: OPENAI_API_KEY.
+   */
   openaiApiKey?: string;
   /** Embedding model. Env: CONTEXT_GRAPH_EMBEDDING_MODEL. Default: text-embedding-3-small */
   embeddingModel?: string;
 
   /**
    * Force the fully-local providers (in-process embeddings + Ollama extraction)
-   * even when cloud API keys are present. Env: CONTEXT_GRAPH_LOCAL=1.
+   * even when an OpenRouter/OpenAI key is present. Env: CONTEXT_GRAPH_LOCAL=1.
    */
   forceLocal?: boolean;
   /** Local embedding model (transformers.js). Env: CONTEXT_GRAPH_LOCAL_EMBEDDING_MODEL. Default: Xenova/all-MiniLM-L6-v2 */
@@ -58,17 +63,18 @@ export interface EngineConfig {
   // --- advanced: bring your own components ---
   /** Override the storage backend (defaults to a SQLite store at dbPath). */
   store?: GraphStore;
-  /** Override the embedder (defaults to OpenAI). */
+  /** Override the embedder (defaults to local, or OpenAI when a key is set). */
   embedder?: Embedder;
-  /** Override the extractor (defaults to Claude). */
+  /** Override the extractor (defaults to OpenRouter, or local Ollama with no key). */
   extractor?: Extractor;
 }
 
 /** Fully-resolved configuration with all defaults applied. */
 export interface ResolvedConfig {
   dbPath: string;
-  anthropicApiKey?: string;
-  extractionModel: string;
+  openrouterApiKey?: string;
+  openrouterModel: string;
+  openrouterBaseUrl: string;
   openaiApiKey?: string;
   embeddingModel: string;
   forceLocal: boolean;
@@ -85,7 +91,8 @@ export interface ResolvedConfig {
 
 export const DEFAULTS = {
   dbPath: "./.context-graph/graph.db",
-  extractionModel: "claude-haiku-4-5-20251001",
+  openrouterModel: "openai/gpt-4o-mini",
+  openrouterBaseUrl: "https://openrouter.ai/api/v1",
   embeddingModel: "text-embedding-3-small",
   localEmbeddingModel: "Xenova/all-MiniLM-L6-v2",
   ollamaModel: "llama3.2",
@@ -100,11 +107,13 @@ export function resolveConfig(config: EngineConfig = {}): ResolvedConfig {
   const env = process.env;
   return {
     dbPath: config.dbPath ?? env.CONTEXT_GRAPH_DB ?? DEFAULTS.dbPath,
-    anthropicApiKey: config.anthropicApiKey ?? env.ANTHROPIC_API_KEY,
-    extractionModel:
-      config.extractionModel ??
-      env.CONTEXT_GRAPH_EXTRACTION_MODEL ??
-      DEFAULTS.extractionModel,
+    openrouterApiKey: config.openrouterApiKey ?? env.OPENROUTER_API_KEY,
+    openrouterModel:
+      config.openrouterModel ??
+      env.CONTEXT_GRAPH_OPENROUTER_MODEL ??
+      DEFAULTS.openrouterModel,
+    openrouterBaseUrl:
+      config.openrouterBaseUrl ?? env.OPENROUTER_BASE_URL ?? DEFAULTS.openrouterBaseUrl,
     openaiApiKey: config.openaiApiKey ?? env.OPENAI_API_KEY,
     embeddingModel:
       config.embeddingModel ??

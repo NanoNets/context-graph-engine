@@ -145,7 +145,7 @@ export class OllamaExtractor implements Extractor {
     } catch (err) {
       throw new Error(
         `Could not reach Ollama at ${this.baseUrl}. Start it (https://ollama.com) and pull a model ` +
-          `(e.g. \`ollama pull ${this.model}\`), or set ANTHROPIC_API_KEY to use cloud extraction. ` +
+          `(e.g. \`ollama pull ${this.model}\`), or set OPENROUTER_API_KEY to use cloud extraction. ` +
           `Underlying error: ${err instanceof Error ? err.message : String(err)}`,
       );
     }

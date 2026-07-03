@@ -4,7 +4,7 @@ import type { GraphStore } from "./graph/store.js";
 import { SqliteStore } from "./graph/sqlite-store.js";
 import type { Embedder, EngineConfig, Extractor, ResolvedConfig } from "./ai/providers.js";
 import { resolveConfig } from "./ai/providers.js";
-import { AnthropicExtractor } from "./ai/anthropic.js";
+import { OpenRouterExtractor } from "./ai/openrouter.js";
 import { OpenAIEmbedder } from "./ai/openai.js";
 import { LocalEmbedder, OllamaExtractor } from "./ai/local.js";
 import { chunkText } from "./ingest/chunker.js";
@@ -93,11 +93,12 @@ export class ContextGraphEngine {
       if (this.cfg.extractor) {
         // Explicit override wins.
         this._extractor = this.cfg.extractor;
-      } else if (!this.cfg.forceLocal && this.cfg.anthropicApiKey) {
-        // Use cloud extraction when a key is available.
-        this._extractor = new AnthropicExtractor(
-          this.cfg.anthropicApiKey,
-          this.cfg.extractionModel,
+      } else if (!this.cfg.forceLocal && this.cfg.openrouterApiKey) {
+        // Use OpenRouter for extraction when a key is available.
+        this._extractor = new OpenRouterExtractor(
+          this.cfg.openrouterApiKey,
+          this.cfg.openrouterModel,
+          this.cfg.openrouterBaseUrl,
         );
       } else {
         // Fall back to local extraction via a running Ollama instance.

@@ -22,7 +22,7 @@ Think "durable, structured memory for a team of agents" — the same integration
 | **Retrieval** (`src/retrieval/`) | Semantic match on entities → one-hop graph expansion → supporting passages → a ready-to-inject prompt block | ✅ Done |
 | **Storage** (`src/graph/sqlite-store.ts`) | Embedded SQLite (`better-sqlite3`), zero infra; swappable behind a `GraphStore` interface | ✅ Done |
 | **Local-first providers** (`src/ai/local.ts`) | In-process embeddings (transformers.js) + local extraction (Ollama) — **runs with no API keys** | ✅ Done |
-| **Cloud auto-upgrade** (`src/engine.ts`) | If `ANTHROPIC_API_KEY` / `OPENAI_API_KEY` are set, uses Claude + OpenAI automatically for higher quality | ✅ Done |
+| **Cloud auto-upgrade** (`src/engine.ts`) | If `OPENROUTER_API_KEY` is set, uses OpenRouter for extraction automatically (any tool-calling model) for higher quality | ✅ Done |
 | **Three access modes** | Library, `context-graph` CLI, and `context-graph-mcp` MCP server for any agent | ✅ Done |
 | **One-line installer** (`install.sh`) | `curl … | sh` clones, builds, and puts both commands on PATH | ✅ Done |
 | Update modes (silent vs. flagged) | Deferred per your call — needs discussion | ⏸ Deferred |
@@ -38,12 +38,12 @@ The engine needs a model for **extraction** (pulling entities/relationships out 
 
 **Right now this machine has neither Ollama nor any API key set**, so pick one path first:
 
-### Path A — Cloud (fastest to a clean demo, best quality) ✅ recommended for a live demo
+### Path A — Cloud via OpenRouter (fastest to a clean demo, best quality) ✅ recommended for a live demo
 ```bash
-export ANTHROPIC_API_KEY=sk-ant-...     # extraction via Claude
-export OPENAI_API_KEY=sk-...            # embeddings via OpenAI (optional; local otherwise)
+export OPENROUTER_API_KEY=sk-or-...     # extraction (default model: openai/gpt-4o-mini)
+export OPENAI_API_KEY=sk-...            # embeddings (optional; embeddings stay local otherwise)
 ```
-Reliable, fast, produces the richest graph. Best if you want the demo to look sharp.
+Reliable, fast, produces the richest graph. One OpenRouter key covers extraction — embeddings run locally unless you also set an OpenAI key. Best if you want the demo to look sharp.
 
 ### Path B — Fully local (the "no keys" story your manager asked for)
 ```bash
@@ -126,8 +126,8 @@ src/
   ai/
     providers.ts       ← config resolution (constructor → env → defaults) + interfaces
     local.ts           ← key-free LocalEmbedder + OllamaExtractor
-    anthropic.ts       ← Claude extraction (tool-calling)
-    openai.ts          ← OpenAI embeddings
+    openrouter.ts      ← cloud extraction via OpenRouter (tool-calling)
+    openai.ts          ← OpenAI embeddings (optional)
   graph/
     types.ts           ← the data model (nodes, edges, chunks) — read this to grok the domain
     merge.ts           ← dedup + reinforcement (the "gets smarter" logic)
