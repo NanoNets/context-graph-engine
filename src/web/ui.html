@@ -1,0 +1,751 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Context Graph — your team's living knowledge ledger</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='9' cy='9' r='4' fill='%232E6B4E'/%3E%3Ccircle cx='24' cy='13' r='3' fill='%231C2422'/%3E%3Ccircle cx='14' cy='24' r='3' fill='%231C2422'/%3E%3Cpath d='M12 11l9 2M11 12l3 9M23 16l-8 7' stroke='%239AA79F' stroke-width='1.5'/%3E%3C/svg%3E" />
+<style>
+  :root {
+    --paper: #f2f5f0;
+    --panel: #fdfdfb;
+    --ink: #1c2422;
+    --ink-soft: #5c6862;
+    --ink-faint: #8b968f;
+    --line: #dde4dc;
+    --verdant: #2e6b4e;
+    --verdant-deep: #1f4f38;
+    --verdant-soft: #e2ede4;
+    --amber: #a9762b;
+    --amber-soft: #f3ead8;
+    --serif: "Charter", "Iowan Old Style", "Palatino", Georgia, serif;
+    --sans: system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    font-family: var(--sans);
+    background: var(--paper);
+    color: var(--ink);
+    font-size: 15px;
+    line-height: 1.5;
+  }
+  button, input, textarea { font: inherit; color: inherit; }
+  :focus-visible { outline: 2px solid var(--verdant); outline-offset: 2px; }
+
+  /* ---------- header ---------- */
+  .masthead {
+    display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap;
+    padding: 14px 22px 12px;
+    border-bottom: 1px solid var(--line);
+    background: var(--panel);
+  }
+  .wordmark { font-family: var(--sans); font-weight: 700; font-size: 15px; letter-spacing: .14em; text-transform: uppercase; }
+  .wordmark .dot { color: var(--verdant); }
+  .tagline { font-family: var(--serif); font-style: italic; color: var(--ink-soft); font-size: 14.5px; }
+  .masthead-right { margin-left: auto; display: flex; align-items: baseline; gap: 18px; }
+  .stat { font-family: var(--mono); font-size: 12px; color: var(--ink-soft); }
+  .stat b { color: var(--ink); font-size: 14px; font-weight: 600; }
+  .provider-badge {
+    font-family: var(--mono); font-size: 11px; padding: 3px 9px;
+    border: 1px solid var(--line); border-radius: 999px; color: var(--ink-soft);
+    background: var(--paper);
+  }
+  .provider-badge.cloud { border-color: var(--verdant); color: var(--verdant-deep); background: var(--verdant-soft); }
+
+  /* ---------- layout ---------- */
+  .frame {
+    display: grid;
+    grid-template-columns: minmax(400px, 500px) 1fr;
+    height: calc(100vh - 49px);
+  }
+  .desk {
+    overflow-y: auto;
+    padding: 22px 22px 60px;
+    border-right: 1px solid var(--line);
+  }
+  .atlas { position: relative; background: var(--panel); }
+  #graph { position: absolute; inset: 0; }
+
+  /* ---------- ask ---------- */
+  .ask-label {
+    font-size: 11px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-faint); font-weight: 600; margin-bottom: 8px;
+  }
+  .ask-row { display: flex; gap: 8px; }
+  .ask-input {
+    flex: 1;
+    font-family: var(--serif); font-size: 17px;
+    padding: 11px 14px;
+    border: 1px solid var(--line); border-radius: 6px;
+    background: var(--panel);
+  }
+  .ask-input::placeholder { color: var(--ink-faint); font-style: italic; }
+  .btn {
+    padding: 10px 18px; border-radius: 6px; border: 1px solid var(--verdant-deep);
+    background: var(--verdant); color: #fff; font-weight: 600; font-size: 14px;
+    cursor: pointer;
+  }
+  .btn:hover { background: var(--verdant-deep); }
+  .btn:disabled { opacity: .55; cursor: default; }
+  .btn.quiet { background: var(--panel); color: var(--ink); border-color: var(--line); font-weight: 500; }
+  .btn.quiet:hover { border-color: var(--ink-faint); }
+
+  .local-note {
+    margin-top: 10px; padding: 9px 12px; border-radius: 6px;
+    background: var(--amber-soft); border: 1px solid #e5d7ba;
+    font-size: 13px; color: #6d5426;
+  }
+  .local-note code { font-family: var(--mono); font-size: 12px; }
+
+  /* ---------- answer ---------- */
+  .answer-card {
+    margin-top: 18px; background: var(--panel);
+    border: 1px solid var(--line); border-radius: 8px;
+    padding: 18px 20px;
+  }
+  .answer-q {
+    font-family: var(--mono); font-size: 12px; color: var(--ink-faint);
+    margin-bottom: 10px; word-break: break-word;
+  }
+  .answer-body { font-family: var(--serif); font-size: 16.5px; line-height: 1.62; }
+  .answer-body p + p { margin-top: 10px; }
+  .answer-body ul { margin: 8px 0 8px 22px; }
+  .answer-body .cite {
+    font-family: var(--mono); font-size: 10.5px; font-style: normal;
+    background: var(--verdant-soft); color: var(--verdant-deep);
+    border-radius: 4px; padding: 1px 5px; margin: 0 1px;
+    cursor: pointer; vertical-align: super; line-height: 1;
+    border: none;
+  }
+  .answer-body .cite:hover { background: var(--verdant); color: #fff; }
+  .thinking { font-family: var(--serif); font-style: italic; color: var(--ink-soft); }
+
+  /* ---------- the receipt (signature element) ---------- */
+  .receipt {
+    display: inline-flex; align-items: center; gap: 7px;
+    font-family: var(--mono); font-size: 11px; color: var(--ink-soft);
+    border: 1px solid var(--line); border-radius: 4px;
+    padding: 2px 8px 2px 6px; background: var(--panel);
+    white-space: nowrap;
+  }
+  .receipt .meter {
+    width: 34px; height: 5px; border-radius: 3px; background: #e4e9e3;
+    overflow: hidden; flex: none;
+  }
+  .receipt .meter i { display: block; height: 100%; background: var(--verdant); border-radius: 3px; }
+  .receipt.low .meter i { background: var(--amber); }
+  .receipt .pct { color: var(--ink); font-weight: 600; }
+
+  /* ---------- ledger sections ---------- */
+  .ledger-head {
+    display: flex; align-items: baseline; justify-content: space-between;
+    margin: 26px 0 10px;
+    border-bottom: 1px solid var(--line); padding-bottom: 6px;
+  }
+  .ledger-head h2 {
+    font-size: 11px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-faint); font-weight: 600;
+  }
+  .ledger-head .count { font-family: var(--mono); font-size: 11px; color: var(--ink-faint); }
+
+  .fact {
+    display: flex; flex-direction: column; gap: 5px;
+    padding: 11px 2px; border-bottom: 1px solid var(--line);
+  }
+  .fact-top { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+  .fact-name { font-family: var(--serif); font-size: 15.5px; font-weight: 700; cursor: pointer; }
+  .fact-name:hover { color: var(--verdant-deep); text-decoration: underline; }
+  .fact-type { font-family: var(--mono); font-size: 10.5px; color: var(--ink-faint); text-transform: lowercase; }
+  .fact-via { font-family: var(--mono); font-size: 10px; color: var(--verdant-deep); background: var(--verdant-soft); border-radius: 3px; padding: 1px 5px; }
+  .fact-via.expanded { color: var(--ink-soft); background: var(--paper); }
+  .fact-summary { font-family: var(--serif); font-size: 14px; color: var(--ink-soft); line-height: 1.5; }
+
+  .edge-line { font-family: var(--mono); font-size: 12px; color: var(--ink-soft); padding: 6px 2px; border-bottom: 1px solid var(--line); }
+  .edge-line b { color: var(--ink); font-weight: 600; }
+  .edge-line .rel { color: var(--verdant-deep); }
+
+  .source {
+    padding: 12px 2px; border-bottom: 1px solid var(--line);
+  }
+  .source.flash { background: var(--verdant-soft); transition: background 1.2s; }
+  .source-top { display: flex; align-items: baseline; gap: 8px; margin-bottom: 5px; }
+  .source-num { font-family: var(--mono); font-size: 11px; font-weight: 700; color: var(--verdant-deep); }
+  .source-title { font-size: 13px; font-weight: 600; }
+  .source-text {
+    font-family: var(--serif); font-size: 13.5px; color: var(--ink-soft); line-height: 1.55;
+    max-height: 88px; overflow: hidden; position: relative;
+  }
+  .source.open .source-text { max-height: none; }
+  .source-more { font-size: 12px; color: var(--verdant-deep); background: none; border: none; cursor: pointer; padding: 2px 0; }
+
+  /* ---------- grow the graph ---------- */
+  details.grow { margin-top: 22px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); }
+  details.grow summary {
+    cursor: pointer; padding: 12px 16px; font-weight: 600; font-size: 13.5px;
+    list-style: none; display: flex; align-items: center; gap: 8px;
+  }
+  details.grow summary::before { content: "+"; font-family: var(--mono); color: var(--verdant); font-weight: 700; }
+  details.grow[open] summary::before { content: "–"; }
+  details.grow .grow-body { padding: 2px 16px 16px; }
+  .grow-hint { font-size: 12.5px; color: var(--ink-soft); margin-bottom: 10px; }
+  textarea.teach {
+    width: 100%; min-height: 74px; resize: vertical;
+    font-family: var(--serif); font-size: 15px; padding: 10px 12px;
+    border: 1px solid var(--line); border-radius: 6px; background: var(--paper);
+    margin-bottom: 8px;
+  }
+  input.dir {
+    width: 100%; font-family: var(--mono); font-size: 13px; padding: 9px 12px;
+    border: 1px solid var(--line); border-radius: 6px; background: var(--paper);
+    margin-bottom: 8px;
+  }
+  .grow-status { font-family: var(--mono); font-size: 12px; margin-top: 10px; color: var(--ink-soft); white-space: pre-wrap; word-break: break-word; }
+  .grow-status.ok { color: var(--verdant-deep); }
+  .grow-status.err { color: #a03b2e; }
+
+  .doc-row { display: flex; gap: 8px; align-items: baseline; padding: 7px 2px; border-bottom: 1px solid var(--line); font-size: 13px; }
+  .doc-row .t { font-weight: 600; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .doc-row .d { font-family: var(--mono); font-size: 11px; color: var(--ink-faint); flex: none; }
+
+  /* ---------- graph panel chrome ---------- */
+  .atlas-legend {
+    position: absolute; top: 14px; left: 16px; z-index: 5;
+    font-family: var(--mono); font-size: 11px; color: var(--ink-soft);
+    background: color-mix(in srgb, var(--panel) 88%, transparent);
+    border: 1px solid var(--line); border-radius: 6px; padding: 8px 12px;
+    display: flex; gap: 14px; align-items: center;
+  }
+  .atlas-legend .swatch { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 5px; vertical-align: -1px; }
+  #node-card {
+    position: absolute; bottom: 16px; left: 16px; right: 16px; z-index: 5;
+    max-width: 440px;
+    background: var(--panel); border: 1px solid var(--line); border-radius: 8px;
+    padding: 14px 16px; box-shadow: 0 4px 18px rgba(28,36,34,.08);
+    display: none;
+  }
+  #node-card.show { display: block; }
+  #node-card .close { position: absolute; top: 8px; right: 10px; background: none; border: none; cursor: pointer; color: var(--ink-faint); font-size: 15px; }
+  #node-card h3 { font-family: var(--serif); font-size: 17px; margin-bottom: 2px; }
+  #node-card .nc-type { font-family: var(--mono); font-size: 11px; color: var(--ink-faint); margin-bottom: 7px; }
+  #node-card .nc-summary { font-family: var(--serif); font-size: 14px; color: var(--ink-soft); line-height: 1.5; margin-bottom: 9px; }
+  #node-card .nc-prov { font-family: var(--mono); font-size: 11px; color: var(--ink-faint); margin-top: 8px; }
+  .atlas-empty {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    z-index: 4; text-align: center; padding: 40px;
+  }
+  .atlas-empty .inner { max-width: 360px; }
+  .atlas-empty h3 { font-family: var(--serif); font-size: 20px; margin-bottom: 8px; }
+  .atlas-empty p { color: var(--ink-soft); font-size: 14px; }
+
+  .hidden { display: none !important; }
+
+  @media (max-width: 900px) {
+    .frame { grid-template-columns: 1fr; grid-template-rows: auto 420px; height: auto; }
+    .desk { border-right: none; border-bottom: 1px solid var(--line); }
+    .atlas { height: 420px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <span class="wordmark">Context<span class="dot">·</span>Graph</span>
+  <span class="tagline">a living ledger of what your team knows</span>
+  <div class="masthead-right">
+    <span class="stat"><b id="stat-nodes">–</b> facts</span>
+    <span class="stat"><b id="stat-edges">–</b> connections</span>
+    <span class="stat"><b id="stat-docs">–</b> sources</span>
+    <span class="provider-badge" id="provider-badge">…</span>
+  </div>
+</header>
+
+<div class="frame">
+  <main class="desk">
+    <div class="ask-label">Ask the graph</div>
+    <form class="ask-row" id="ask-form">
+      <input class="ask-input" id="ask-input" placeholder="How do we deploy to staging?" autocomplete="off" />
+      <button class="btn" id="ask-btn" type="submit">Ask</button>
+    </form>
+    <div class="local-note hidden" id="local-note">
+      Running fully local — retrieval and the graph work offline. Set
+      <code>OPENROUTER_API_KEY</code> to get written answers and ingest new documents with a cloud model.
+    </div>
+
+    <div id="answer-wrap" class="hidden">
+      <div class="answer-card">
+        <div class="answer-q" id="answer-q"></div>
+        <div class="answer-body" id="answer-body"></div>
+      </div>
+
+      <div class="ledger-head"><h2>Facts consulted</h2><span class="count" id="facts-count"></span></div>
+      <div id="facts"></div>
+
+      <div class="ledger-head" id="edges-head"><h2>How they connect</h2><span class="count" id="edges-count"></span></div>
+      <div id="edges"></div>
+
+      <div class="ledger-head"><h2>Sources</h2><span class="count" id="sources-count"></span></div>
+      <div id="sources"></div>
+    </div>
+
+    <details class="grow" id="teach-panel">
+      <summary>Teach it something</summary>
+      <div class="grow-body">
+        <p class="grow-hint">Write a fact the docs don't capture — “Postgres failovers page the on-call via #incidents, not email.” The graph extracts it, reinforces what it already knows, and remembers who said so.</p>
+        <textarea class="teach" id="teach-input" placeholder="What did you learn?"></textarea>
+        <button class="btn quiet" id="teach-btn" type="button">Add to the ledger</button>
+        <div class="grow-status" id="teach-status"></div>
+      </div>
+    </details>
+
+    <details class="grow" id="ingest-panel">
+      <summary>Ingest a folder of documents</summary>
+      <div class="grow-body">
+        <p class="grow-hint">Point it at a folder on this machine (.pdf, .md, .txt). Every file becomes chunks, entities, and relationships — watch the graph grow on the right.</p>
+        <input class="dir" id="ingest-input" placeholder="/path/to/your/docs" />
+        <button class="btn quiet" id="ingest-btn" type="button">Ingest folder</button>
+        <div class="grow-status" id="ingest-status"></div>
+      </div>
+    </details>
+
+    <div class="ledger-head"><h2>In the ledger</h2><span class="count" id="docs-count"></span></div>
+    <div id="docs"></div>
+  </main>
+
+  <section class="atlas">
+    <div class="atlas-legend">
+      <span><span class="swatch" style="background:#2e6b4e"></span>consulted for your question</span>
+      <span><span class="swatch" style="background:#b8c2ba"></span>everything else it knows</span>
+    </div>
+    <div id="graph"></div>
+    <div class="atlas-empty hidden" id="atlas-empty">
+      <div class="inner">
+        <h3>The ledger is empty.</h3>
+        <p>Ingest a folder of documents on the left and this space becomes a map of everything your team knows.</p>
+      </div>
+    </div>
+    <div id="node-card">
+      <button class="close" id="node-card-close" aria-label="Close">×</button>
+      <h3 id="nc-name"></h3>
+      <div class="nc-type" id="nc-type"></div>
+      <div class="nc-summary" id="nc-summary"></div>
+      <span class="receipt" id="nc-receipt"></span>
+      <div class="nc-prov" id="nc-prov"></div>
+    </div>
+  </section>
+</div>
+
+<script src="https://unpkg.com/vis-network@9.1.9/standalone/umd/vis-network.min.js" integrity="sha384-yxKDWWf0wwdUj/gPeuL11czrnKFQROnLgY8ll7En9NYoXibgg3C6NK/UDHNtUgWJ" crossorigin="anonymous"></script>
+<script>
+"use strict";
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+const COLOR_BASE = { background: "#b8c2ba", border: "#93a098" };
+const COLOR_HIT = { background: "#2e6b4e", border: "#1f4f38" };
+const COLOR_EXPANDED = { background: "#7fa98f", border: "#2e6b4e" };
+const COLOR_FRESH = { background: "#3f8f66", border: "#1f4f38" };
+
+let network = null;
+let nodesDs = null;
+let edgesDs = null;
+let prevObs = new Map(); // node id -> observations, for "what just got smarter" diffing
+let highlighted = new Set();
+
+/* ---------- receipts ---------- */
+function receiptHtml(confidence, observations, sourceCount) {
+  const pct = Math.round(confidence * 100);
+  const low = pct < 55;
+  const src = sourceCount != null ? ` · ${sourceCount} source${sourceCount === 1 ? "" : "s"}` : "";
+  return `<span class="receipt${low ? " low" : ""}" title="confidence ${pct}%, observed ${observations}×">` +
+    `<span class="meter"><i style="width:${pct}%"></i></span>` +
+    `<span class="pct">${pct}%</span><span>×${observations}${esc(src)}</span></span>`;
+}
+
+/* ---------- stats + provider ---------- */
+async function refreshStats() {
+  const s = await (await fetch("/api/stats")).json();
+  $("stat-nodes").textContent = s.nodes;
+  $("stat-edges").textContent = s.edges;
+  $("stat-docs").textContent = s.documents;
+  const badge = $("provider-badge");
+  if (s.provider.canSynthesize) {
+    badge.textContent = "answers: " + s.provider.model;
+    badge.classList.add("cloud");
+  } else {
+    badge.textContent = "local mode";
+    $("local-note").classList.remove("hidden");
+  }
+  return s;
+}
+
+/* ---------- graph ---------- */
+function nodeVisual(n) {
+  return {
+    id: n.id,
+    label: n.name,
+    title: `${n.name} — ${n.type}\n${n.summary}\n×${n.observations} observations · ${Math.round(n.confidence * 100)}% confidence`,
+    size: 9 + Math.min(n.observations, 10) * 1.8,
+    color: highlighted.has(n.id) ? COLOR_HIT : COLOR_BASE,
+    _data: n,
+  };
+}
+
+async function refreshGraph({ diff = false } = {}) {
+  const g = await (await fetch("/api/graph")).json();
+  $("atlas-empty").classList.toggle("hidden", g.nodes.length > 0);
+
+  const freshIds = [];
+  if (diff) {
+    for (const n of g.nodes) {
+      const before = prevObs.get(n.id);
+      if (before === undefined || n.observations > before) freshIds.push(n.id);
+    }
+  }
+  prevObs = new Map(g.nodes.map((n) => [n.id, n.observations]));
+
+  const nodes = g.nodes.map(nodeVisual);
+  const edges = g.edges.map((e, i) => ({
+    id: "e" + i,
+    from: e.sourceId,
+    to: e.targetId,
+    title: `${e.relation}${e.description ? " — " + e.description : ""}\n×${e.observations} · ${Math.round(e.confidence * 100)}%`,
+    width: 1 + Math.min(e.observations - 1, 4) * 0.6,
+  }));
+
+  if (!network) {
+    nodesDs = new vis.DataSet(nodes);
+    edgesDs = new vis.DataSet(edges);
+    network = new vis.Network($("graph"), { nodes: nodesDs, edges: edgesDs }, {
+      nodes: {
+        shape: "dot",
+        font: { face: "system-ui", size: 12, color: "#1c2422" },
+        borderWidth: 1.5,
+      },
+      edges: {
+        color: { color: "#c9d1c9", highlight: "#2e6b4e", hover: "#8b968f" },
+        arrows: { to: { enabled: true, scaleFactor: 0.5 } },
+        smooth: { type: "continuous" },
+      },
+      interaction: { hover: true, tooltipDelay: 120 },
+      physics: {
+        solver: "forceAtlas2Based",
+        forceAtlas2Based: { gravitationalConstant: -42, springLength: 110, damping: 0.5 },
+        stabilization: { iterations: 180 },
+      },
+    });
+    network.on("click", (params) => {
+      if (params.nodes.length) showNodeCard(params.nodes[0]);
+      else hideNodeCard();
+    });
+  } else {
+    // Update in place so the layout doesn't reshuffle under the user.
+    const existing = new Set(nodesDs.getIds());
+    for (const n of nodes) existing.has(n.id) ? nodesDs.update(n) : nodesDs.add(n);
+    edgesDs.clear();
+    edgesDs.add(edges);
+  }
+
+  if (freshIds.length) pulseFresh(freshIds);
+  return g;
+}
+
+function pulseFresh(ids) {
+  nodesDs.update(ids.map((id) => ({ id, color: COLOR_FRESH, borderWidth: 3 })));
+  if (network) network.fit({ nodes: ids, animation: { duration: 600 }, maxZoomLevel: 1.2 });
+  setTimeout(() => {
+    nodesDs.update(ids.map((id) => ({
+      id,
+      color: highlighted.has(id) ? COLOR_HIT : COLOR_BASE,
+      borderWidth: 1.5,
+    })));
+  }, 2600);
+}
+
+function highlightRetrieval(bundle) {
+  highlighted = new Set(bundle.nodes.map((n) => n.id));
+  const semantic = new Set(bundle.nodes.filter((n) => n.via === "semantic").map((n) => n.id));
+  nodesDs.update(nodesDs.getIds().map((id) => ({
+    id,
+    color: semantic.has(id) ? COLOR_HIT : highlighted.has(id) ? COLOR_EXPANDED : COLOR_BASE,
+    opacity: highlighted.has(id) ? 1 : 0.35,
+  })));
+  if (highlighted.size && network) {
+    network.fit({ nodes: [...highlighted], animation: { duration: 700 }, maxZoomLevel: 1.1 });
+  }
+}
+
+function focusNode(id) {
+  if (!network) return;
+  network.focus(id, { scale: 1.3, animation: { duration: 500 } });
+  network.selectNodes([id]);
+  showNodeCard(id);
+}
+
+function showNodeCard(id) {
+  const v = nodesDs.get(id);
+  if (!v || !v._data) return;
+  const n = v._data;
+  $("nc-name").textContent = n.name;
+  $("nc-type").textContent = n.type;
+  $("nc-summary").textContent = n.summary;
+  $("nc-receipt").outerHTML = receiptHtml(n.confidence, n.observations).replace('class="receipt', 'id="nc-receipt" class="receipt');
+  $("nc-prov").textContent = "";
+  $("node-card").classList.add("show");
+}
+function hideNodeCard() { $("node-card").classList.remove("show"); }
+$("node-card-close").addEventListener("click", hideNodeCard);
+
+/* ---------- ask ---------- */
+function renderAnswerText(text, sourceCount) {
+  // Minimal, safe rendering: escape first, then paragraphs, bullets, bold, [n] citations.
+  const lines = esc(text).split(/\n/);
+  let html = "", inList = false;
+  const flushList = () => { if (inList) { html += "</ul>"; inList = false; } };
+  let para = [];
+  const flushPara = () => {
+    if (para.length) { html += "<p>" + para.join("<br>") + "</p>"; para = []; }
+  };
+  for (const raw of lines) {
+    const line = raw.trim();
+    if (!line) { flushPara(); flushList(); continue; }
+    if (/^[-*•]\s+/.test(line)) {
+      flushPara();
+      if (!inList) { html += "<ul>"; inList = true; }
+      html += "<li>" + line.replace(/^[-*•]\s+/, "") + "</li>";
+    } else {
+      flushList();
+      para.push(line);
+    }
+  }
+  flushPara(); flushList();
+  html = html.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+  html = html.replace(/\[(\d+)\]/g, (m, d) => {
+    const i = Number(d);
+    return i >= 1 && i <= sourceCount ? `<button class="cite" data-src="${i}">${i}</button>` : m;
+  });
+  return html;
+}
+
+function renderBundle(bundle) {
+  const facts = $("facts");
+  facts.innerHTML = bundle.nodes.map((n) => `
+    <div class="fact">
+      <div class="fact-top">
+        <span class="fact-name" data-node="${esc(n.id)}">${esc(n.name)}</span>
+        <span class="fact-type">${esc(n.type)}</span>
+        <span class="fact-via${n.via === "expanded" ? " expanded" : ""}">${n.via === "semantic" ? "matched" : "connected"}</span>
+        ${receiptHtml(n.confidence, n.observations, n.provenance.length)}
+      </div>
+      <div class="fact-summary">${esc(n.summary)}</div>
+    </div>`).join("");
+  $("facts-count").textContent = bundle.nodes.length;
+  facts.querySelectorAll(".fact-name").forEach((el) =>
+    el.addEventListener("click", () => focusNode(el.dataset.node)));
+
+  const byId = new Map(bundle.nodes.map((n) => [n.id, n.name]));
+  const edgeRows = bundle.edges
+    .filter((e) => byId.has(e.sourceId) && byId.has(e.targetId))
+    .slice(0, 10)
+    .map((e) => `<div class="edge-line"><b>${esc(byId.get(e.sourceId))}</b> <span class="rel">—${esc(e.relation)}→</span> <b>${esc(byId.get(e.targetId))}</b></div>`);
+  $("edges").innerHTML = edgeRows.join("");
+  $("edges-count").textContent = edgeRows.length;
+  $("edges-head").classList.toggle("hidden", !edgeRows.length);
+
+  $("sources").innerHTML = bundle.chunks.map((c, i) => `
+    <div class="source" id="source-${i + 1}">
+      <div class="source-top">
+        <span class="source-num">[${i + 1}]</span>
+        <span class="source-title">${esc(c.documentTitle)}</span>
+      </div>
+      <div class="source-text">${esc(c.text)}</div>
+      <button class="source-more" type="button">show more</button>
+    </div>`).join("");
+  $("sources-count").textContent = bundle.chunks.length;
+  $("sources").querySelectorAll(".source-more").forEach((btn) =>
+    btn.addEventListener("click", () => {
+      const card = btn.closest(".source");
+      card.classList.toggle("open");
+      btn.textContent = card.classList.contains("open") ? "show less" : "show more";
+    }));
+}
+
+$("ask-form").addEventListener("submit", async (ev) => {
+  ev.preventDefault();
+  const q = $("ask-input").value.trim();
+  if (!q) return;
+  const btn = $("ask-btn");
+  btn.disabled = true;
+  $("answer-wrap").classList.remove("hidden");
+  $("answer-q").textContent = "Q · " + q;
+  $("answer-body").innerHTML = '<span class="thinking">Consulting the graph…</span>';
+  $("facts").innerHTML = ""; $("edges").innerHTML = ""; $("sources").innerHTML = "";
+  try {
+    const r = await fetch("/api/ask", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ question: q }),
+    });
+    const data = await r.json();
+    if (data.error) throw new Error(data.error);
+    const { answer, bundle } = data;
+    if (!bundle.nodes.length && !bundle.chunks.length) {
+      $("answer-body").innerHTML = '<p class="thinking">The graph holds nothing relevant to that yet. Ingest the documents that would answer it, and ask again.</p>';
+    } else if (answer) {
+      $("answer-body").innerHTML = renderAnswerText(answer, bundle.chunks.length);
+      $("answer-body").querySelectorAll(".cite").forEach((el) =>
+        el.addEventListener("click", () => {
+          const card = $("source-" + el.dataset.src);
+          if (!card) return;
+          card.scrollIntoView({ behavior: "smooth", block: "center" });
+          card.classList.add("flash");
+          setTimeout(() => card.classList.remove("flash"), 1400);
+        }));
+    } else {
+      $("answer-body").innerHTML = '<p class="thinking">Local mode — here is everything the graph knows about this, with receipts. Set OPENROUTER_API_KEY for a written answer.</p>';
+    }
+    renderBundle(bundle);
+    highlightRetrieval(bundle);
+  } catch (e) {
+    $("answer-body").innerHTML = '<p class="thinking">Something went wrong: ' + esc(e.message) + "</p>";
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+/* ---------- teach ---------- */
+$("teach-btn").addEventListener("click", async () => {
+  const learning = $("teach-input").value.trim();
+  const status = $("teach-status");
+  if (!learning) return;
+  $("teach-btn").disabled = true;
+  status.className = "grow-status";
+  status.textContent = "Extracting entities and folding them in…";
+  try {
+    const r = await fetch("/api/contribute", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ learning }),
+    });
+    const data = await r.json();
+    if (data.error) throw new Error(data.error);
+    status.className = "grow-status ok";
+    status.textContent =
+      `✓ ledger updated — ${data.nodesCreated} new fact${data.nodesCreated === 1 ? "" : "s"}, ` +
+      `${data.nodesUpdated} reinforced, ${data.edgesCreated + data.edgesUpdated} connections touched`;
+    $("teach-input").value = "";
+    await refreshStats();
+    await refreshGraph({ diff: true });
+    await refreshDocs();
+  } catch (e) {
+    status.className = "grow-status err";
+    status.textContent = "Could not extract: " + e.message +
+      "\nExtraction needs OPENROUTER_API_KEY or a running Ollama.";
+  } finally {
+    $("teach-btn").disabled = false;
+  }
+});
+
+/* ---------- ingest ---------- */
+$("ingest-btn").addEventListener("click", async () => {
+  const dir = $("ingest-input").value.trim();
+  const status = $("ingest-status");
+  if (!dir) return;
+  $("ingest-btn").disabled = true;
+  status.className = "grow-status";
+  status.textContent = "Scanning " + dir + " …";
+  try {
+    const r = await fetch("/api/ingest-dir", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ dir }),
+    });
+    if (!r.ok) {
+      const err = await r.json().catch(() => ({}));
+      throw new Error(err.error || r.statusText);
+    }
+    const reader = r.body.getReader();
+    const decoder = new TextDecoder();
+    let buf = "";
+    const lines = [];
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buf += decoder.decode(value, { stream: true });
+      let nl;
+      while ((nl = buf.indexOf("\n")) >= 0) {
+        const line = buf.slice(0, nl); buf = buf.slice(nl + 1);
+        if (!line.trim()) continue;
+        const ev = JSON.parse(line);
+        if (ev.type === "progress") {
+          const name = ev.file.split("/").pop();
+          lines.push(`[${ev.index + 1}/${ev.total}] reading ${name}…`);
+          status.textContent = lines.slice(-6).join("\n");
+          // Grow the graph live between files.
+          refreshGraph({ diff: true }).catch(() => {});
+          refreshStats().catch(() => {});
+        } else if (ev.type === "done") {
+          const fresh = ev.results.filter((x) => !x.skipped);
+          const skipped = ev.results.length - fresh.length;
+          const nodes = fresh.reduce((a, x) => a + x.nodesCreated + x.nodesUpdated, 0);
+          status.className = "grow-status ok";
+          status.textContent =
+            `✓ ${fresh.length} document${fresh.length === 1 ? "" : "s"} ingested` +
+            (skipped ? ` (${skipped} already known, skipped)` : "") +
+            `, ${nodes} facts written or reinforced`;
+        } else if (ev.type === "error") {
+          throw new Error(ev.error);
+        }
+      }
+    }
+    await refreshStats();
+    await refreshGraph({ diff: true });
+    await refreshDocs();
+  } catch (e) {
+    status.className = "grow-status err";
+    status.textContent = "Ingest failed: " + e.message +
+      "\nExtraction needs OPENROUTER_API_KEY or a running Ollama.";
+  } finally {
+    $("ingest-btn").disabled = false;
+  }
+});
+
+/* ---------- documents ---------- */
+async function refreshDocs() {
+  const docs = await (await fetch("/api/documents")).json();
+  $("docs-count").textContent = docs.length;
+  $("docs").innerHTML = docs.slice(0, 30).map((d) => `
+    <div class="doc-row">
+      <span class="t" title="${esc(d.source)}">${esc(d.title)}</span>
+      <span class="d">${esc((d.createdAt || "").slice(0, 10))}</span>
+    </div>`).join("");
+}
+
+/* ---------- boot ---------- */
+(async function boot() {
+  try {
+    await refreshStats();
+    if (typeof vis === "undefined") {
+      $("graph").innerHTML = '<p style="padding:40px;color:#5c6862;font-family:var(--serif)">The graph view needs internet access once (vis-network CDN). Everything else works offline.</p>';
+    } else {
+      await refreshGraph();
+    }
+    await refreshDocs();
+  } catch (e) {
+    console.error(e);
+  }
+  $("ask-input").focus();
+  // Shareable question links: /?q=how+do+we+deploy auto-asks on load.
+  const q = new URLSearchParams(location.search).get("q");
+  if (q) {
+    $("ask-input").value = q;
+    $("ask-form").requestSubmit();
+  }
+})();
+</script>
+</body>
+</html>

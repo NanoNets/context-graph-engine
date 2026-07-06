@@ -141,6 +141,19 @@ export class SqliteStore implements GraphStore {
       .run(doc);
   }
 
+  allDocuments(): GraphDocument[] {
+    const rows = this.db
+      .prepare(`SELECT id, title, source, hash, created_at FROM documents ORDER BY created_at DESC`)
+      .all() as Array<{ id: string; title: string; source: string; hash: string; created_at: string }>;
+    return rows.map((r) => ({
+      id: r.id,
+      title: r.title,
+      source: r.source,
+      hash: r.hash,
+      createdAt: r.created_at,
+    }));
+  }
+
   documentTitle(documentId: string): string {
     const row = this.db
       .prepare(`SELECT title FROM documents WHERE id = ?`)

@@ -17,6 +17,8 @@ export interface GraphStore {
   // --- documents ---
   getDocumentByHash(hash: string): GraphDocument | undefined;
   insertDocument(doc: GraphDocument): void;
+  /** Every ingested document, newest first (for UI listings). */
+  allDocuments(): GraphDocument[];
 
   // --- chunks ---
   insertChunk(chunk: Chunk): void;
