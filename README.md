@@ -174,10 +174,10 @@ This is how nearly every self-hosted team tool works (Vaultwarden, Outline, Book
 
 ```bash
 docker compose up -d
-docker compose logs | grep token    # the share link, with access token
+cat ./data/share-link.txt           # the share link, with access token
 ```
 
-The graph persists to `./data/graph.db`; drop documents into `./docs` and ingest them from the UI as `/docs`. When exposed beyond localhost the API requires the access token from the logs (pin it with `CONTEXT_GRAPH_WEB_TOKEN`).
+The graph persists to `./data/graph.db`; drop documents into `./docs` and ingest them from the UI as `/docs`. When exposed beyond localhost the API requires an access token. It's generated once, saved to `./data/share-link.txt` (and printed to `docker compose logs`), and **stays stable across restarts** so shared links keep working. Pin your own with `CONTEXT_GRAPH_WEB_TOKEN`.
 
 No server to put it on? Run it on any machine and share it over [Tailscale](https://tailscale.com) without opening a port to the internet:
 

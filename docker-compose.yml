@@ -1,7 +1,7 @@
 # Context Graph — one shared team-brain server.
 #
 #   docker compose up -d
-#   docker compose logs | grep token     # grab the access/share link
+#   cat ./data/share-link.txt            # grab the access/share link
 #
 # The graph lives in ./data as a single SQLite file. Put documents you want to
 # ingest into ./docs and type /docs in the UI's "Ingest a folder" box.
@@ -17,7 +17,7 @@ services:
       # Optional: cloud extraction + written answers. Without it the graph and
       # retrieval still work; extraction needs this key or a reachable Ollama.
       OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
-      # Optional: pin the access token; otherwise one is generated per start
-      # and printed in the logs.
+      # Optional: pin the access token. Otherwise one is generated once and
+      # saved to ./data/share-link.txt (stable across restarts).
       CONTEXT_GRAPH_WEB_TOKEN: ${CONTEXT_GRAPH_WEB_TOKEN:-}
     restart: unless-stopped

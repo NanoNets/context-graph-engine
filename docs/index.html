@@ -659,7 +659,7 @@
         <h3>One shared server</h3>
         <p>Run a single container; teammates open a link with an access token. Put it on your tailnet and it's reachable from anywhere, exposed to no one.</p>
         <pre>$ docker compose up -d
-$ docker compose logs | grep token
+$ cat ./data/share-link.txt
 <span class="c"># optional: private access from anywhere</span>
 $ tailscale serve localhost:4680</pre>
       </div>

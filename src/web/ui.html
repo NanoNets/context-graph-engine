@@ -249,9 +249,58 @@
   @media (prefers-reduced-motion: reduce) {
     * { transition: none !important; animation: none !important; }
   }
+
+  /* ---------- access-token gate ---------- */
+  .token-overlay {
+    position: fixed; inset: 0; z-index: 1000;
+    display: none; align-items: center; justify-content: center;
+    background: rgba(28, 36, 34, .55); padding: 20px;
+  }
+  .token-overlay.open { display: flex; }
+  .token-card {
+    width: 100%; max-width: 440px;
+    background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
+    padding: 24px 24px 20px; box-shadow: 0 12px 40px rgba(28, 36, 34, .25);
+  }
+  .token-card h2 {
+    font-family: var(--serif); font-size: 20px; font-weight: 600; margin-bottom: 8px;
+  }
+  .token-card p { font-size: 14px; color: var(--ink-soft); margin-bottom: 14px; }
+  .token-card p code {
+    font-family: var(--mono); font-size: 12px;
+    background: var(--paper); border: 1px solid var(--line);
+    border-radius: 4px; padding: 1px 5px; color: var(--ink);
+  }
+  .token-input {
+    width: 100%; padding: 11px 13px; font-family: var(--mono); font-size: 13px;
+    border: 1px solid var(--line); border-radius: 6px; background: var(--panel);
+  }
+  .token-input:focus { border-color: var(--verdant); }
+  .token-hint { font-size: 12.5px; color: var(--ink-faint); margin: 10px 0 0; }
+  .token-hint code { font-family: var(--mono); font-size: 11.5px; }
+  .token-err { color: var(--amber); font-size: 13px; margin-top: 10px; min-height: 0; }
+  .token-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px; }
 </style>
 </head>
 <body>
+
+<div class="token-overlay" id="token-overlay" role="dialog" aria-modal="true" aria-labelledby="token-title">
+  <div class="token-card">
+    <h2 id="token-title">This graph is protected</h2>
+    <p>Paste the <b>access token</b> or the full <b>share link</b> your team was given.</p>
+    <input class="token-input" id="token-input" type="text"
+           placeholder="token, or http://…/#token=…" autocomplete="off" spellcheck="false" />
+    <div class="token-err" id="token-err"></div>
+    <p class="token-hint">
+      Where to find it: open <code>./data/share-link.txt</code> next to the server,
+      or run <code>docker compose logs | grep token</code>.
+    </p>
+    <div class="token-actions">
+      <button class="btn quiet" id="token-cancel" type="button">Cancel</button>
+      <button class="btn" id="token-submit" type="button">Unlock</button>
+    </div>
+  </div>
+</div>
 
 <header class="masthead">
   <span class="wordmark">Context<span class="dot">·</span>Graph</span>
@@ -346,8 +395,17 @@ const $ = (id) => document.getElementById(id);
 
 /* ---------- access token (shared/team deployments) ---------- */
 // A share link carries #token=… in the URL fragment — fragments are never
-// sent to the server, so the token stays out of proxy/access logs. Stash it
-// and strip it from the address bar.
+// sent to the server, so the token stays out of proxy/access logs. Accept
+// either a bare token or a whole pasted link and pull the token out of it.
+function extractToken(raw) {
+  const s = (raw || "").trim();
+  if (!s) return "";
+  // Full share link: token lives in the #token=… fragment.
+  const hash = s.includes("#") ? s.slice(s.indexOf("#") + 1) : "";
+  const fromHash = new URLSearchParams(hash).get("token");
+  return (fromHash || s).trim();
+}
+
 (function pickUpToken() {
   const frag = new URLSearchParams(location.hash.replace(/^#/, ""));
   const t = frag.get("token");
@@ -357,17 +415,51 @@ const $ = (id) => document.getElementById(id);
   }
 })();
 
+// In-page token modal — a Promise that resolves with the entered token (already
+// normalized) or null if the user cancels. Replaces the browser's window.prompt.
+function askForToken(message) {
+  const overlay = $("token-overlay");
+  const input = $("token-input");
+  const err = $("token-err");
+  err.textContent = message || "";
+  input.value = "";
+  overlay.classList.add("open");
+  input.focus();
+  return new Promise((resolve) => {
+    const close = (value) => {
+      overlay.classList.remove("open");
+      $("token-submit").onclick = null;
+      $("token-cancel").onclick = null;
+      input.onkeydown = null;
+      overlay.onmousedown = null;
+      resolve(value);
+    };
+    const submit = () => {
+      const token = extractToken(input.value);
+      if (!token) { err.textContent = "Enter a token or share link."; return; }
+      close(token);
+    };
+    $("token-submit").onclick = submit;
+    $("token-cancel").onclick = () => close(null);
+    input.onkeydown = (e) => {
+      if (e.key === "Enter") submit();
+      else if (e.key === "Escape") close(null);
+    };
+    // Click on the backdrop (not the card) cancels.
+    overlay.onmousedown = (e) => { if (e.target === overlay) close(null); };
+  });
+}
+
 async function api(path, opts = {}) {
   const headers = { ...(opts.headers || {}) };
   const token = localStorage.getItem("cg-token");
   if (token) headers["authorization"] = "Bearer " + token;
   const r = await fetch(path, { ...opts, headers });
   if (r.status === 401) {
-    const t = window.prompt(
-      "This graph is protected. Paste the access token (shown where the server was started, or in your share link):",
-    );
-    if (t && t.trim()) {
-      localStorage.setItem("cg-token", t.trim());
+    const wrong = Boolean(token); // had a token that the server rejected
+    const t = await askForToken(wrong ? "That token was rejected. Try again." : "");
+    if (t) {
+      localStorage.setItem("cg-token", t);
       return api(path, opts);
     }
     throw new Error("access token required");

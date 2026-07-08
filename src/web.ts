@@ -17,9 +17,9 @@
 import "dotenv/config";
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
-import { readFileSync, existsSync, statSync } from "node:fs";
+import { readFileSync, writeFileSync, existsSync, statSync, mkdirSync } from "node:fs";
 import { networkInterfaces } from "node:os";
-import { resolve } from "node:path";
+import { resolve, dirname, join } from "node:path";
 import OpenAI from "openai";
 import { ContextGraphEngine } from "./engine.js";
 import { resolveConfig } from "./ai/providers.js";
@@ -97,15 +97,77 @@ function json(res: ServerResponse, status: number, body: unknown): void {
 const LOCAL_HOSTNAMES = new Set(["localhost", "127.0.0.1", "[::1]", "::1"]);
 
 /**
+ * Directory that holds durable server state (the graph db, and the persisted
+ * access token). Defaults next to the SQLite file so it rides the same mounted
+ * volume in Docker. Undefined for an in-memory db — nothing to persist.
+ */
+function dataDir(): string | undefined {
+  if (cfg.dbPath === ":memory:") return undefined;
+  return dirname(resolve(cfg.dbPath));
+}
+
+/**
+ * Resolve the access token, persisting a generated one so it survives restarts.
+ *
+ * Precedence: an explicit CONTEXT_GRAPH_WEB_TOKEN always wins (and is never
+ * written to disk). Otherwise, when exposed, reuse a previously persisted token
+ * or mint one and save it (owner-only) beside the db — so a `docker compose
+ * restart` no longer invalidates every teammate's saved link. Also drops a
+ * human-readable share-link.txt so the deployer never has to grep the logs.
+ */
+function resolveWebToken(): { token?: string; sharePath?: string } {
+  const explicit = process.env.CONTEXT_GRAPH_WEB_TOKEN?.trim();
+  if (explicit) return { token: explicit };
+  if (!EXPOSED) return {};
+
+  const dir = dataDir();
+  if (!dir) return { token: randomBytes(18).toString("base64url") };
+
+  const tokenPath = join(dir, ".web-token");
+  let token: string;
+  try {
+    token = existsSync(tokenPath) ? readFileSync(tokenPath, "utf8").trim() : "";
+    if (!token) {
+      token = randomBytes(18).toString("base64url");
+      mkdirSync(dir, { recursive: true });
+      writeFileSync(tokenPath, token + "\n", { mode: 0o600 });
+    }
+  } catch {
+    // Read-only volume or similar — fall back to an in-memory token so the
+    // server still starts (it'll just change on restart, as before).
+    return { token: randomBytes(18).toString("base64url") };
+  }
+
+  // Best-effort human-readable share file; failure here must not block startup.
+  let sharePath: string | undefined;
+  try {
+    const lan = lanAddress();
+    const base = lan ? `http://${lan}:${PORT}` : `http://<this-machine>:${PORT}`;
+    const share = join(dir, "share-link.txt");
+    writeFileSync(
+      share,
+      `Context Graph — team access\n\n` +
+        `Access token:\n  ${token}\n\n` +
+        `Share this link with your team (opens the UI already signed in):\n  ${base}/#token=${token}\n\n` +
+        `On this machine, use:\n  http://localhost:${PORT}/#token=${token}\n`,
+      { mode: 0o600 },
+    );
+    sharePath = share;
+  } catch {
+    /* ignore */
+  }
+  return { token, sharePath };
+}
+
+/**
  * Access token for the API. On the loopback default no token is needed — the
  * OS already gates who can reach the port. The moment the server is exposed
  * beyond loopback (HOST=0.0.0.0, Docker, a VPS) a token is required: taken
- * from CONTEXT_GRAPH_WEB_TOKEN, or generated fresh and printed at startup.
+ * from CONTEXT_GRAPH_WEB_TOKEN, or persisted next to the db and printed at
+ * startup (see resolveWebToken).
  */
 const EXPOSED = !LOCAL_HOSTNAMES.has(HOST);
-const WEB_TOKEN =
-  process.env.CONTEXT_GRAPH_WEB_TOKEN?.trim() ||
-  (EXPOSED ? randomBytes(18).toString("base64url") : undefined);
+const { token: WEB_TOKEN, sharePath: SHARE_PATH } = resolveWebToken();
 
 function isAuthorized(req: IncomingMessage): boolean {
   if (!WEB_TOKEN) return true;
@@ -272,6 +334,9 @@ server.listen(PORT, HOST, () => {
     // the network, so it can't leak into proxy or access logs.
     if (lan) console.log(`  share with your team:  http://${lan}:${PORT}/#token=${WEB_TOKEN}`);
     else console.log(`  share:  http://<this-machine>:${PORT}/#token=${WEB_TOKEN}`);
+    // The same link is written to a file on the mounted volume, so the deployer
+    // (who ran `docker compose up -d` and sees no logs) can just open it.
+    if (SHARE_PATH) console.log(`  share link also saved to:  ${SHARE_PATH}`);
   }
   console.log(`  graph db:    ${p.db}`);
   console.log(`  extraction:  ${p.extraction} (${p.model})`);
