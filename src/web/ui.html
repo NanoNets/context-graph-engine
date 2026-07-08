@@ -204,6 +204,7 @@
   .grow-status { font-family: var(--mono); font-size: 12px; margin-top: 10px; color: var(--ink-soft); white-space: pre-wrap; word-break: break-word; }
   .grow-status.ok { color: var(--verdant-deep); }
   .grow-status.err { color: #a03b2e; }
+  .picker-row { display: flex; flex-wrap: wrap; gap: 8px; }
   details.server-path { margin-top: 12px; border-top: 1px solid var(--line); padding-top: 10px; }
   details.server-path summary { cursor: pointer; font-size: 12.5px; color: var(--ink-faint); list-style: none; }
   details.server-path summary::-webkit-details-marker { display: none; }
@@ -360,16 +361,20 @@
     </details>
 
     <details class="grow" id="ingest-panel">
-      <summary>Ingest a folder of documents</summary>
+      <summary>Ingest documents</summary>
       <div class="grow-body">
-        <p class="grow-hint">Pick a folder from your computer (.pdf, .md, .txt) — every file becomes chunks, entities, and relationships, watch the graph grow on the right.</p>
+        <p class="grow-hint">Pick files or a whole folder from your computer (.pdf, .md, .txt) — every file becomes chunks, entities, and relationships, watch the graph grow on the right.</p>
+        <input type="file" id="files-input" multiple accept=".pdf,.md,.markdown,.txt" hidden />
         <input type="file" id="folder-input" webkitdirectory multiple hidden />
-        <button class="btn" id="choose-folder-btn" type="button">Choose folder…</button>
+        <div class="picker-row">
+          <button class="btn" id="choose-files-btn" type="button">Choose files…</button>
+          <button class="btn" id="choose-folder-btn" type="button">Choose folder…</button>
+        </div>
         <details class="server-path">
-          <summary>or ingest a folder on the server</summary>
-          <p class="grow-hint">Reads files from the server's own disk — in Docker, that's the mounted <code>/docs</code>.</p>
-          <input class="dir" id="ingest-input" placeholder="/path/to/your/docs" />
-          <button class="btn quiet" id="ingest-btn" type="button">Ingest server folder</button>
+          <summary>or ingest a path on the server</summary>
+          <p class="grow-hint">Reads a file or folder from the server's own disk — in Docker, that's the mounted <code>/docs</code>.</p>
+          <input class="dir" id="ingest-input" placeholder="/path/to/docs or /path/to/file.md" />
+          <button class="btn quiet" id="ingest-btn" type="button">Ingest server path</button>
         </details>
         <div class="grow-status" id="ingest-status"></div>
       </div>
@@ -388,7 +393,7 @@
     <div class="atlas-empty hidden" id="atlas-empty">
       <div class="inner">
         <h3>The ledger is empty.</h3>
-        <p>Ingest a folder of documents on the left and this space becomes a map of everything your team knows.</p>
+        <p>Ingest documents on the left — a single file or a whole folder — and this space becomes a map of everything your team knows.</p>
       </div>
     </div>
     <div id="node-card">
@@ -867,22 +872,25 @@ async function fileToPayload(file) {
   return { name: file.name, text: await file.text() };
 }
 
+$("choose-files-btn").addEventListener("click", () => $("files-input").click());
 $("choose-folder-btn").addEventListener("click", () => $("folder-input").click());
+$("files-input").addEventListener("change", (e) => uploadPicked(e, "files"));
+$("folder-input").addEventListener("change", (e) => uploadPicked(e, "folder"));
 
-$("folder-input").addEventListener("change", async (e) => {
+async function uploadPicked(e, kind) {
   const all = Array.from(e.target.files || []);
   const files = all.filter((f) => UPLOAD_ACCEPT.test(f.name));
   const status = $("ingest-status");
-  e.target.value = ""; // let the user re-pick the same folder later
+  e.target.value = ""; // let the user re-pick the same selection later
   if (!files.length) {
     status.className = "grow-status err";
     status.textContent = all.length
-      ? "No .pdf, .md, or .txt files in that folder."
-      : "No folder selected.";
+      ? `No .pdf, .md, or .txt files in that ${kind === "folder" ? "folder" : "selection"}.`
+      : `No ${kind === "folder" ? "folder" : "files"} selected.`;
     return;
   }
-  const btn = $("choose-folder-btn");
-  btn.disabled = true;
+  const buttons = [$("choose-files-btn"), $("choose-folder-btn")];
+  buttons.forEach((b) => { b.disabled = true; });
   status.className = "grow-status";
   const lines = [];
   let ok = 0, skipped = 0, failed = 0, nodes = 0;
@@ -928,9 +936,9 @@ $("folder-input").addEventListener("change", async (e) => {
     await refreshGraph({ diff: true });
     await refreshDocs();
   } finally {
-    btn.disabled = false;
+    buttons.forEach((b) => { b.disabled = false; });
   }
-});
+}
 
 /* ---------- documents ---------- */
 async function refreshDocs() {

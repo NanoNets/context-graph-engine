@@ -286,20 +286,24 @@ const server = createServer(async (req, res) => {
     }
 
     if (req.method === "POST" && url.pathname === "/api/ingest-dir") {
+      // Accepts a directory or a single file on the server's disk.
       const { dir } = JSON.parse(await readBody(req)) as { dir?: string };
       if (!dir?.trim()) return json(res, 400, { error: "dir is required" });
       const abs = resolve(dir);
-      if (!existsSync(abs) || !statSync(abs).isDirectory()) {
-        return json(res, 400, { error: `not a directory: ${abs}` });
+      if (!existsSync(abs)) {
+        return json(res, 400, { error: `no such file or directory: ${abs}` });
       }
+      const isDir = statSync(abs).isDirectory();
 
       // Stream progress as NDJSON so the UI can narrate a long ingest live.
       res.writeHead(200, { "content-type": "application/x-ndjson", "cache-control": "no-store" });
       const emit = (event: unknown) => res.write(JSON.stringify(event) + "\n");
       try {
-        const results = await engine.ingestDir(abs, {
-          onProgress: (info) => emit({ type: "progress", ...info }),
-        });
+        const results = isDir
+          ? await engine.ingestDir(abs, {
+              onProgress: (info) => emit({ type: "progress", ...info }),
+            })
+          : [await engine.ingestFile(abs)];
         emit({ type: "done", results, stats: await engine.stats() });
       } catch (e) {
         emit({ type: "error", error: e instanceof Error ? e.message : String(e) });
