@@ -10,6 +10,8 @@ Dumping docs into a vector store gives you a bag of chunks. It doesn't give you 
 
 Access it four ways: a **web UI** (your team's knowledge as a living, citable graph — see below), a **library**, a **CLI**, or an **MCP server** that any agent (Claude Code, Cursor, …) can plug into.
 
+> **Benchmark:** on a real 344-file repo, giving the agent the graph up front cut tool calls **31%**, cost **23%**, and latency **17%** vs. exploring cold — same model, same tools, only difference is the graph bundle.
+
 ---
 
 ## Install
