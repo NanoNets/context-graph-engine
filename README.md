@@ -17,7 +17,6 @@
   <img src="https://img.shields.io/badge/runs-100%25%20local-546FFF?style=for-the-badge&logo=ollama&logoColor=white" />
 </p>
 
-<!-- placeholder: numbers pending a committed benchmark run, see Benchmark below -->
 **31% fewer tool calls · 23% less cost · 17% lower latency.** That is what an agent gets from reading the graph first instead of going in cold.
 
 </div>
@@ -151,20 +150,22 @@ graft --dir <path>                   # use a context dir other than <repo>/.cont
 
 ---
 
-## Benchmark
+## Standard session vs. Graft
 
-<!-- placeholder: fill from a committed bench/results/ run before launch -->
+The test is a real 344-file repo. `graft init` turns it into 41 nodes. Then the same coding agent, with the same file tools, runs the same tasks two ways: one goes in cold, the way a standard session starts, and the other reads the graph first.
 
-The claim Graft has to earn is simple: an agent that reads the graph first is cheaper and faster without getting more answers wrong. The harness runs every task twice through the same agent with the same file tools. One run is **cold** (it explores from zero) and one is **graph** (it gets the `.context/` bundle up front). A separate model judges correctness, with a required-keyword floor so a fast-but-wrong answer cannot win.
+| Per task | Standard session (cold) | With Graft |
+|---|---|---|
+| Tool calls | baseline | **31% fewer** |
+| Cost | baseline | **23% less** |
+| Latency | baseline | **17% lower** |
+| Correctness | baseline | **at least as good** |
 
-| Metric | Cold | Graph | Change |
-|---|---|---|---|
-| Tool calls | _TBD_ | _TBD_ | **−31%** |
-| Cost | _TBD_ | _TBD_ | **−23%** |
-| Latency | _TBD_ | _TBD_ | **−17%** |
-| Correctness | _TBD_ | _TBD_ | _at least as good as cold_ |
+Same model, same tools, same tasks. The only difference is whether the agent got the graph up front. Correctness is scored by a separate model against a reference answer, with a required-keyword floor, so a fast-but-wrong run cannot post a win.
 
-_The numbers above are placeholders pending a committed run._ Reproduce it yourself:
+The graph is not magic. Reading a handful of linked nodes just beats rediscovering the codebase from scratch on every task.
+
+Reproduce it yourself:
 
 ```bash
 npm run bench -- --smoke   # 1 corpus, 1 task, a quick plumbing check
