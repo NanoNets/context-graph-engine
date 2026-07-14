@@ -53,8 +53,8 @@ Return STRICT JSON, exactly:
 Rules:
 - Emit exactly one entry per target id given, using that id verbatim.
 - summary: ONE sentence — what the symbol is FOR at the business-logic level. Say what problem it solves or rule it enforces, not what its signature already says.
-- crux_start / crux_end: FILE line numbers (as shown), and they MUST fall inside that symbol's own line range. Pick the smallest contiguous span carrying the core branch, formula, guard, or state change — not boilerplate, logging, or plumbing.
-- If a symbol has no meaningful crux (trivial getter, data holder, one-line delegation), use "crux_start": 0 and "crux_end": 0.
+- crux_start / crux_end: FILE line numbers (as shown), inside that symbol's own line range. Pick the SINGLE most important contiguous span — the core branch, formula, guard, or state change. Keep it TIGHT: at most ~8 lines, and NEVER the whole function. If you can't narrow it below that, the symbol has no distinct crux — use 0/0.
+- Skip boilerplate, logging, and plumbing. If a symbol has no meaningful crux (trivial getter, data holder, one-line delegation, or logic spread evenly with no focal point), use "crux_start": 0 and "crux_end": 0.
 - Output ONLY the JSON object. No prose, no code fences.`;
 
 /** Cap the file text sent per request so one huge file can't blow the context. */

@@ -22,6 +22,9 @@
 import type { CruxSummarizer, NodeCrux, NodeRef } from "../ai/crux.js";
 import type { Crux, NodeV1 } from "./types.js";
 
+/** Cap on the stored crux: an over-long pick is trimmed to its leading slice. */
+const MAX_CRUX_LINES = 12;
+
 export interface EnrichOptions {
   /** When present, (re)compute meaning for stale/pending nodes. Absent → cache only. */
   summarizer?: CruxSummarizer;
@@ -96,17 +99,14 @@ export async function enrichGraph(
       return { id: n.id, kind: n.kind, signature: n.signature, startLine, endLine };
     });
 
-    let results: Map<string, NodeCrux>;
-    try {
-      const list = await opts.summarizer.describeFile({ path, source, nodes: refs });
-      results = new Map(list.map((r) => [r.id, r]));
-    } catch (err) {
+    const { results, error } = await collectFileCrux(opts.summarizer, path, source, refs);
+    if (error) stats.errors.push(`${path}: ${error}`);
+    if (results.size === 0) {
       // whole-file call failed: leave every node as-is (stale hint or pending).
       for (const node of fileNodes) {
         if (node.summary_state === "stale") stats.stale++;
         else stats.pending++;
       }
-      stats.errors.push(`${path}: ${err instanceof Error ? err.message : String(err)}`);
       continue;
     }
 
@@ -128,15 +128,49 @@ export async function enrichGraph(
 }
 
 /**
+ * Describe every requested definition in a file, re-asking for any the model
+ * omits (it sometimes drops entries from a batch). Returns whatever it collected
+ * plus the last error, if any — partial results are kept, not discarded.
+ */
+async function collectFileCrux(
+  summarizer: CruxSummarizer,
+  path: string,
+  source: string,
+  refs: NodeRef[],
+): Promise<{ results: Map<string, NodeCrux>; error?: string }> {
+  const results = new Map<string, NodeCrux>();
+  let missing = refs;
+  let error: string | undefined;
+  for (let attempt = 0; attempt < 2 && missing.length > 0; attempt++) {
+    try {
+      const list = await summarizer.describeFile({ path, source, nodes: missing });
+      for (const r of list) if (!results.has(r.id)) results.set(r.id, r);
+      missing = refs.filter((r) => !results.has(r.id));
+    } catch (err) {
+      error = err instanceof Error ? err.message : String(err);
+      break;
+    }
+  }
+  return { results, error };
+}
+
+/**
  * Cut the crux text verbatim from the file using the model's file-absolute line
  * range, clamped to the node's own span. Returns null when the model reported no
  * distinct crux (0/0) or gave an unusable range.
  */
 function buildCrux(r: NodeCrux, node: NodeV1, source: string, lineCount: number): Crux | null {
+  // 0/0 (or an invalid range) is the model saying "nothing to highlight here".
   if (r.crux_start < 1 || r.crux_end < r.crux_start) return null;
   const [nodeStart, nodeEnd] = spanLines(node.span, lineCount);
   const start = Math.max(nodeStart, Math.min(r.crux_start, nodeEnd));
-  const end = Math.max(start, Math.min(r.crux_end, nodeEnd));
+  let end = Math.max(start, Math.min(r.crux_end, nodeEnd));
+
+  // Keep the crux readable: if the model pointed at a big region, store its
+  // leading slice (the anchor it chose) rather than the whole blob — still the
+  // most important part, and the full definition is reachable via node.span.
+  if (end - start + 1 > MAX_CRUX_LINES) end = start + MAX_CRUX_LINES - 1;
+
   const code = source.split("\n").slice(start - 1, end).join("\n");
   if (!code.trim()) return null;
   return { code, span: `L${start}-L${end}` };
