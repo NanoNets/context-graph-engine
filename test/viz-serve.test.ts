@@ -38,15 +38,16 @@ test("viz server serves viewer, context graph, and gates code graph", async () =
     assert.equal(graph.meta.repoName, "fixture");
     assert.equal(graph.nodes[0].id, "alpha");
 
-    // no graph.json yet → 404 with an explanatory error
+    // no wiring graph yet → 404 with an explanatory error
     const missing = await fetch(`${srv.url}/api/code-graph`);
     assert.equal(missing.status, 404);
     const body = await missing.json();
-    assert.match(body.error, /graft graph/);
+    assert.match(body.error, /graft build/);
 
-    // valid graph.json → passthrough
+    // valid wiring graph → passthrough
+    mkdirSync(join(contextDir, ".graph"), { recursive: true });
     writeFileSync(
-      join(contextDir, "graph.json"),
+      join(contextDir, ".graph", "wiring.json"),
       JSON.stringify({ meta: { version: 1, nodeCount: 0, edgeCount: 0, languages: [] }, nodes: [], edges: [] }),
     );
     const code = await fetch(`${srv.url}/api/code-graph`).then((r) => r.json());

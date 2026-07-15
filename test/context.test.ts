@@ -37,7 +37,7 @@ test("init builds one markdown node per entity, with links and a manifest", asyn
     assert.equal(r.links, 2);
     assert.equal(r.files, 2);
 
-    const ctx = join(dir, ".context");
+    const ctx = join(dir, "graft");
     assert.ok(existsSync(join(ctx, "auth-service.md")));
     assert.ok(existsSync(join(ctx, "token-store.md")));
     assert.ok(existsSync(join(ctx, "billing.md")));
@@ -125,7 +125,7 @@ test("human notes below the generated block survive regeneration", async () => {
   const dir = makeFixture();
   try {
     await buildContext(dir, buildOpts());
-    const path = join(dir, ".context", "billing.md");
+    const path = join(dir, "graft", "billing.md");
     const withNote = readFileSync(path, "utf8") + "\nHand-written note: watch out for retries.\n";
     writeFileSync(path, withNote);
     await buildContext(dir, buildOpts());

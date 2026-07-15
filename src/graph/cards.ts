@@ -1,0 +1,223 @@
+/**
+ * Tier-2 "wiring cards" — the passive-channel surface of the wiring graph.
+ *
+ * The wiring graph itself lives as machine-only JSON in `graft/.graph/wiring.json`
+ * (nodes + edges), which an agent never greps or reads. This module projects its
+ * NODES up into markdown: one small card per source file, mirroring the source
+ * tree under `graft/` (e.g. `graft/src/ai/providers.md`). Each card lists the
+ * file's symbols with their `L<start>-L<end>` spans and a one-line description, so
+ * a `grep <symbol>` / `find <name>` / `cat` lands on the card and the agent reads
+ * ~150 tokens instead of the whole source file. Edges stay in the JSON — you can't
+ * grep a traversal — and are reached through `graft ask`.
+ *
+ * Cards are a pure projection: no LLM work here. The one-liner is the node's LLM
+ * `summary` when present (after `graft build --deep`), else its deterministic
+ * `signature`, so cards are useful even in a $0 structure-only build.
+ */
+import { mkdirSync, writeFileSync, existsSync, readdirSync, rmSync } from "node:fs";
+import { dirname, join, relative } from "node:path";
+import type { GraphV1, NodeV1 } from "./types.js";
+import { CACHE_DIR, readNodes } from "../context/node-file.js";
+import { GRAPH_DIR } from "./write.js";
+
+const INDEX_FILE = "INDEX.md";
+
+export interface CardFileInfo {
+  /** Card path relative to the context dir, e.g. "src/ai/providers.md". */
+  card: string;
+  /** Source path the card mirrors, e.g. "src/ai/providers.ts". */
+  path: string;
+  symbols: number;
+}
+
+export interface CardStats {
+  written: number;
+  pruned: number;
+  files: CardFileInfo[];
+}
+
+/** The card path for a source path: mirror the tree, swap the extension for .md. */
+function cardPathFor(outDir: string, sourcePath: string): string {
+  const md = sourcePath.replace(/\.[^./]+$/, "") + ".md";
+  return join(outDir, md);
+}
+
+/** Starting line of an "L43-L55" span, for stable ordering (0 if unparseable). */
+function spanStart(span: string): number {
+  const m = /^L(\d+)/.exec(span);
+  return m ? Number(m[1]) : 0;
+}
+
+/** First line of a node's meaning: LLM summary if ready, else its signature. */
+function oneLiner(node: NodeV1): string {
+  const s = node.summary?.trim();
+  if (s) return s.split("\n")[0].trim();
+  return node.signature?.trim() ?? "";
+}
+
+/** path → concept-node slugs that cite it as a source (for the up-links). */
+function conceptsByPath(outDir: string): Map<string, string[]> {
+  const map = new Map<string, string[]>();
+  for (const node of readNodes(outDir)) {
+    for (const src of node.sources) {
+      const list = map.get(src.path) ?? [];
+      list.push(node.slug);
+      map.set(src.path, list);
+    }
+  }
+  return map;
+}
+
+/** Render one file's card. `fileNode` may be absent for parse-only fragments. */
+function renderCard(
+  sourcePath: string,
+  fileNode: NodeV1 | undefined,
+  symbols: NodeV1[],
+  conceptSlugs: string[],
+): string {
+  const uplinks = conceptSlugs
+    .sort()
+    .map((s) => `[[${s}]]`)
+    .join(" ");
+  const head = uplinks ? `# ${sourcePath} · ${uplinks}` : `# ${sourcePath}`;
+  const lines: string[] = [head, ""];
+
+  const fileSummary = fileNode ? oneLiner(fileNode) : "";
+  if (fileSummary) lines.push(fileSummary, "");
+
+  const sorted = [...symbols].sort(
+    (a, b) => spanStart(a.span) - spanStart(b.span) || a.name.localeCompare(b.name),
+  );
+  for (const n of sorted) {
+    const desc = oneLiner(n);
+    const tail = desc ? ` — ${desc}` : "";
+    lines.push(`- ${n.name} · ${n.kind} · ${n.span}${tail}`);
+  }
+  if (sorted.length === 0) lines.push("_No extracted symbols in this file._");
+  return lines.join("\n") + "\n";
+}
+
+/** Every existing card file (`.md` inside subdirs of outDir; not concept nodes). */
+function listExistingCards(outDir: string): string[] {
+  const out: string[] = [];
+  const walk = (dir: string): void => {
+    for (const e of readdirSync(dir, { withFileTypes: true })) {
+      if (e.isDirectory()) {
+        if (dir === outDir && (e.name === CACHE_DIR || e.name === GRAPH_DIR)) continue;
+        walk(join(dir, e.name));
+      } else if (e.isFile() && e.name.endsWith(".md")) {
+        out.push(join(dir, e.name));
+      }
+    }
+  };
+  for (const e of readdirSync(outDir, { withFileTypes: true })) {
+    // Concept nodes and INDEX.md are top-level files — skip. Cards are in subdirs.
+    if (e.isDirectory() && e.name !== CACHE_DIR && e.name !== GRAPH_DIR) {
+      walk(join(outDir, e.name));
+    }
+  }
+  return out;
+}
+
+/** Remove now-empty directories under outDir (bottom-up), skipping .cache/.graph. */
+function pruneEmptyDirs(outDir: string): void {
+  const visit = (dir: string): boolean => {
+    // returns true if dir is empty after visiting children
+    let empty = true;
+    for (const e of readdirSync(dir, { withFileTypes: true })) {
+      if (dir === outDir && (e.name === CACHE_DIR || e.name === GRAPH_DIR)) {
+        empty = false;
+        continue;
+      }
+      const child = join(dir, e.name);
+      if (e.isDirectory()) {
+        if (visit(child)) rmSync(child, { recursive: true, force: true });
+        else empty = false;
+      } else {
+        empty = false;
+      }
+    }
+    return empty;
+  };
+  if (existsSync(outDir)) visit(outDir);
+}
+
+/**
+ * Write one wiring card per source file into `outDir`, mirroring the source tree,
+ * and prune cards whose source no longer exists. Returns what changed.
+ */
+export function writeCards(graph: GraphV1, outDir: string): CardStats {
+  const byPath = new Map<string, NodeV1[]>();
+  for (const n of graph.nodes) {
+    const list = byPath.get(n.path) ?? [];
+    list.push(n);
+    byPath.set(n.path, list);
+  }
+
+  const concepts = conceptsByPath(outDir);
+  const written = new Set<string>();
+  const files: CardFileInfo[] = [];
+
+  for (const [sourcePath, group] of byPath) {
+    const fileNode = group.find((n) => n.kind === "file");
+    const symbols = group.filter((n) => n.kind !== "file");
+    const cardPath = cardPathFor(outDir, sourcePath);
+    mkdirSync(dirname(cardPath), { recursive: true });
+    writeFileSync(cardPath, renderCard(sourcePath, fileNode, symbols, concepts.get(sourcePath) ?? []));
+    written.add(cardPath);
+    files.push({ card: relative(outDir, cardPath), path: sourcePath, symbols: symbols.length });
+  }
+
+  let pruned = 0;
+  for (const existing of listExistingCards(outDir)) {
+    if (!written.has(existing)) {
+      rmSync(existing);
+      pruned++;
+    }
+  }
+  pruneEmptyDirs(outDir);
+
+  files.sort((a, b) => a.card.localeCompare(b.card));
+  return { written: written.size, pruned, files };
+}
+
+/**
+ * Write `graft/INDEX.md` — the roster an agent `cat`s to orient. Lists the concept
+ * nodes on disk and the per-file cards. Deterministic order; no timestamps.
+ */
+export function writeIndex(outDir: string, files: CardFileInfo[]): void {
+  const lines: string[] = [
+    "# graft — repo map",
+    "",
+    "Small markdown nodes summarising this repo. `grep` any term, symbol, or",
+    'filename here, or run `graft ask "<task>"`. Each node carries prose plus exact',
+    "`file:line`; open a source file only to edit the named span.",
+    "",
+  ];
+
+  const concepts = readNodes(outDir).sort((a, b) => a.slug.localeCompare(b.slug));
+  if (concepts.length) {
+    lines.push("## Concepts", "");
+    for (const c of concepts) {
+      const srcs = c.sources.map((s) => s.path).join(", ");
+      const tail = srcs ? ` · ${srcs}` : "";
+      lines.push(`- [${c.slug}](${c.slug}.md) — ${c.name || c.slug}${tail}`);
+    }
+    lines.push("");
+  }
+
+  if (files.length) {
+    lines.push("## Files", "");
+    lines.push(
+      "Per-file wiring cards mirror the source tree. `grep` a symbol or `find` a",
+      "filename to land on its card.",
+      "",
+    );
+    for (const f of files) {
+      lines.push(`- [${f.card}](${f.card}) — ${f.symbols} symbol${f.symbols === 1 ? "" : "s"}`);
+    }
+    lines.push("");
+  }
+
+  writeFileSync(join(outDir, INDEX_FILE), lines.join("\n"));
+}

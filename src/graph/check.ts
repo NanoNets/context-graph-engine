@@ -11,18 +11,18 @@
  *   removed  a node in graph.json no longer exists in code       (run `graph`)
  *   changed  a node's body_hash differs from the committed one   (run `graph`)
  *   stale    a committed node's summary is flagged stale — its body changed
- *            since it was last summarized                         (run `graph --llm`)
+ *            since it was last summarized                         (run `graft build --deep`)
  *
  * `added`/`removed`/`changed` are structural: the graph no longer describes the
  * code. `stale` is a meaning-layer signal the last build already recorded.
  * `pending` (never summarized) is not drift — it's a deliberate Tier-1-only build.
  */
 import { readFileSync } from "node:fs";
-import { join, relative, resolve } from "node:path";
+import { relative, resolve } from "node:path";
 import { contextDirFor } from "../context/node-file.js";
 import { extractFile, languageOf } from "./extract.js";
 import { listSourceFiles } from "./build.js";
-import { GRAPH_FILE, readGraph } from "./write.js";
+import { readGraph, wiringPath } from "./write.js";
 
 export interface GraphCheckResult {
   ok: boolean;
@@ -54,7 +54,7 @@ export function checkGraph(dir: string, opts: GraphCheckOptions = {}): GraphChec
     pending: 0,
   };
 
-  const committed = readGraph(join(outDir, GRAPH_FILE));
+  const committed = readGraph(wiringPath(outDir));
   if (!committed) {
     result.missing = true;
     return result;
@@ -103,11 +103,11 @@ export function checkGraph(dir: string, opts: GraphCheckOptions = {}): GraphChec
 /** Render a graph-check result as a human-readable report. */
 export function formatGraphCheckReport(r: GraphCheckResult): string {
   if (r.missing) {
-    return "graph check: NO GRAPH\n\nNo .context/graph.json found. Run `graft graph` first.";
+    return "graph check: NO GRAPH\n\nNo graft/.graph/wiring.json found. Run `graft build` first.";
   }
   if (r.ok) {
     const note = r.pending ? ` (${r.pending} node(s) not yet summarized — run \`graph --llm\`)` : "";
-    return `graph check: OK — graph.json is in sync with the code.${note}`;
+    return `graph check: OK — the wiring graph is in sync with the code.${note}`;
   }
 
   const lines: string[] = ["graph check: STALE", ""];
@@ -129,7 +129,7 @@ export function formatGraphCheckReport(r: GraphCheckResult): string {
     for (const id of r.stale) lines.push(`  ! ${id}`);
   }
   lines.push("");
-  if (structural) lines.push("Run `graft graph` to rebuild the structure, then commit .context/.");
-  if (r.stale.length) lines.push("Run `graft graph --llm` to refresh stale summaries.");
+  if (structural) lines.push("Run `graft build` to rebuild the structure, then commit graft/.");
+  if (r.stale.length) lines.push("Run `graft build --deep` to refresh stale summaries.");
   return lines.join("\n");
 }

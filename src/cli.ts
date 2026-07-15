@@ -21,7 +21,7 @@ const program = new Command();
 program
   .name("graft")
   .description("Build a repo's context graph as linked markdown, and keep it in sync with the code.")
-  .option("--dir <path>", "context graph directory (default: <repo>/.context)");
+  .option("--dir <path>", "context graph directory (default: <repo>/graft)");
 
 function engineFrom(): Graft {
   const opts = program.opts<{ dir?: string }>();
@@ -29,63 +29,81 @@ function engineFrom(): Graft {
 }
 
 program
-  .command("init")
-  .description("Build .context/ from your code — one markdown node per system, API, or concept")
+  .command("build")
+  .description(
+    "Build graft/ from your code — wiring graph + per-file cards ($0, no key). " +
+      "Add --deep for the LLM concept map + per-symbol summaries/crux.",
+  )
   .argument("[dir]", "repository root", ".")
+  .option("--deep", "run the LLM pass: concept nodes (graft/*.md) + per-symbol summary/crux")
   .option("-e, --extensions <exts...>", 'code extensions to include (e.g. ".ts" ".py")')
-  .action(async (dir: string, opts: { extensions?: string[] }) => {
+  .action(async (dir: string, opts: { deep?: boolean; extensions?: string[] }) => {
     const engine = engineFrom();
-    const r = await engine.init(dir, {
-      extensions: opts.extensions,
-      onProgress: ({ phase, index, total, file }) =>
-        process.stderr.write(
-          `\r${phase === "summarize" ? "reading" : "writing"} ${index + 1}/${total}: ${file.slice(0, 50).padEnd(50)}`,
-        ),
-    });
-    process.stderr.write("\n");
-    console.log(
-      `✓ ${r.nodes} nodes, ${r.links} links from ${r.files} files ` +
-        `(${r.summarized} read, ${r.cached} cached)`,
-    );
-    console.log(`  → ${r.contextDir}`);
-    for (const e of r.errors) console.error(`✗ ${e}`);
-    const rel = relative(process.cwd(), r.contextDir) || ".context";
-    console.log(`  commit it:  git add ${rel} && git commit -m "update context graph"`);
-  });
+    const fmt = (o: Record<string, number>) =>
+      Object.entries(o)
+        .sort((a, b) => b[1] - a[1])
+        .map(([k, n]) => `${n} ${k}`)
+        .join(", ");
 
-program
-  .command("graph")
-  .description("Build .context/graph.json — a per-symbol code graph (tree-sitter structure + optional LLM meaning)")
-  .argument("[dir]", "repository root", ".")
-  .option("--llm", "run the Tier-2 LLM pass (summary + crux); unchanged bodies are served from cache")
-  .action(async (dir: string, opts: { llm?: boolean }) => {
-    const engine = engineFrom();
-    const r = await engine.graph(dir, {
-      llm: opts.llm,
+    // --deep: concept nodes first (they're LLM prose; the wiring cards link up to
+    // them), then the wiring graph rewrites the cards + INDEX with those up-links.
+    if (opts.deep) {
+      const c = await engine.init(dir, {
+        extensions: opts.extensions,
+        onProgress: ({ phase, index, total, file }) =>
+          process.stderr.write(
+            `\r${phase === "summarize" ? "reading" : "writing"} concepts ${index + 1}/${total}: ${file.slice(0, 40).padEnd(40)}`,
+          ),
+      });
+      process.stderr.write("\n");
+      console.log(
+        `✓ concepts: ${c.nodes} nodes, ${c.links} links from ${c.files} files (${c.summarized} read, ${c.cached} cached)`,
+      );
+      for (const e of c.errors) console.error(`✗ ${e}`);
+    }
+
+    // Wiring graph (Tier-2 cards + Tier-3 wiring.json) — always. LLM meaning only with --deep.
+    const g = await engine.graph(dir, {
+      llm: opts.deep,
       onProgress: ({ phase, index, total, file }) =>
         process.stderr.write(
           `\r${phase === "enrich" ? "summarizing" : "parsing"} ${index + 1}/${total}: ${file.slice(0, 50).padEnd(50)}`,
         ),
     });
     process.stderr.write("\n");
-    const fmt = (o: Record<string, number>) =>
-      Object.entries(o)
-        .sort((a, b) => b[1] - a[1])
-        .map(([k, n]) => `${n} ${k}`)
-        .join(", ");
-    console.log(`✓ ${r.nodes} nodes (${fmt(r.byKind)}) from ${r.files} files [${r.languages.join(", ")}]`);
-    console.log(`  ${r.edges} edges (${fmt(r.byRelation)})`);
-    const m = r.meaning;
-    console.log(
-      `  meaning: ${m.computed} computed, ${m.cached} cached, ${m.stale} stale, ${m.pending} pending`,
-    );
-    console.log(`  → ${r.graphPath}`);
-    for (const e of r.errors) console.error(`✗ ${e}`);
+    console.log(`✓ wiring: ${g.nodes} nodes (${fmt(g.byKind)}), ${g.edges} edges, ${g.cards} cards [${g.languages.join(", ")}]`);
+    if (opts.deep) {
+      const m = g.meaning;
+      console.log(`  meaning: ${m.computed} computed, ${m.cached} cached, ${m.stale} stale, ${m.pending} pending`);
+    }
+    console.log(`  → ${g.contextDir}`);
+    for (const e of g.errors) console.error(`✗ ${e}`);
+
+    const rel = relative(process.cwd(), g.contextDir) || "graft";
+    console.log(`  commit it:  git add ${rel} && git commit -m "update graft"`);
+  });
+
+program
+  .command("ask")
+  .description("Query the graft/ graph — returns ranked nodes + exact file:line, routed to prose or wiring ($0, no key)")
+  .argument("<query>", "what you want to understand, in plain words")
+  .argument("[dir]", "repository root", ".")
+  .option("-n, --limit <n>", "max results", "8")
+  .option("--json", "output the result as JSON")
+  .action(async (query: string, dir: string, opts: { limit: string; json?: boolean }) => {
+    const engine = engineFrom();
+    const r = engine.ask(dir, query, { limit: Number(opts.limit) });
+    if (opts.json) {
+      console.log(JSON.stringify(r, null, 2));
+    } else {
+      const { formatAsk } = await import("./ask/ask.js");
+      process.stdout.write(formatAsk(r));
+    }
   });
 
 program
   .command("check")
-  .description("Fail if .context/ is stale relative to the code (for CI)")
+  .description("Fail if graft/ is stale relative to the code (for CI)")
   .argument("[dir]", "repository root", ".")
   .option("-e, --extensions <exts...>", "code extensions to include")
   .option("--json", "output the drift as JSON")
@@ -123,7 +141,7 @@ program
     const globalOpts = program.opts<{ dir?: string }>();
     const contextDir = contextDirFor(root, globalOpts.dir);
     if (!existsSync(contextDir)) {
-      console.error(`✗ no context graph at ${contextDir} — run \`graft init\` first`);
+      console.error(`✗ no context graph at ${contextDir} — run \`graft build --deep\` first`);
       process.exit(1);
     }
     // dist/cli.js → dist/viewer/ (prebuilt at package build time)

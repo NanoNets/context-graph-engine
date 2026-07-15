@@ -94,10 +94,12 @@ export function digestSources(sources: SourceRef[]): string {
   return contentHash(lines);
 }
 
-/** Absolute path of the `.context/` directory for a repo root. */
+/** Absolute path of the `graft/` directory for a repo root. Visible (not
+ * dot-prefixed) on purpose: default ripgrep skips hidden dirs, so the agent's
+ * grep/ls/find reflex must be able to land on the graph. */
 export function contextDirFor(root: string, override?: string): string {
   if (override) return override;
-  return join(root, ".context");
+  return join(root, "graft");
 }
 
 /** Render the generated body (Summary + Related) for a node. */
@@ -181,7 +183,7 @@ export function readNodes(dir: string): ParsedNode[] {
   if (!existsSync(dir)) return [];
   const out: ParsedNode[] = [];
   for (const entry of readdirSync(dir)) {
-    if (!entry.endsWith(".md")) continue;
+    if (!entry.endsWith(".md") || entry === "INDEX.md") continue;
     const fm = matter(readFileSync(join(dir, entry), "utf8")).data as Record<string, unknown>;
     out.push({
       slug: String(fm.slug ?? entry.replace(/\.md$/, "")),
@@ -200,7 +202,7 @@ export function existingNodeSlugs(dir: string): Set<string> {
   if (!existsSync(dir)) return new Set();
   return new Set(
     readdirSync(dir)
-      .filter((e) => e.endsWith(".md"))
+      .filter((e) => e.endsWith(".md") && e !== "INDEX.md")
       .map((e) => e.replace(/\.md$/, "")),
   );
 }

@@ -4,7 +4,7 @@
  * Pure I/O + hashing: no LLM, no network, milliseconds. It re-hashes the source
  * files the manifest recorded and compares. Meant to run in CI: exit 0 when the
  * graph is fresh, 1 when it has drifted (so a PR that changed code but not the
- * graph fails until `graft init` is re-run and committed).
+ * graph fails until `graft build --deep` is re-run and committed).
  *
  * Drift categories:
  *   content     a recorded source file's bytes changed
@@ -109,7 +109,7 @@ export function checkContext(dir: string, opts: CheckOptions = {}): CheckResult 
 /** Render a check result as a human-readable report. */
 export function formatCheckReport(r: CheckResult): string {
   if (r.missing) {
-    return "graft check: NO GRAPH\n\nNo .context/manifest.json found. Run `graft init` first.";
+    return "graft check: NO GRAPH\n\nNo graft/manifest.json found. Run `graft build --deep` first.";
   }
   if (r.ok) return "graft check: OK — the graph is in sync with the code.";
 
@@ -130,7 +130,7 @@ export function formatCheckReport(r: CheckResult): string {
     lines.push(`index mismatch (${r.indexDrift.length}):`);
     for (const s of r.indexDrift) lines.push(`  ! ${s}`);
   }
-  lines.push("", "Run `graft init` to regenerate, then commit .context/.");
+  lines.push("", "Run `graft build --deep` to regenerate, then commit graft/.");
   return lines.join("\n");
 }
 

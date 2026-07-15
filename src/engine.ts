@@ -18,9 +18,10 @@ import { buildContext, CODE_EXTENSIONS, type BuildProgress, type BuildResult } f
 import { checkContext, type CheckResult } from "./context/check.js";
 import { buildGraph, type GraphBuildOptions, type GraphBuildResult } from "./graph/build.js";
 import { checkGraph, type GraphCheckResult } from "./graph/check.js";
+import { ask, type AskResult } from "./ask/ask.js";
 
 export { CODE_EXTENSIONS };
-export type { BuildResult, BuildProgress, CheckResult, GraphBuildResult, GraphCheckResult };
+export type { BuildResult, BuildProgress, CheckResult, GraphBuildResult, GraphCheckResult, AskResult };
 
 export interface InitOptions {
   /** Code extensions to include. Default: {@link CODE_EXTENSIONS}. */
@@ -79,6 +80,15 @@ export class Graft {
       summarizer: opts.llm ? this.cruxSummarizer() : undefined,
       onProgress: opts.onProgress,
     });
+  }
+
+  /**
+   * Answer a plain-words query from the committed `graft/` graph — the active
+   * channel. Deterministic and $0: routes structural queries to the wiring
+   * edges and everything else to a lexical rank over concepts + symbols.
+   */
+  ask(dir: string, query: string, opts: { limit?: number } = {}): AskResult {
+    return ask(dir, query, { contextDir: this.cfg.contextDir, limit: opts.limit });
   }
 
   /** The OpenRouter API key, or a clear error telling the user how to set it. */

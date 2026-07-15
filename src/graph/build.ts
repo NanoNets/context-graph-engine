@@ -8,13 +8,14 @@
  * Edges (M2) and LLM summary/crux (M3) layer onto this without changing it.
  */
 import { readFileSync } from "node:fs";
-import { join, relative, resolve } from "node:path";
+import { relative, resolve } from "node:path";
 import { walkDir } from "../ingest/fs.js";
 import { contextDirFor } from "../context/node-file.js";
 import { extractFile, languageOf, type Language, type RawEdge } from "./extract.js";
 import { resolveEdges } from "./resolve.js";
 import { enrichGraph, type EnrichStats } from "./enrich.js";
-import { GRAPH_FILE, readGraph, writeGraph } from "./write.js";
+import { readGraph, writeGraph, wiringPath } from "./write.js";
+import { writeCards, writeIndex } from "./cards.js";
 import type { GraphV1, Kind, NodeV1, Relation } from "./types.js";
 import type { CruxSummarizer } from "../ai/crux.js";
 
@@ -34,6 +35,8 @@ export interface GraphBuildOptions {
 export interface GraphBuildResult {
   contextDir: string;
   graphPath: string;
+  /** Per-file wiring cards written (Tier-2 passive surface). */
+  cards: number;
   files: number;
   nodes: number;
   edges: number;
@@ -89,7 +92,7 @@ export async function buildGraph(
 
   // graph.json is its own Tier-2 cache: fold in the prior meaning layer so an
   // unchanged body is never re-summarized (and a Tier-1-only run never wipes it).
-  const prior = readGraph(join(outDir, GRAPH_FILE));
+  const prior = readGraph(wiringPath(outDir));
   const priorById = new Map((prior?.nodes ?? []).map((n) => [n.id, n]));
   const meaning = await enrichGraph(nodes, priorById, sources, {
     summarizer: opts.summarizer,
@@ -111,6 +114,11 @@ export async function buildGraph(
 
   const graphPath = writeGraph(graph, outDir);
 
+  // Tier-2 passive surface: project the nodes into per-file markdown cards, and
+  // refresh the INDEX roster. Pure projection — no LLM, no network.
+  const cardStats = writeCards(graph, outDir);
+  writeIndex(outDir, cardStats.files);
+
   const byKind = {} as Record<Kind, number>;
   for (const n of nodes) byKind[n.kind] = (byKind[n.kind] ?? 0) + 1;
   const byRelation = {} as Record<Relation, number>;
@@ -119,6 +127,7 @@ export async function buildGraph(
   return {
     contextDir: outDir,
     graphPath,
+    cards: cardStats.written,
     files: files.length,
     nodes: nodes.length,
     edges: edges.length,
@@ -129,5 +138,3 @@ export async function buildGraph(
     errors,
   };
 }
-
-export { GRAPH_FILE };
