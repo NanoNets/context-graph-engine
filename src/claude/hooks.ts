@@ -2,8 +2,8 @@ import { readFileSync } from 'node:fs';
 import { execFileSync, spawn } from 'node:child_process';
 import { join, basename } from 'node:path';
 import { readWiring } from './stats.js';
-import { formatBlastRadius } from './format.js';
-import { patchStats, readStats, acquireLock } from './state.js';
+import { formatBlastRadius, formatRetrieval } from './format.js';
+import { patchStats, readStats, acquireLock, readSession, writeSession } from './state.js';
 
 function readStdin(): any {
   const seam = process.env.GRAFT_TEST_STDIN;
@@ -57,5 +57,21 @@ export async function main(event: string): Promise<void> {
       child.unref();
     }
     return;
+  }
+
+  if (event === 'prompt') {
+    const prompt = String(input?.prompt ?? '').trim();
+    if (prompt.length < 8) return;
+    const ask = graftJson(dir, ['ask', prompt, '.', '--json', '-n', '5']);
+    if (!ask) return;
+    const txt = formatRetrieval(ask);
+    if (!txt) return;
+    emit('UserPromptSubmit', txt);
+    const id = input.session_id || 'default';
+    const s = readSession(dir, id);
+    s.lastQuery = prompt;
+    const agent = input?.agent?.name;
+    if (agent) s.perAgentQuery[agent] = prompt;
+    writeSession(dir, id, s);
   }
 }

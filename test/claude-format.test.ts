@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { renderStatusline, enrichedSegment, incomingEdges, formatBlastRadius } from '../src/claude/format.js';
+import { renderStatusline, enrichedSegment, incomingEdges, formatBlastRadius, formatRetrieval } from '../src/claude/format.js';
 import { emptyStats } from '../src/claude/state.js';
 
 const strip = (s: string) => s.replace(/\x1b\[[0-9;]*m/g, '');
@@ -61,4 +61,18 @@ test('formatBlastRadius renders callers or null', () => {
   assert.match(strip(txt!), /blast radius for pkce\.ts/);
   assert.match(strip(txt!), /exchange \(client\.ts\)/);
   assert.equal(formatBlastRadius(wiring2, '/abs/repo/src/unknown.ts'), null);
+});
+
+test('formatRetrieval renders top hits, trims snippet, first pointer only', () => {
+  const ask = { query: 'pkce', mode: 'lexical', hits: [
+    { kind: 'concept', title: 'PKCE', pointer: 'src/pkce.ts, src/client.ts', snippet: 'Validates   the   challenge.', score: 1 },
+  ] } as any;
+  const txt = strip(formatRetrieval(ask)!);
+  assert.match(txt, /relevant context/);
+  assert.match(txt, /PKCE — src\/pkce\.ts — Validates the challenge\./);
+  assert.doesNotMatch(txt, /client\.ts/); // only the first pointer segment
+});
+
+test('formatRetrieval returns null for no hits', () => {
+  assert.equal(formatRetrieval({ query: 'x', mode: 'empty', hits: [] } as any), null);
 });

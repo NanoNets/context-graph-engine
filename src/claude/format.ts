@@ -71,3 +71,19 @@ export function formatBlastRadius(w: GraphV1, filePath: string, cap = 8): string
   const more = edges.length > cap ? `\n • +${edges.length - cap} more` : '';
   return `[graft] blast radius for ${basename(filePath)} — who depends on it:\n${items.join('\n')}${more}`;
 }
+
+export interface AskJson {
+  query: string; mode: string;
+  hits: { kind: string; title: string; pointer: string; snippet: string; score: number }[];
+}
+
+export function formatRetrieval(ask: AskJson, cap = 5): string | null {
+  const hits = (ask.hits ?? []).slice(0, cap);
+  if (!hits.length) return null;
+  const lines = hits.map((h) => {
+    const ptr = (h.pointer ?? '').split(',')[0].trim();
+    const snip = (h.snippet ?? '').replace(/\s+/g, ' ').trim().slice(0, 140);
+    return ` • ${h.title} — ${ptr} — ${snip}`;
+  });
+  return `[graft] relevant context for this prompt:\n${lines.join('\n')}`;
+}
