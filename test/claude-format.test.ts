@@ -68,9 +68,18 @@ test('formatRetrieval renders top hits, trims snippet, first pointer only', () =
     { kind: 'concept', title: 'PKCE', pointer: 'src/pkce.ts, src/client.ts', snippet: 'Validates   the   challenge.', score: 1 },
   ] } as any;
   const txt = strip(formatRetrieval(ask)!);
-  assert.match(txt, /relevant context/);
-  assert.match(txt, /PKCE — src\/pkce\.ts — Validates the challenge\./);
+  assert.match(txt, /retrieved context/);
+  assert.match(txt, /PKCE — src\/pkce\.ts/);
+  assert.match(txt, /Validates the challenge\./); // snippet trimmed, own line
   assert.doesNotMatch(txt, /client\.ts/); // only the first pointer segment
+});
+
+test('formatRetrieval appends a tokens-saved line when ask reports a baseline', () => {
+  const ask = { query: 'pkce', mode: 'lexical', saved: { files: 1, baselineChars: 8000 }, hits: [
+    { kind: 'symbol', title: 'verify', pointer: 'src/pkce.ts:L1-L4', snippet: 's', score: 1, code: 'a\nb' },
+  ] } as any;
+  const txt = strip(formatRetrieval(ask)!);
+  assert.match(txt, /tokens saved ≈ [\d,]+ \(\d+%\)/);
 });
 
 test('formatRetrieval returns null for no hits', () => {

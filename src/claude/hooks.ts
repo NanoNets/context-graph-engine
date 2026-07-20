@@ -1,8 +1,8 @@
-import { readFileSync } from 'node:fs';
+import { readFileSync, existsSync } from 'node:fs';
 import { execFileSync, spawn } from 'node:child_process';
 import { join, basename } from 'node:path';
 import { readWiring } from './stats.js';
-import { formatBlastRadius, formatRetrieval, formatOrientation } from './format.js';
+import { formatBlastRadius, formatRetrieval, retrievalTokensSaved, formatOrientation } from './format.js';
 import { patchStats, readStats, acquireLock, readSession, writeSession } from './state.js';
 import { graftCliPath, claudeScriptPath } from './paths.js';
 
@@ -65,11 +65,15 @@ export async function main(event: string): Promise<void> {
   }
 
   if (event === 'stop') {
+    // sync-run.js ships next to this module inside the package, so it resolves in
+    // any repo that installs graft (not just graft's own). Defensive existsSync:
+    // if the package is somehow incomplete, skip rather than wedge on syncing:true.
+    const syncRun = claudeScriptPath('sync-run.js');
+    if (!existsSync(syncRun)) return;
     const stats = readStats(dir);
     if (stats?.dirty && acquireLock(dir)) {
       patchStats(dir, { syncing: true });
-      const child = spawn(process.execPath, [claudeScriptPath('sync-run.js'), dir],
-        { detached: true, stdio: 'ignore' });
+      const child = spawn(process.execPath, [syncRun, dir], { detached: true, stdio: 'ignore' });
       child.unref();
     }
     return;
@@ -78,7 +82,10 @@ export async function main(event: string): Promise<void> {
   if (event === 'prompt') {
     const prompt = String(input?.prompt ?? '').trim();
     if (prompt.length < 8) return;
-    const ask = graftJson(dir, ['ask', prompt, '.', '--json', '-n', '5']);
+    // --source: inline the actual code spans so the injected pack is substitutive
+    // (the agent reads the span here instead of opening the file), and so `ask`
+    // returns the `saved` baseline used for the tokens-saved line.
+    const ask = graftJson(dir, ['ask', prompt, '.', '--json', '--source', '-n', '5']);
     if (!ask) return;
     const txt = formatRetrieval(ask);
     if (!txt) return;
@@ -86,6 +93,10 @@ export async function main(event: string): Promise<void> {
     const id = input.session_id || 'default';
     const s = readSession(dir, id);
     s.lastQuery = prompt;
+    // Accumulate tokens saved this session (baseline − pack), so the statusline
+    // can show a running total. Guarded: only when `ask` returned a baseline.
+    const saved = retrievalTokensSaved(ask);
+    if (saved > 0) s.savedTokens = (s.savedTokens ?? 0) + saved;
     const agent = input?.agent?.name;
     if (agent) s.perAgentQuery[agent] = prompt;
     writeSession(dir, id, s);

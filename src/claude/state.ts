@@ -11,6 +11,8 @@ export interface SessionState {
   lastQuery: string | null;
   perAgentQuery: Record<string, string>;
   graftReads: number; sourceReads: number;
+  /** Cumulative tokens saved this session via `ask --source` retrieval (est.). */
+  savedTokens: number;
 }
 
 export const LOCK_STALE_MS = 300000;
@@ -20,7 +22,7 @@ export function emptyStats(): Stats {
     staleCount: 0, dirty: false, syncing: false, syncedAt: null, lastFile: null };
 }
 function emptySession(): SessionState {
-  return { lastQuery: null, perAgentQuery: {}, graftReads: 0, sourceReads: 0 };
+  return { lastQuery: null, perAgentQuery: {}, graftReads: 0, sourceReads: 0, savedTokens: 0 };
 }
 
 export function cacheDir(projectDir: string): string { return join(projectDir, 'graft', '.cache'); }

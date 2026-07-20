@@ -47,6 +47,8 @@ export interface NodeV1 {
   exported: boolean;
   origin: "ast";
   body_hash: string; // sha256 of the definition text; the Tier-2 re-run trigger
+  chars?: number; // byte length of the WHOLE file (file nodes only); the baseline
+  //                 `ask` uses to estimate tokens saved vs reading the file whole
 
   // meaning (Tier-2, one LLM call)
   summary_state: SummaryState;
