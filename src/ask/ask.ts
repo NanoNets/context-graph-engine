@@ -29,7 +29,15 @@ export interface AskHit {
   relation?: Relation;
   related?: string[];
   score: number;
+  /** The actual source at `pointer`, sliced from disk when `source` is on.
+   * This is what makes `ask` substitutive — the agent reads the span here
+   * instead of opening the file, so no source read happens on top of the query. */
+  code?: string;
 }
+
+/** Max source lines to inline per hit — a definition longer than this is
+ * truncated with a marker, so one giant function can't blow up the pack. */
+const MAX_SPAN_LINES = 80;
 
 export interface AskResult {
   query: string;
@@ -236,19 +244,64 @@ function lexical(query: string, corpus: Corpus, limit: number): AskResult {
 export interface AskOptions {
   contextDir?: string;
   limit?: number;
+  /** Inline the source at each `path:Lx-Ly` hit, sliced from `dir`. Turns the
+   * pack from a locator into a retriever so the agent needn't re-open the file. */
+  source?: boolean;
+}
+
+/** Parse a `path:Lx-Ly` pointer into its parts, or null if it isn't one
+ * (concept multi-path lists and raw import strings return null). */
+function parseSpan(pointer: string): { path: string; from: number; to: number } | null {
+  const m = pointer.match(/^(.*):L(\d+)-L(\d+)$/);
+  if (!m) return null;
+  return { path: m[1], from: Number(m[2]), to: Number(m[3]) };
+}
+
+/** Read the source lines [from, to] (1-indexed, inclusive) of `path` under `root`,
+ * capped at {@link MAX_SPAN_LINES}. Returns null if the file can't be read. */
+function sliceSpan(root: string, path: string, from: number, to: number): string | null {
+  try {
+    const lines = readFileSync(join(root, path), "utf8").split("\n");
+    const start = Math.max(1, from);
+    const end = Math.min(lines.length, to);
+    const slice = lines.slice(start - 1, end);
+    if (slice.length > MAX_SPAN_LINES) {
+      const head = slice.slice(0, MAX_SPAN_LINES);
+      head.push(`… (+${slice.length - MAX_SPAN_LINES} more lines; open ${path}:L${start}-L${end})`);
+      return head.join("\n");
+    }
+    return slice.join("\n");
+  } catch {
+    return null;
+  }
+}
+
+/** Attach inlined source to every hit whose pointer is a real `path:span`. */
+function inlineSource(root: string, hits: AskHit[]): void {
+  for (const h of hits) {
+    const s = parseSpan(h.pointer);
+    if (!s) continue;
+    const code = sliceSpan(root, s.path, s.from, s.to);
+    if (code) h.code = code;
+  }
 }
 
 /** Answer a query from the graft/ graph at `dir`. Deterministic, $0. */
 export function ask(dir: string, query: string, opts: AskOptions = {}): AskResult {
-  const outDir = contextDirFor(resolve(dir), opts.contextDir);
+  const root = resolve(dir);
+  const outDir = contextDirFor(root, opts.contextDir);
   const limit = opts.limit ?? 8;
   const corpus = loadCorpus(outDir);
 
+  let result: AskResult;
   if (corpus.graph) {
     const s = structural(query, corpus.graph, limit);
-    if (s) return s;
+    result = s ?? lexical(query, corpus, limit);
+  } else {
+    result = lexical(query, corpus, limit);
   }
-  return lexical(query, corpus, limit);
+  if (opts.source) inlineSource(root, result.hits);
+  return result;
 }
 
 /** Render an {@link AskResult} as a compact markdown context pack. */
@@ -262,6 +315,7 @@ export function formatAsk(r: AskResult): string {
     for (const h of r.hits) {
       const tail = h.snippet ? ` — ${h.snippet}` : "";
       lines.push(`- ${h.title}  ${h.pointer}  (${h.relation})${tail}`);
+      if (h.code) lines.push("", "```", h.code, "```", "");
     }
   } else {
     r.hits.forEach((h, i) => {
@@ -269,6 +323,7 @@ export function formatAsk(r: AskResult): string {
       lines.push(`   ${h.pointer}`);
       if (h.snippet) lines.push(`   ${h.snippet}`);
       if (h.related?.length) lines.push(`   related: ${h.related.join(", ")}`);
+      if (h.code) lines.push("", "```", h.code, "```");
       lines.push("");
     });
   }

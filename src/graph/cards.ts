@@ -208,16 +208,14 @@ export function writeIndex(outDir: string, files: CardFileInfo[]): void {
   }
 
   if (files.length) {
+    const withSymbols = files.filter((f) => f.symbols > 0).length;
     lines.push("## Files", "");
     lines.push(
-      "Per-file wiring cards mirror the source tree. `grep` a symbol or `find` a",
-      "filename to land on its card.",
+      `${files.length} per-file wiring cards mirror the source tree under \`graft/\` ` +
+        `(${withSymbols} carry extracted symbols). They are deliberately not enumerated here —`,
+      "`grep` a symbol or `find`/`ls` a filename under `graft/` to land on the card for that file.",
       "",
     );
-    for (const f of files) {
-      lines.push(`- [${f.card}](${f.card}) — ${f.symbols} symbol${f.symbols === 1 ? "" : "s"}`);
-    }
-    lines.push("");
   }
 
   writeFileSync(join(outDir, INDEX_FILE), lines.join("\n"));

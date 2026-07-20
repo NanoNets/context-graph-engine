@@ -102,10 +102,11 @@ program
   .argument("<query>", "what you want to understand, in plain words")
   .argument("[dir]", "repository root", ".")
   .option("-n, --limit <n>", "max results", "8")
+  .option("--source", "inline the source at each file:line hit (retriever mode — the pack IS the answer, no need to re-open files)")
   .option("--json", "output the result as JSON")
-  .action(async (query: string, dir: string, opts: { limit: string; json?: boolean }) => {
+  .action(async (query: string, dir: string, opts: { limit: string; source?: boolean; json?: boolean }) => {
     const engine = engineFrom();
-    const r = engine.ask(dir, query, { limit: Number(opts.limit) });
+    const r = engine.ask(dir, query, { limit: Number(opts.limit), source: opts.source });
     if (opts.json) {
       console.log(JSON.stringify(r, null, 2));
     } else {
