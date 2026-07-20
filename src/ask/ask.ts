@@ -46,6 +46,10 @@ export interface AskResult {
   subject?: string;
   hits: AskHit[];
   note?: string;
+  /** Token-saving estimate, set only in `--source` (retriever) mode: the whole
+   * size of the distinct files these hits point into, i.e. the baseline cost of
+   * reading them instead of this pack. Computed from file sizes stored at build. */
+  saved?: { files: number; baselineChars: number };
 }
 
 const STOP = new Set([
@@ -286,6 +290,39 @@ function inlineSource(root: string, hits: AskHit[]): void {
   }
 }
 
+/** Every repo-relative file path a set of hits points into (dedup). A symbol
+ * pointer is `path:span`; a concept pointer is a comma-joined path list. */
+function hitFiles(hits: AskHit[]): Set<string> {
+  const files = new Set<string>();
+  for (const h of hits) {
+    const span = parseSpan(h.pointer);
+    if (span) { files.add(span.path); continue; }
+    for (const p of h.pointer.split(",").map((s) => s.trim()))
+      if (p && !p.includes(" ")) files.add(p);
+  }
+  return files;
+}
+
+/** Baseline = whole size of the files these hits cover, read from the sizes the
+ * build stored on each file node. Zero when the graph predates the `chars` field
+ * (a pre-upgrade index) — the caller then just omits the estimate. */
+function baselineFor(hits: AskHit[], graph: GraphV1 | null): AskResult["saved"] | undefined {
+  if (!graph) return undefined;
+  const size = new Map<string, number>();
+  for (const n of graph.nodes)
+    if (n.kind === "file" && typeof n.chars === "number") size.set(n.path, n.chars);
+
+  let baselineChars = 0;
+  let files = 0;
+  for (const path of hitFiles(hits)) {
+    const c = size.get(path);
+    if (c === undefined) continue;
+    baselineChars += c;
+    files++;
+  }
+  return files > 0 ? { files, baselineChars } : undefined;
+}
+
 /** Answer a query from the graft/ graph at `dir`. Deterministic, $0. */
 export function ask(dir: string, query: string, opts: AskOptions = {}): AskResult {
   const root = resolve(dir);
@@ -300,8 +337,18 @@ export function ask(dir: string, query: string, opts: AskOptions = {}): AskResul
   } else {
     result = lexical(query, corpus, limit);
   }
-  if (opts.source) inlineSource(root, result.hits);
+  if (opts.source) {
+    inlineSource(root, result.hits);
+    // The pack is truly substitutive only in retriever mode (spans inlined), so
+    // the "vs reading whole files" estimate is only honest here.
+    result.saved = baselineFor(result.hits, corpus.graph);
+  }
   return result;
+}
+
+/** Rough tokens for a byte length (≈ 4 chars/token; good enough for an estimate). */
+function toTokens(chars: number): number {
+  return Math.round(chars / 4);
 }
 
 /** Render an {@link AskResult} as a compact markdown context pack. */
@@ -327,5 +374,23 @@ export function formatAsk(r: AskResult): string {
       lines.push("");
     });
   }
-  return lines.join("\n").trimEnd() + "\n";
+  const body = lines.join("\n").trimEnd();
+  return body + savingsFooter(r, body) + "\n";
+}
+
+/** The one-line token-saving estimate `ask` appends in retriever mode, so the
+ * agent gets the number for free in the tool output — no extra work on its end.
+ * `packChars` is measured from the rendered body: exactly what the agent reads. */
+function savingsFooter(r: AskResult, body: string): string {
+  if (!r.saved || r.saved.baselineChars <= 0) return "";
+  const pack = toTokens(body.length);
+  const base = toTokens(r.saved.baselineChars);
+  if (base <= pack) return ""; // no saving to claim (tiny files); stay quiet
+  const saved = base - pack;
+  const pct = Math.round((saved / base) * 100);
+  return (
+    `\n\n[graft] tokens saved ≈ ${saved.toLocaleString()} (${pct}%) — this pack ≈ ` +
+    `${pack.toLocaleString()} tok vs reading the ${r.saved.files} source file(s) whole ≈ ` +
+    `${base.toLocaleString()} tok. Estimate (baseline = those files read in full).`
+  );
 }

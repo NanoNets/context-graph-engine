@@ -25,7 +25,7 @@ export function freshnessSegment(s: Stats): string {
 
 export function renderStatusline(
   stats: Stats | null,
-  _session: SessionState | null,
+  session: SessionState | null,
   ctx: { ctxPct: number | null },
 ): string[] {
   if (!stats || stats.nodeCount === 0) {
@@ -35,6 +35,8 @@ export function renderStatusline(
   const enr = enrichedSegment(stats);
   if (enr) top.push(enr);
   top.push(freshnessSegment(stats));
+  const saved = session?.savedTokens ?? 0;
+  if (saved > 0) top.push(C.indigo(`~${saved.toLocaleString()} tok saved`));
 
   const bottom: string[] = [];
   if (typeof ctx.ctxPct === 'number') bottom.push(C.text(`ctx ${ctx.ctxPct}%`));
@@ -74,18 +76,50 @@ export function formatBlastRadius(w: GraphV1, filePath: string, cap = 8): string
 
 export interface AskJson {
   query: string; mode: string;
-  hits: { kind: string; title: string; pointer: string; snippet: string; score: number }[];
+  hits: { kind: string; title: string; pointer: string; snippet: string; score: number; code?: string }[];
+  /** Set by `ask --source`: whole size of the files these hits cover (baseline). */
+  saved?: { files: number; baselineChars: number };
+}
+
+function tokensOf(chars: number): number { return Math.round(chars / 4); }
+
+/** The retrieval pack body — pointers, snippets, and (in --source mode) the
+ * actual code span for each hit, so the agent reads it here instead of opening
+ * the file. Kept separate so the tokens-saved math can measure this exact text. */
+function retrievalBody(hits: AskJson['hits']): string {
+  const blocks = hits.map((h, i) => {
+    const ptr = (h.pointer ?? '').split(',')[0].trim();
+    const snip = (h.snippet ?? '').replace(/\s+/g, ' ').trim().slice(0, 140);
+    let b = ` ${i + 1}. ${h.title} — ${ptr}`;
+    if (snip) b += `\n    ${snip}`;
+    if (h.code) b += `\n\`\`\`\n${h.code}\n\`\`\``;
+    return b;
+  });
+  return `[graft] retrieved context — read these spans, do not re-open the files:\n${blocks.join('\n')}`;
+}
+
+/** Tokens saved (baseline − this pack), or 0 when no honest estimate applies. */
+export function retrievalTokensSaved(ask: AskJson, cap = 5): number {
+  const hits = (ask.hits ?? []).slice(0, cap);
+  if (!hits.length || !ask.saved || ask.saved.baselineChars <= 0) return 0;
+  const pack = tokensOf(retrievalBody(hits).length);
+  const base = tokensOf(ask.saved.baselineChars);
+  return base > pack ? base - pack : 0;
 }
 
 export function formatRetrieval(ask: AskJson, cap = 5): string | null {
   const hits = (ask.hits ?? []).slice(0, cap);
   if (!hits.length) return null;
-  const lines = hits.map((h) => {
-    const ptr = (h.pointer ?? '').split(',')[0].trim();
-    const snip = (h.snippet ?? '').replace(/\s+/g, ' ').trim().slice(0, 140);
-    return ` • ${h.title} — ${ptr} — ${snip}`;
-  });
-  return `[graft] relevant context for this prompt:\n${lines.join('\n')}`;
+  const body = retrievalBody(hits);
+  const saved = retrievalTokensSaved(ask, cap);
+  if (saved <= 0) return body;
+  const base = tokensOf(ask.saved!.baselineChars);
+  const pct = Math.round((saved / base) * 100);
+  return (
+    `${body}\n[graft] tokens saved ≈ ${saved.toLocaleString()} (${pct}%) — this pack ≈ ` +
+    `${tokensOf(body.length).toLocaleString()} tok vs reading the ${ask.saved!.files} file(s) whole ≈ ` +
+    `${base.toLocaleString()} tok (estimate).`
+  );
 }
 
 export function formatOrientation(indexMd: string, budgetBytes = 1500): string {

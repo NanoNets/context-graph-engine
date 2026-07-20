@@ -106,6 +106,7 @@ export function extractFile(rel: string, source: string, lang: Language): Extrac
       exported: true,
       origin: "ast",
       body_hash: contentHash(source),
+      chars: source.length,
       summary_state: "pending",
       summary: null,
       crux: null,

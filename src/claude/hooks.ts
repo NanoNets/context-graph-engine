@@ -1,8 +1,8 @@
-import { readFileSync } from 'node:fs';
+import { readFileSync, existsSync } from 'node:fs';
 import { execFileSync, spawn } from 'node:child_process';
 import { join, basename } from 'node:path';
 import { readWiring } from './stats.js';
-import { formatBlastRadius, formatRetrieval, formatOrientation } from './format.js';
+import { formatBlastRadius, formatRetrieval, retrievalTokensSaved, formatOrientation } from './format.js';
 import { patchStats, readStats, acquireLock, readSession, writeSession } from './state.js';
 
 function readStdin(): any {
@@ -19,9 +19,16 @@ export function underGraft(dir: string, file: string): boolean {
   const rel = file.startsWith(dir) ? file.slice(dir.length) : file;
   return rel.replace(/^[/\\]+/, '').replace(/\\/g, '/').startsWith('graft/');
 }
+/** Resolve the graft CLI: the repo's own build when present (graft self-hosting),
+ * else the globally-installed `graft` on PATH (any other repo using graft). */
+function graftCli(dir: string): { cmd: string; pre: string[] } {
+  const local = join(dir, 'dist', 'cli.js');
+  return existsSync(local) ? { cmd: process.execPath, pre: [local] } : { cmd: 'graft', pre: [] };
+}
 function graftJson(dir: string, args: string[]): any | null {
+  const { cmd, pre } = graftCli(dir);
   try {
-    const out = execFileSync(process.execPath, [join(dir, 'dist', 'cli.js'), ...args],
+    const out = execFileSync(cmd, [...pre, ...args],
       { cwd: dir, encoding: 'utf8', timeout: 8000, stdio: ['ignore', 'pipe', 'ignore'] });
     return JSON.parse(out);
   } catch (e: any) {
@@ -64,11 +71,15 @@ export async function main(event: string): Promise<void> {
   }
 
   if (event === 'stop') {
+    // Auto-sync needs graft's own build (sync-run.js). Only graft's self-hosted
+    // repo has it; in any other repo skip rather than spawn a missing script and
+    // get wedged on syncing:true (those repos regen via their own build/CI).
+    const syncRun = join(dir, 'dist', 'claude', 'sync-run.js');
+    if (!existsSync(syncRun)) return;
     const stats = readStats(dir);
     if (stats?.dirty && acquireLock(dir)) {
       patchStats(dir, { syncing: true });
-      const child = spawn(process.execPath, [join(dir, 'dist', 'claude', 'sync-run.js'), dir],
-        { detached: true, stdio: 'ignore' });
+      const child = spawn(process.execPath, [syncRun, dir], { detached: true, stdio: 'ignore' });
       child.unref();
     }
     return;
@@ -77,7 +88,10 @@ export async function main(event: string): Promise<void> {
   if (event === 'prompt') {
     const prompt = String(input?.prompt ?? '').trim();
     if (prompt.length < 8) return;
-    const ask = graftJson(dir, ['ask', prompt, '.', '--json', '-n', '5']);
+    // --source: inline the actual code spans so the injected pack is substitutive
+    // (the agent reads the span here instead of opening the file), and so `ask`
+    // returns the `saved` baseline used for the tokens-saved line.
+    const ask = graftJson(dir, ['ask', prompt, '.', '--json', '--source', '-n', '5']);
     if (!ask) return;
     const txt = formatRetrieval(ask);
     if (!txt) return;
@@ -85,6 +99,10 @@ export async function main(event: string): Promise<void> {
     const id = input.session_id || 'default';
     const s = readSession(dir, id);
     s.lastQuery = prompt;
+    // Accumulate tokens saved this session (baseline − pack), so the statusline
+    // can show a running total. Guarded: only when `ask` returned a baseline.
+    const saved = retrievalTokensSaved(ask);
+    if (saved > 0) s.savedTokens = (s.savedTokens ?? 0) + saved;
     const agent = input?.agent?.name;
     if (agent) s.perAgentQuery[agent] = prompt;
     writeSession(dir, id, s);
