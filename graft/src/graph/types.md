@@ -1,4 +1,4 @@
-# src/graph/types.ts · [[context-graph-management]]
+# src/graph/types.ts
 
 Defines the schema for a code graph, outlining nodes and edges for code structure representation.
 

@@ -1,4 +1,4 @@
-# bench/judge.ts · [[ai-model-evaluation]] [[benchmarking-framework]]
+# bench/judge.ts · [[benchmarking-framework]]
 
 This file implements a correctness scoring system that evaluates AI-generated answers against a reference answer using keyword checks and an LLM judge.
 

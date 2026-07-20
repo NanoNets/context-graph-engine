@@ -9,7 +9,7 @@ sources_digest: bfb889927e966de42eecbab5b0186d21e7c5fc8fbde68f2a8a68c657bb120a9a
 links:
   - to: benchmarking-framework
     relation: part_of
-    description: It supports the benchmarking framework by providing a testing mechanism.
+    description: Supports the benchmarking framework by providing a testing environment.
 generator:
   version: 1
 covers:
@@ -23,11 +23,11 @@ covers:
 <!-- context:generated:start -->
 ## Summary
 
-This component allows for offline verification of the benchmarking harness, enabling developers to test control flow without needing an API key. It simulates responses from AI services for comprehensive testing.
+This component allows for offline verification of the benchmarking harness, enabling developers to test control flow without needing external API keys. It simulates responses for comprehensive testing.
 
 ## Related
 
-- part of [[benchmarking-framework]] — It supports the benchmarking framework by providing a testing mechanism.
+- part of [[benchmarking-framework]] — Supports the benchmarking framework by providing a testing environment.
 <!-- context:generated:end -->
 
 ## Notes

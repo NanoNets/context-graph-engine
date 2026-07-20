@@ -9,7 +9,7 @@ sources_digest: 2940a72050e0bee89a860d904a1ebf289505f797cd93c71d86c2e776227e3fb4
 links:
   - to: benchmarking-framework
     relation: part_of
-    description: It provides the tasks that the benchmarking framework evaluates.
+    description: Provides the necessary tasks for the benchmarking framework.
 generator:
   version: 1
 covers:
@@ -26,11 +26,11 @@ covers:
 <!-- context:generated:start -->
 ## Summary
 
-This component defines the benchmark tasks and corpora used for evaluation, ensuring that each task has a verifiable answer based on actual source code. It emphasizes fair assessments of code comprehension across various tasks.
+This component defines and manages the benchmark tasks and corpora, ensuring that each task has verifiable answers based on actual source code. It emphasizes fair assessments of code comprehension.
 
 ## Related
 
-- part of [[benchmarking-framework]] — It provides the tasks that the benchmarking framework evaluates.
+- part of [[benchmarking-framework]] — Provides the necessary tasks for the benchmarking framework.
 <!-- context:generated:end -->
 
 ## Notes

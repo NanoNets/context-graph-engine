@@ -9,13 +9,11 @@ sources:
     hash: 775be8c40a8e4172521bba8f6a1f026fa23c4d24b9b5225da3ed5b745077a5b0
   - path: src/context/build.ts
     hash: 8c614e5dc6b1ef2d6949016ce7480099f95f021ea6b0882f2919397f97a68ce7
-  - path: src/graph/enrich.ts
-    hash: 7b8238702835246bfc446ae017157e627c7609fde83b090619de71d013edf8e6
-sources_digest: bb866199bd2f821c5a9b3a9d3fbeff70c9b09d3f6f3b52200219b1a0b89e0fdd
+sources_digest: 0393dee6bf242715500eeac001ca94cd9c7ff05d644d8e36d58e9c7fd2e0eab9
 links:
   - to: benchmarking-framework
     relation: validates
-    description: It ensures that the benchmarking results are accurate and efficient.
+    description: Ensures that caching is effectively utilized in benchmarking.
 generator:
   version: 1
 covers:
@@ -118,33 +116,15 @@ covers:
   - symbol: mapWithConcurrency
     kind: function
     at: 'src/context/build.ts:L334-L349'
-  - symbol: EnrichOptions
-    kind: interface
-    at: 'src/graph/enrich.ts:L28-L33'
-  - symbol: EnrichStats
-    kind: interface
-    at: 'src/graph/enrich.ts:L35-L41'
-  - symbol: enrichGraph
-    kind: function
-    at: 'src/graph/enrich.ts:L43-L128'
-  - symbol: collectFileCrux
-    kind: function
-    at: 'src/graph/enrich.ts:L135-L155'
-  - symbol: buildCrux
-    kind: function
-    at: 'src/graph/enrich.ts:L162-L177'
-  - symbol: spanLines
-    kind: function
-    at: 'src/graph/enrich.ts:L180-L186'
 ---
 <!-- context:generated:start -->
 ## Summary
 
-This concept involves the use of caching to optimize performance and reduce costs associated with repeated prompts in the benchmarking process. It ensures that redundant processing is avoided and that results are efficiently managed.
+This concept involves the use of caching to optimize performance and reduce costs associated with repeated prompts in the benchmarking process.
 
 ## Related
 
-- validates [[benchmarking-framework]] — It ensures that the benchmarking results are accurate and efficient.
+- validates [[benchmarking-framework]] — Ensures that caching is effectively utilized in benchmarking.
 <!-- context:generated:end -->
 
 ## Notes

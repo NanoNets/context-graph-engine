@@ -1,4 +1,4 @@
-# src/graph/extract.ts · [[context-graph-management]]
+# src/graph/extract.ts
 
 This module extracts structured data from source files into a normalized format for further processing.
 

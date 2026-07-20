@@ -1,4 +1,4 @@
-# src/context/node-file.ts · [[context-graph-management]]
+# src/context/node-file.ts
 
 This file defines the structure and operations for managing a context graph represented as markdown files.
 

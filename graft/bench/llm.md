@@ -1,4 +1,4 @@
-# bench/llm.ts · [[openrouter-integration]]
+# bench/llm.ts · [[ai-model-integration]] [[benchmarking-framework]]
 
 This file configures and provides access to the OpenRouter API for benchmarking LLMs without needing separate API keys.
 

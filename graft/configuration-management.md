@@ -7,9 +7,9 @@ sources:
     hash: c0d1294d6fa49f6d06ff9bb137b34ea897f94a67810a839cd5705a1fa5995483
 sources_digest: a131fc0c197424e0b9a6a1da0c7e97f8aaa37eb06f6720480e7959923c918071
 links:
-  - to: ai-model-evaluation
+  - to: ai-model-integration
     relation: configures
-    description: It configures the settings for the AI evaluation process.
+    description: Allows users to specify configurations for AI model interactions.
 generator:
   version: 1
 covers:
@@ -26,11 +26,11 @@ covers:
 <!-- context:generated:start -->
 ## Summary
 
-This concept encompasses the management of user-facing configurations for the AI engine, allowing customization of settings such as context directories and API credentials. It ensures that all necessary parameters are set for the engine to function correctly.
+This concept encompasses the management of user-facing configurations for the AI engine, allowing for customization of settings and components without code changes.
 
 ## Related
 
-- configures [[ai-model-evaluation]] — It configures the settings for the AI evaluation process.
+- configures [[ai-model-integration]] — Allows users to specify configurations for AI model interactions.
 <!-- context:generated:end -->
 
 ## Notes

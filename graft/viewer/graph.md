@@ -1,4 +1,4 @@
-# viewer/graph.ts · [[graph-visualization]]
+# viewer/graph.ts · [[visualization-layer]]
 
 This file implements a force-directed graph visualization using D3.js, allowing interactive exploration of nodes and edges.
 

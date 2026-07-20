@@ -9,9 +9,7 @@ sources_digest: f7b46f3036503f43413cb48d25fa6ce54585514fb19e9b4e923c0c5628ce8aed
 links:
   - to: benchmarking-framework
     relation: part_of
-    description: >-
-      It is responsible for reporting the outcomes of the benchmarking
-      framework's evaluations.
+    description: Integrates with the benchmarking framework to report results.
 generator:
   version: 1
 covers:
@@ -43,11 +41,11 @@ covers:
 <!-- context:generated:start -->
 ## Summary
 
-This component aggregates and formats the results of benchmarking trials, providing insights into model performance across different configurations. It emphasizes clarity in reporting and includes cost calculations for agent runs.
+This component aggregates and formats the results of benchmarking trials, providing insights into performance metrics and cost evaluations. It emphasizes clarity in reporting and economic implications.
 
 ## Related
 
-- part of [[benchmarking-framework]] — It is responsible for reporting the outcomes of the benchmarking framework's evaluations.
+- part of [[benchmarking-framework]] — Integrates with the benchmarking framework to report results.
 <!-- context:generated:end -->
 
 ## Notes

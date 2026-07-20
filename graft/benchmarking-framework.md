@@ -7,6 +7,8 @@ sources:
     hash: e10d64f913c9517cef84cce58ea042d71bed3e94182c791245170eca54060e31
   - path: bench/judge.ts
     hash: 94c222341b066e4f3134b3d9d3f30f31b9ffe7b92967086b07c58f297d349936
+  - path: bench/llm.ts
+    hash: 6c0d2a02ac6aa86de94f779355020700a4d9016e2f4b431bf75560e1d3c51229
   - path: bench/report.ts
     hash: 775be8c40a8e4172521bba8f6a1f026fa23c4d24b9b5225da3ed5b745077a5b0
   - path: bench/run.ts
@@ -15,18 +17,17 @@ sources:
     hash: 0eaf577938e20fa27d9cd0157bc8843fdc37165d85696789334b8605138f4bb4
   - path: bench/tasks.ts
     hash: d21168797f40d193a914aca0c438409d29d300441bc0a6a518c93869240b3b69
-sources_digest: cc0c5db726f28fff7640e4c1d4705d7cd4eb54660db1b399622bd8f580ffe58d
+sources_digest: afaac16d744b84811efe1b826c2bab23737665e1e62fe39b1267f20f5451b4d0
 links:
+  - to: ai-model-integration
+    relation: uses
+    description: Utilizes the OpenRouter service for model interactions.
   - to: benchmarking-results-reporting
     relation: produces
-    description: >-
-      It generates detailed reports summarizing the performance metrics of the
-      evaluated models.
-  - to: openrouter-integration
+    description: Generates reports summarizing benchmarking results.
+  - to: task-management
     relation: depends_on
-    description: >-
-      The benchmarking framework relies on the OpenRouter service for model
-      interactions.
+    description: Relies on defined tasks and corpora for benchmarking.
 generator:
   version: 1
 covers:
@@ -69,6 +70,9 @@ covers:
   - symbol: judge
     kind: function
     at: 'bench/judge.ts:L51-L87'
+  - symbol: makeClient
+    kind: function
+    at: 'bench/llm.ts:L14-L18'
   - symbol: Row
     kind: interface
     at: 'bench/report.ts:L6-L26'
@@ -130,12 +134,13 @@ covers:
 <!-- context:generated:start -->
 ## Summary
 
-This component orchestrates the benchmarking process for evaluating AI models, including agents and judges, through various tasks and configurations. It integrates multiple files to manage agent execution, correctness scoring, and result reporting, ensuring a comprehensive evaluation of model performance.
+This component orchestrates the benchmarking process, evaluating AI models through agents and judges, and reporting results. It integrates various modules for running benchmarks, scoring correctness, and managing configurations.
 
 ## Related
 
-- produces [[benchmarking-results-reporting]] — It generates detailed reports summarizing the performance metrics of the evaluated models.
-- depends on [[openrouter-integration]] — The benchmarking framework relies on the OpenRouter service for model interactions.
+- uses [[ai-model-integration]] — Utilizes the OpenRouter service for model interactions.
+- produces [[benchmarking-results-reporting]] — Generates reports summarizing benchmarking results.
+- depends on [[task-management]] — Relies on defined tasks and corpora for benchmarking.
 <!-- context:generated:end -->
 
 ## Notes

@@ -1,7 +1,7 @@
 {
   "version": 1,
   "model": "openrouter:openai/gpt-4o-mini",
-  "repoDigest": "3b2a2ca79a7b49123c81fa6f4dc1bf949e12042e28aa491bca058d8ca300b913",
+  "repoDigest": "f7db46e361715e61d60229d1747926ce09ebe17ebf62a16ab251ebe72f7bc843",
   "files": [
     {
       "path": "bench/agent.ts",
@@ -57,11 +57,11 @@
     },
     {
       "path": "src/ask/ask.ts",
-      "hash": "62415cb36e835e8a5e9329a770489a726028284b8f40497beba6a721ecf05e21"
+      "hash": "5dad6519214e9b58feb86b46e2f498338819643ec44dc69a8f70614aad2eb986"
     },
     {
       "path": "src/cli.ts",
-      "hash": "294b01aae943b958a291aa17387fe05439ca3b5ffe1a4ed97a4a2c378dcd7947"
+      "hash": "ba1d90ee4c0f7b5000fa4239461c19d54fdedcad12b8592589312f163e1357dc"
     },
     {
       "path": "src/context/build.ts",
@@ -77,23 +77,23 @@
     },
     {
       "path": "src/engine.ts",
-      "hash": "26307935c472954b6511e7352cf6c0f11ce53dd151ac2407e5fcadc0b9b7c01b"
+      "hash": "e237ef6555d8bd2001eccfc32e314ef3881cef1c79d537ee701515a357f87d16"
     },
     {
       "path": "src/graph/build.ts",
-      "hash": "8b05c94896ca63d9c66bf5b3340db53cb8600d536a36880a3012599edf1b3a44"
+      "hash": "b18f5fc18dffd77771f39722eb19963c1188fd298cbb5cfd5d71ef8dc45658c6"
     },
     {
       "path": "src/graph/cards.ts",
-      "hash": "aef80e6f26a00e406385cd1faeb03d3b4e35a3cc7f1e0c50f7d94ad8a380f913"
+      "hash": "c45f4bd1be271a9c5ff01c04bae2a2d4fd761eb85bd8d4a302738e6744e636b1"
     },
     {
       "path": "src/graph/check.ts",
-      "hash": "f0b73053e31d03ec1280d465d614c97044541691675f2b3d09e10bcab5078b58"
+      "hash": "5358023fe498fb2878e3aa9b6756272c39926dda865c6495d8f33d13c5ceb376"
     },
     {
       "path": "src/graph/enrich.ts",
-      "hash": "7b8238702835246bfc446ae017157e627c7609fde83b090619de71d013edf8e6"
+      "hash": "c15a0aef99e54d4c24ac748a9b33373512f1511b1f5bcd830f9d2e407ff47917"
     },
     {
       "path": "src/graph/extract.ts",
@@ -130,6 +130,10 @@
     {
       "path": "src/viz/serve.ts",
       "hash": "14283762f454c01fc95cfbe9c2b41ef063fc17c4c3e5d120b5dc7f66f541fc1c"
+    },
+    {
+      "path": "test/ask.test.ts",
+      "hash": "b2d9beeea01fd6faab6225ea3b3a735d5dd808e8358ffe37bb82a2a5f5da3dce"
     },
     {
       "path": "test/context.test.ts",
@@ -174,13 +178,13 @@
   ],
   "nodes": [
     {
-      "slug": "ai-model-evaluation",
-      "name": "AI Model Evaluation",
+      "slug": "ai-model-integration",
+      "name": "AI Model Integration",
       "type": "system",
       "sources": [
-        "bench/judge.ts"
+        "bench/llm.ts"
       ],
-      "sourcesDigest": "bfba2049dadf6f189e964206041bfbb54d9515eabe1bf3cc28ea06450fa65de7"
+      "sourcesDigest": "1bdc59307386b5187ea92242900b2c3b286de3f9f45a08a7dfcf1c2d11801b27"
     },
     {
       "slug": "benchmarking-framework",
@@ -189,12 +193,13 @@
       "sources": [
         "bench/agent.ts",
         "bench/judge.ts",
+        "bench/llm.ts",
         "bench/report.ts",
         "bench/run.ts",
         "bench/selfcheck.ts",
         "bench/tasks.ts"
       ],
-      "sourcesDigest": "cc0c5db726f28fff7640e4c1d4705d7cd4eb54660db1b399622bd8f580ffe58d"
+      "sourcesDigest": "afaac16d744b84811efe1b826c2bab23737665e1e62fe39b1267f20f5451b4d0"
     },
     {
       "slug": "benchmarking-results-reporting",
@@ -212,10 +217,9 @@
       "sources": [
         "bench/agent.ts",
         "bench/report.ts",
-        "src/context/build.ts",
-        "src/graph/enrich.ts"
+        "src/context/build.ts"
       ],
-      "sourcesDigest": "bb866199bd2f821c5a9b3a9d3fbeff70c9b09d3f6f3b52200219b1a0b89e0fdd"
+      "sourcesDigest": "0393dee6bf242715500eeac001ca94cd9c7ff05d644d8e36d58e9c7fd2e0eab9"
     },
     {
       "slug": "code-summarization-and-synthesis",
@@ -238,65 +242,36 @@
       "sourcesDigest": "a131fc0c197424e0b9a6a1da0c7e97f8aaa37eb06f6720480e7959923c918071"
     },
     {
-      "slug": "context-graph-management",
-      "name": "Context Graph Management",
+      "slug": "error-handling-and-reporting",
+      "name": "Error Handling and Reporting",
+      "type": "concept",
+      "sources": [
+        "bench/run.ts",
+        "src/graph/build.ts",
+        "src/graph/check.ts"
+      ],
+      "sourcesDigest": "1386bf6efb7992fa69cd12a578fcd62b16f5332693ce2d7020e4050ba354f2f7"
+    },
+    {
+      "slug": "graph-construction",
+      "name": "Graph Construction",
       "type": "system",
       "sources": [
         "src/context/build.ts",
         "src/context/check.ts",
-        "src/context/node-file.ts",
         "src/graph/build.ts",
-        "src/graph/check.ts",
-        "src/graph/enrich.ts",
-        "src/graph/extract.ts",
-        "src/graph/resolve.ts",
-        "src/graph/types.ts",
+        "src/graph/check.ts"
+      ],
+      "sourcesDigest": "542278c320dfc3ba4690fe870e4222ebb3eb9fa87d9c1cd94780003d54e72141"
+    },
+    {
+      "slug": "graph-management",
+      "name": "Graph Management",
+      "type": "system",
+      "sources": [
         "src/graph/write.ts"
       ],
-      "sourcesDigest": "55e6a39238b64c950511c3f7ca87ed1629d82b42231ba60ef5e8e90098ec441c"
-    },
-    {
-      "slug": "error-handling-and-robustness",
-      "name": "Error Handling and Robustness",
-      "type": "concept",
-      "sources": [
-        "bench/run.ts",
-        "bench/selfcheck.ts",
-        "src/engine.ts"
-      ],
-      "sourcesDigest": "f316b70320a3b6166ab65b4721c724c3b21b9e78cb80e77e2e94c67e3355f8aa"
-    },
-    {
-      "slug": "graph-visualization",
-      "name": "Graph Visualization",
-      "type": "system",
-      "sources": [
-        "viewer/data.ts",
-        "viewer/detail.ts",
-        "viewer/graph.ts",
-        "viewer/main.ts",
-        "viewer/tree.ts"
-      ],
-      "sourcesDigest": "fd0623540e7f7eed9942e3db2bc219f9a08b3814ac219dfb2b9a74f8c1aea966"
-    },
-    {
-      "slug": "markdown-context-graph",
-      "name": "Markdown Context Graph",
-      "type": "concept",
-      "sources": [
-        "src/graph/write.ts",
-        "src/index.ts"
-      ],
-      "sourcesDigest": "7883f522ca32a5ffcf1b690631a79925bbb7af24c682d2b389611674a5720a65"
-    },
-    {
-      "slug": "openrouter-integration",
-      "name": "OpenRouter Integration",
-      "type": "system",
-      "sources": [
-        "bench/llm.ts"
-      ],
-      "sourcesDigest": "1bdc59307386b5187ea92242900b2c3b286de3f9f45a08a7dfcf1c2d11801b27"
+      "sourcesDigest": "fa6cd161fd547a03ecad2649fbb2b6094b5a6a64b10dcc1bdd6244e5157d4d48"
     },
     {
       "slug": "self-check-mechanism",
@@ -315,6 +290,19 @@
         "bench/tasks.ts"
       ],
       "sourcesDigest": "2940a72050e0bee89a860d904a1ebf289505f797cd93c71d86c2e776227e3fb4"
+    },
+    {
+      "slug": "visualization-layer",
+      "name": "Visualization Layer",
+      "type": "system",
+      "sources": [
+        "viewer/data.ts",
+        "viewer/detail.ts",
+        "viewer/graph.ts",
+        "viewer/main.ts",
+        "viewer/tree.ts"
+      ],
+      "sourcesDigest": "fd0623540e7f7eed9942e3db2bc219f9a08b3814ac219dfb2b9a74f8c1aea966"
     }
   ]
 }

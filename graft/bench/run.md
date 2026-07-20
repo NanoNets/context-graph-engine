@@ -1,4 +1,4 @@
-# bench/run.ts · [[benchmarking-framework]] [[error-handling-and-robustness]]
+# bench/run.ts · [[benchmarking-framework]] [[error-handling-and-reporting]]
 
 This file orchestrates the benchmarking process for various corpora and tasks, managing the execution and reporting of results.
 

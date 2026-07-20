@@ -11,11 +11,9 @@ sources:
     hash: 982ab91da10ae51fdba64466cbb614db14a51f2e100bb12a72178961d8dd97d7
 sources_digest: 1916d34902c4bd664703e6c5da273beb26c2be5f55e971b3cc3f590f65cde3c7
 links:
-  - to: context-graph-management
+  - to: graph-construction
     relation: produces
-    description: >-
-      It generates structured nodes that represent the architecture of the
-      codebase.
+    description: Generates structured nodes for the architecture graph.
 generator:
   version: 1
 covers:
@@ -98,11 +96,11 @@ covers:
 <!-- context:generated:start -->
 ## Summary
 
-This component focuses on summarizing code definitions and synthesizing a structured representation of the codebase architecture. It utilizes AI models to generate concise summaries and structured nodes for the context graph.
+This component focuses on summarizing code definitions and synthesizing a structured architecture graph from file summaries, enhancing the understanding of the codebase's architecture.
 
 ## Related
 
-- produces [[context-graph-management]] — It generates structured nodes that represent the architecture of the codebase.
+- produces [[graph-construction]] — Generates structured nodes for the architecture graph.
 <!-- context:generated:end -->
 
 ## Notes

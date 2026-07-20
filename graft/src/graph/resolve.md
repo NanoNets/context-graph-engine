@@ -1,4 +1,4 @@
-# src/graph/resolve.ts · [[context-graph-management]]
+# src/graph/resolve.ts
 
 This file resolves raw edge intents into concrete edges by matching names against a node index, ensuring accurate relationships between nodes.
 

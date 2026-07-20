@@ -1,4 +1,4 @@
-# bench/selfcheck.ts · [[benchmarking-framework]] [[error-handling-and-robustness]] [[self-check-mechanism]]
+# bench/selfcheck.ts · [[benchmarking-framework]] [[self-check-mechanism]]
 
 This file performs an offline verification of the harness plumbing to ensure control flow works correctly without needing an API key.
 

@@ -1,4 +1,4 @@
-# viewer/detail.ts · [[graph-visualization]]
+# viewer/detail.ts · [[visualization-layer]]
 
 This file provides the logic to render a detailed view of a selected node in a graph, including its properties and relationships.
 

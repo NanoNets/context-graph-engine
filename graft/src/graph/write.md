@@ -1,4 +1,4 @@
-# src/graph/write.ts · [[context-graph-management]] [[markdown-context-graph]]
+# src/graph/write.ts · [[graph-management]]
 
 This file contains functions for managing the serialization and deserialization of a wiring graph used in a context directory.
 

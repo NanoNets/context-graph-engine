@@ -1,4 +1,4 @@
-# viewer/main.ts · [[graph-visualization]]
+# viewer/main.ts · [[visualization-layer]]
 
 This file serves as the entry point for the graft visualization viewer, managing the user interface and interactions for displaying graphs.
 

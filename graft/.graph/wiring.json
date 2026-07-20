@@ -1,8 +1,8 @@
 {
   "meta": {
     "version": 1,
-    "nodeCount": 319,
-    "edgeCount": 730,
+    "nodeCount": 325,
+    "edgeCount": 752,
     "languages": [
       "typescript"
     ]
@@ -1194,13 +1194,13 @@
       "name": "ask.ts",
       "kind": "file",
       "path": "src/ask/ask.ts",
-      "span": "L1-L277",
+      "span": "L1-L332",
       "signature": null,
       "exported": true,
       "origin": "ast",
-      "body_hash": "62415cb36e835e8a5e9329a770489a726028284b8f40497beba6a721ecf05e21",
+      "body_hash": "5dad6519214e9b58feb86b46e2f498338819643ec44dc69a8f70614aad2eb986",
       "summary_state": "ready",
-      "summary": "This file implements a query routing tool that processes natural language queries to return relevant context from a codebase.",
+      "summary": "This file implements a query tool that routes natural language queries to relevant code symbols and returns structured context information.",
       "crux": null
     },
     {
@@ -1208,16 +1208,16 @@
       "name": "ask",
       "kind": "function",
       "path": "src/ask/ask.ts",
-      "span": "L242-L252",
+      "span": "L290-L305",
       "signature": "function ask(dir: string, query: string, opts: AskOptions = {}): AskResult",
       "exported": true,
       "origin": "ast",
-      "body_hash": "c025c4d20293ee7c251599d4bb566b5083a1d259963706f24d33c3c8074f5719",
+      "body_hash": "1124c362b9a0ab463a7c14fe451fcb3ae476344dee54b361904ad0e536aba0f5",
       "summary_state": "ready",
-      "summary": "Handles a query by loading the appropriate corpus and executing either structural or lexical search.",
+      "summary": "Processes a query against a code graph, returning structured results based on the query type and context.",
       "crux": {
-        "code": "    const s = structural(query, corpus.graph, limit);\n    if (s) return s;\n  }",
-        "span": "L248-L250"
+        "code": "    const s = structural(query, corpus.graph, limit);\n    result = s ?? lexical(query, corpus, limit);",
+        "span": "L298-L299"
       }
     },
     {
@@ -1225,13 +1225,13 @@
       "name": "AskHit",
       "kind": "interface",
       "path": "src/ask/ask.ts",
-      "span": "L23-L32",
+      "span": "L23-L36",
       "signature": "interface AskHit",
       "exported": true,
       "origin": "ast",
-      "body_hash": "990a0462418d06bfb0c6debc05ef1267d263ca5eb436928e441444da89a62227",
+      "body_hash": "51baa90dc28b443f824809190b7bb95bd028db20b68aea518ca865769dae424c",
       "summary_state": "ready",
-      "summary": "Represents a hit in the query results, encapsulating details about a concept or symbol found in the codebase.",
+      "summary": "Represents a hit in the query results, encapsulating details about a code symbol and its context.",
       "crux": null
     },
     {
@@ -1239,13 +1239,13 @@
       "name": "AskOptions",
       "kind": "interface",
       "path": "src/ask/ask.ts",
-      "span": "L236-L239",
+      "span": "L244-L250",
       "signature": "interface AskOptions",
       "exported": true,
       "origin": "ast",
-      "body_hash": "36b587f0f7a73149b5024a13a7ac4ff596fc101ce5de200ea50bbc0159f517b3",
+      "body_hash": "64043b27c35ab15223fb25bafbead807a203177b4871d9ca0833012a5ddc3f59",
       "summary_state": "ready",
-      "summary": "Defines options for the ask function, allowing customization of the query context and result limits.",
+      "summary": "Defines options for customizing the behavior of the ask function, such as context directory and result limits.",
       "crux": null
     },
     {
@@ -1253,7 +1253,7 @@
       "name": "AskResult",
       "kind": "interface",
       "path": "src/ask/ask.ts",
-      "span": "L34-L41",
+      "span": "L42-L49",
       "signature": "interface AskResult",
       "exported": true,
       "origin": "ast",
@@ -1267,7 +1267,7 @@
       "name": "Corpus",
       "kind": "interface",
       "path": "src/ask/ask.ts",
-      "span": "L75-L78",
+      "span": "L83-L86",
       "signature": "interface Corpus",
       "exported": false,
       "origin": "ast",
@@ -1281,7 +1281,7 @@
       "name": "counts",
       "kind": "function",
       "path": "src/ask/ask.ts",
-      "span": "L59-L63",
+      "span": "L67-L71",
       "signature": "function counts(tokens: string[]): Map<string, number>",
       "exported": false,
       "origin": "ast",
@@ -1298,7 +1298,7 @@
       "name": "findSubject",
       "kind": "function",
       "path": "src/ask/ask.ts",
-      "span": "L125-L143",
+      "span": "L133-L151",
       "signature": "function findSubject(query: string, graph: GraphV1): NodeV1[]",
       "exported": false,
       "origin": "ast",
@@ -1315,7 +1315,7 @@
       "name": "firstProse",
       "kind": "function",
       "path": "src/ask/ask.ts",
-      "span": "L66-L73",
+      "span": "L74-L81",
       "signature": "function firstProse(body: string): string",
       "exported": false,
       "origin": "ast",
@@ -1332,16 +1332,33 @@
       "name": "formatAsk",
       "kind": "function",
       "path": "src/ask/ask.ts",
-      "span": "L255-L276",
+      "span": "L308-L331",
       "signature": "function formatAsk(r: AskResult): string",
       "exported": true,
       "origin": "ast",
-      "body_hash": "655f23a018eff9da0eee605dfea6bca21949cda37f6d5a5265a2f83cdb84ab69",
+      "body_hash": "8af467346c9f58e5f3fdc408b8eea980c3879d954cae8a32bbc62a19eb2cf4cc",
       "summary_state": "ready",
-      "summary": "Formats the results of an AskResult into a markdown string for easy presentation.",
+      "summary": "Formats the results of a query into a markdown context pack for easy readability and presentation.",
       "crux": {
-        "code": "export function formatAsk(r: AskResult): string {\n  const head = `graft ask — \"${r.query}\"  (${r.mode}${r.note ? `: ${r.note}` : \"\"})`;\n  if (r.hits.length === 0) {\n    return `${head}\\n\\n${r.note ?? \"no matches.\"}`;\n  }\n  const lines = [head, \"\"];\n  if (r.mode === \"structural\") {\n    for (const h of r.hits) {\n      const tail = h.snippet ? ` — ${h.snippet}` : \"\";\n      lines.push(`- ${h.title}  ${h.pointer}  (${h.relation})${tail}`);\n    }\n  } else {",
-        "span": "L255-L266"
+        "code": "export function formatAsk(r: AskResult): string {\n  const head = `graft ask — \"${r.query}\"  (${r.mode}${r.note ? `: ${r.note}` : \"\"})`;\n  if (r.hits.length === 0) {\n    return `${head}\\n\\n${r.note ?? \"no matches.\"}`;\n  }\n  const lines = [head, \"\"];\n  if (r.mode === \"structural\") {\n    for (const h of r.hits) {\n      const tail = h.snippet ? ` — ${h.snippet}` : \"\";\n      lines.push(`- ${h.title}  ${h.pointer}  (${h.relation})${tail}`);\n      if (h.code) lines.push(\"\", \"```\", h.code, \"```\", \"\");\n    }",
+        "span": "L308-L319"
+      }
+    },
+    {
+      "id": "src/ask/ask.ts#inlineSource",
+      "name": "inlineSource",
+      "kind": "function",
+      "path": "src/ask/ask.ts",
+      "span": "L280-L287",
+      "signature": "function inlineSource(root: string, hits: AskHit[]): void",
+      "exported": false,
+      "origin": "ast",
+      "body_hash": "1956881d9722274712b026fa4baf87b7c571977d49e2176dad9b93d849f946b5",
+      "summary_state": "ready",
+      "summary": "Attaches inlined source code to query hits, enhancing the context provided to the user.",
+      "crux": {
+        "code": "function inlineSource(root: string, hits: AskHit[]): void {\n  for (const h of hits) {\n    const s = parseSpan(h.pointer);\n    if (!s) continue;\n    const code = sliceSpan(root, s.path, s.from, s.to);\n    if (code) h.code = code;\n  }",
+        "span": "L280-L286"
       }
     },
     {
@@ -1349,7 +1366,7 @@
       "name": "lexical",
       "kind": "function",
       "path": "src/ask/ask.ts",
-      "span": "L190-L234",
+      "span": "L198-L242",
       "signature": "function lexical(query: string, corpus: Corpus, limit: number): AskResult",
       "exported": false,
       "origin": "ast",
@@ -1366,7 +1383,7 @@
       "name": "loadCorpus",
       "kind": "function",
       "path": "src/ask/ask.ts",
-      "span": "L80-L105",
+      "span": "L88-L113",
       "signature": "function loadCorpus(outDir: string): Corpus",
       "exported": false,
       "origin": "ast",
@@ -1379,11 +1396,28 @@
       }
     },
     {
+      "id": "src/ask/ask.ts#parseSpan",
+      "name": "parseSpan",
+      "kind": "function",
+      "path": "src/ask/ask.ts",
+      "span": "L254-L258",
+      "signature": "function parseSpan(pointer: string): { path: string; from: number; to: number } | null",
+      "exported": false,
+      "origin": "ast",
+      "body_hash": "167f32f4458f586e27867a3de42b75c75366f38d922fd9ea0b5a2380788ed0b0",
+      "summary_state": "ready",
+      "summary": "Parses a string pointer into its file path and line range components, facilitating source code navigation.",
+      "crux": {
+        "code": "  const m = pointer.match(/^(.*):L(\\d+)-L(\\d+)$/);\n  if (!m) return null;\n  return { path: m[1], from: Number(m[2]), to: Number(m[3]) };",
+        "span": "L255-L257"
+      }
+    },
+    {
       "id": "src/ask/ask.ts#score",
       "name": "score",
       "kind": "function",
       "path": "src/ask/ask.ts",
-      "span": "L108-L115",
+      "span": "L116-L123",
       "signature": "function score(query: Map<string, number>, doc: Map<string, number>): number",
       "exported": false,
       "origin": "ast",
@@ -1396,11 +1430,28 @@
       }
     },
     {
+      "id": "src/ask/ask.ts#sliceSpan",
+      "name": "sliceSpan",
+      "kind": "function",
+      "path": "src/ask/ask.ts",
+      "span": "L262-L277",
+      "signature": "function sliceSpan(root: string, path: string, from: number, to: number): string | null",
+      "exported": false,
+      "origin": "ast",
+      "body_hash": "44149097e46f09ef24a44f0b307a1346234527fc47d98b2d52988d26c8d6328d",
+      "summary_state": "ready",
+      "summary": "Reads a specified range of lines from a source file, allowing for inlined code snippets in query results.",
+      "crux": {
+        "code": "function sliceSpan(root: string, path: string, from: number, to: number): string | null {\n  try {\n    const lines = readFileSync(join(root, path), \"utf8\").split(\"\\n\");\n    const start = Math.max(1, from);\n    const end = Math.min(lines.length, to);\n    const slice = lines.slice(start - 1, end);\n    if (slice.length > MAX_SPAN_LINES) {\n      const head = slice.slice(0, MAX_SPAN_LINES);\n      head.push(`… (+${slice.length - MAX_SPAN_LINES} more lines; open ${path}:L${start}-L${end})`);\n      return head.join(\"\\n\");\n    }\n    return slice.join(\"\\n\");",
+        "span": "L262-L273"
+      }
+    },
+    {
       "id": "src/ask/ask.ts#structural",
       "name": "structural",
       "kind": "function",
       "path": "src/ask/ask.ts",
-      "span": "L145-L186",
+      "span": "L153-L194",
       "signature": "function structural(query: string, graph: GraphV1, limit: number): AskResult | null",
       "exported": false,
       "origin": "ast",
@@ -1417,7 +1468,7 @@
       "name": "tokenize",
       "kind": "function",
       "path": "src/ask/ask.ts",
-      "span": "L50-L56",
+      "span": "L58-L64",
       "signature": "function tokenize(text: string): string[]",
       "exported": false,
       "origin": "ast",
@@ -1434,21 +1485,24 @@
       "name": "cli.ts",
       "kind": "file",
       "path": "src/cli.ts",
-      "span": "L1-L166",
+      "span": "L1-L187",
       "signature": null,
       "exported": true,
       "origin": "ast",
-      "body_hash": "294b01aae943b958a291aa17387fe05439ca3b5ffe1a4ed97a4a2c378dcd7947",
+      "body_hash": "ba1d90ee4c0f7b5000fa4239461c19d54fdedcad12b8592589312f163e1357dc",
       "summary_state": "ready",
-      "summary": "This file implements the `graft` CLI tool for building and maintaining a context graph from code, ensuring synchronization and providing querying capabilities.",
-      "crux": null
+      "summary": "This file implements the `graft` CLI tool for building and maintaining a context graph from code, ensuring it stays in sync with the repository.",
+      "crux": {
+        "code": "program\n  .name(\"graft\")\n  .description(\"Build a repo's context graph as linked markdown, and keep it in sync with the code.\")",
+        "span": "L22-L24"
+      }
     },
     {
       "id": "src/cli.ts#engineFrom",
       "name": "engineFrom",
       "kind": "function",
       "path": "src/cli.ts",
-      "span": "L26-L29",
+      "span": "L27-L30",
       "signature": "function engineFrom(): Graft",
       "exported": false,
       "origin": "ast",
@@ -1465,7 +1519,7 @@
       "name": "fmt",
       "kind": "function",
       "path": "src/cli.ts",
-      "span": "L42-L46",
+      "span": "L49-L53",
       "signature": "fmt = (o: Record<string, number>)",
       "exported": false,
       "origin": "ast",
@@ -2190,16 +2244,16 @@
       "name": "engine.ts",
       "kind": "file",
       "path": "src/engine.ts",
-      "span": "L1-L126",
+      "span": "L1-L129",
       "signature": null,
       "exported": true,
       "origin": "ast",
-      "body_hash": "26307935c472954b6511e7352cf6c0f11ce53dd151ac2407e5fcadc0b9b7c01b",
+      "body_hash": "e237ef6555d8bd2001eccfc32e314ef3881cef1c79d537ee701515a357f87d16",
       "summary_state": "ready",
-      "summary": "This file implements the Context Graph Engine, which builds and checks a code context graph from a repository without a database.",
+      "summary": "The Context Graph Engine builds and checks a code context graph from a repository without a database.",
       "crux": {
-        "code": "/**\n * The Context Graph Engine.\n *\n * Two operations, no database:\n *   - {@link Graft.init}  build `.context/` from a code repo.\n *   - {@link Graft.check} report whether `.context/` is still in\n *     sync with the code (for CI).\n *\n * The graph is a folder of linked markdown files committed to the repo; git is\n * the sync. This class wires the OpenRouter LLM providers into the build/check\n * pipelines; an API key is required for any LLM-backed operation.\n */",
-        "span": "L1-L12"
+        "code": " *   - {@link Graft.init}  build `.context/` from a code repo.\n *   - {@link Graft.check} report whether `.context/` is still in\n *     sync with the code (for CI).\n *\n * The graph is a folder of linked markdown files committed to the repo; git is\n * the sync. This class wires the OpenRouter LLM providers into the build/check\n * pipelines; an API key is required for any LLM-backed operation.",
+        "span": "L5-L11"
       }
     },
     {
@@ -2221,33 +2275,30 @@
       "name": "Graft",
       "kind": "class",
       "path": "src/engine.ts",
-      "span": "L43-L125",
+      "span": "L45-L128",
       "signature": "class Graft",
       "exported": true,
       "origin": "ast",
-      "body_hash": "64bc71b4d06ee6365c1848cd45b4375af6d26d2b7dd45d2ba81bb406813d271c",
+      "body_hash": "fb35e77789763532926013366fd1fc5027bd02cac2356512d8a5813f6b409009",
       "summary_state": "ready",
-      "summary": "The Graft class manages the context graph operations, including building and checking the graph against the codebase.",
-      "crux": {
-        "code": "export class Graft {\n  private cfg: ResolvedConfig;\n\n  constructor(config: EngineConfig = {}) {\n    this.cfg = resolveConfig(config);\n  }\n\n  /** Build the `.context/` graph from the repo at `dir`. */\n  async init(dir: string, opts: InitOptions = {}): Promise<BuildResult> {\n    return buildContext(dir, {\n      contextDir: this.cfg.contextDir,\n      extensions: opts.extensions,",
-        "span": "L43-L54"
-      }
+      "summary": "Encapsulates methods for building and checking a context graph from a code repository.",
+      "crux": null
     },
     {
       "id": "src/engine.ts#Graft.ask",
       "name": "ask",
       "kind": "method",
       "path": "src/engine.ts",
-      "span": "L90-L92",
-      "signature": "ask(dir: string, query: string, opts: { limit?: number } = {}): AskResult",
+      "span": "L93-L95",
+      "signature": "ask(dir: string, query: string, opts: { limit?: number; source?: boolean } = {}): AskResult",
       "exported": true,
       "origin": "ast",
-      "body_hash": "a41f3683c1fcac67f48b6cc443e76bceba15b279b302ce847774a81fb0612285",
+      "body_hash": "d076ef89fe91fba4be041009db20e1ff2c709af57fb09103720cb2384f5693c7",
       "summary_state": "ready",
-      "summary": "Processes a query against the committed graph, returning results based on structural and lexical rankings.",
+      "summary": "Processes a query against the committed graph to return relevant information based on structural and lexical ranking.",
       "crux": {
-        "code": "  ask(dir: string, query: string, opts: { limit?: number } = {}): AskResult {\n    return ask(dir, query, { contextDir: this.cfg.contextDir, limit: opts.limit });\n  }",
-        "span": "L90-L92"
+        "code": "  ask(dir: string, query: string, opts: { limit?: number; source?: boolean } = {}): AskResult {",
+        "span": "L93-L93"
       }
     },
     {
@@ -2255,7 +2306,7 @@
       "name": "check",
       "kind": "method",
       "path": "src/engine.ts",
-      "span": "L63-L65",
+      "span": "L65-L67",
       "signature": "check(dir: string, opts: CheckRunOptions = {}): CheckResult",
       "exported": true,
       "origin": "ast",
@@ -2272,7 +2323,7 @@
       "name": "checkGraph",
       "kind": "method",
       "path": "src/engine.ts",
-      "span": "L68-L70",
+      "span": "L70-L72",
       "signature": "checkGraph(dir: string): GraphCheckResult",
       "exported": true,
       "origin": "ast",
@@ -2289,7 +2340,7 @@
       "name": "constructor",
       "kind": "method",
       "path": "src/engine.ts",
-      "span": "L46-L48",
+      "span": "L48-L50",
       "signature": "constructor(config: EngineConfig = {})",
       "exported": true,
       "origin": "ast",
@@ -2306,7 +2357,7 @@
       "name": "cruxSummarizer",
       "kind": "method",
       "path": "src/engine.ts",
-      "span": "L111-L113",
+      "span": "L114-L116",
       "signature": "private cruxSummarizer(): CruxSummarizer",
       "exported": true,
       "origin": "ast",
@@ -2323,16 +2374,16 @@
       "name": "graph",
       "kind": "method",
       "path": "src/engine.ts",
-      "span": "L77-L83",
+      "span": "L79-L86",
       "signature": "graph(dir: string, opts: GraphRunOptions = {}): Promise<GraphBuildResult>",
       "exported": true,
       "origin": "ast",
-      "body_hash": "227e5765f18483fe86dcc7c78c3955f141d0630c869b5111f2283366c8162a06",
+      "body_hash": "cec39cf7bba0c124990ab186d6aae7ae2dcf5f17bfc56ecbef85f1fcc394050e",
       "summary_state": "ready",
-      "summary": "Builds a per-symbol code graph in JSON format, optionally including a meaning layer based on the provided options.",
+      "summary": "Builds a per-symbol code graph from the repository, optionally using a meaning layer with LLM.",
       "crux": {
-        "code": "  graph(dir: string, opts: GraphRunOptions = {}): Promise<GraphBuildResult> {\n    return buildGraph(dir, {\n      contextDir: this.cfg.contextDir,\n      summarizer: opts.llm ? this.cruxSummarizer() : undefined,\n      onProgress: opts.onProgress,\n    });\n  }",
-        "span": "L77-L83"
+        "code": "  graph(dir: string, opts: GraphRunOptions = {}): Promise<GraphBuildResult> {\n    return buildGraph(dir, {\n      contextDir: this.cfg.contextDir,\n      summarizer: opts.llm ? this.cruxSummarizer() : undefined,\n      concurrency: opts.concurrency,\n      onProgress: opts.onProgress,\n    });",
+        "span": "L79-L85"
       }
     },
     {
@@ -2340,7 +2391,7 @@
       "name": "init",
       "kind": "method",
       "path": "src/engine.ts",
-      "span": "L51-L60",
+      "span": "L53-L62",
       "signature": "async init(dir: string, opts: InitOptions = {}): Promise<BuildResult>",
       "exported": true,
       "origin": "ast",
@@ -2357,7 +2408,7 @@
       "name": "modelLabel",
       "kind": "method",
       "path": "src/engine.ts",
-      "span": "L121-L124",
+      "span": "L124-L127",
       "signature": "private modelLabel(): string",
       "exported": true,
       "origin": "ast",
@@ -2374,7 +2425,7 @@
       "name": "requireKey",
       "kind": "method",
       "path": "src/engine.ts",
-      "span": "L95-L103",
+      "span": "L98-L106",
       "signature": "private requireKey(): string",
       "exported": true,
       "origin": "ast",
@@ -2391,7 +2442,7 @@
       "name": "summarizer",
       "kind": "method",
       "path": "src/engine.ts",
-      "span": "L115-L118",
+      "span": "L118-L121",
       "signature": "private summarizer(): Summarizer",
       "exported": true,
       "origin": "ast",
@@ -2408,7 +2459,7 @@
       "name": "synthesizer",
       "kind": "method",
       "path": "src/engine.ts",
-      "span": "L105-L108",
+      "span": "L108-L111",
       "signature": "private synthesizer(): Synthesizer",
       "exported": true,
       "origin": "ast",
@@ -2425,13 +2476,13 @@
       "name": "GraphRunOptions",
       "kind": "interface",
       "path": "src/engine.ts",
-      "span": "L37-L41",
+      "span": "L37-L43",
       "signature": "interface GraphRunOptions",
       "exported": true,
       "origin": "ast",
-      "body_hash": "39ff67f6cc34aa0019b25dcee492776cfbb3872146ec3920492b97331fca894b",
+      "body_hash": "424eba22dc93e6a1f2b948f40d738ef8dd9b0bf4d06d7a3d562c2c6d77443d73",
       "summary_state": "ready",
-      "summary": "Holds options for running the graph build, including whether to use a Tier-2 LLM meaning pass.",
+      "summary": "Defines options for running the graph building process, including LLM usage and concurrency settings.",
       "crux": null
     },
     {
@@ -2453,16 +2504,16 @@
       "name": "build.ts",
       "kind": "file",
       "path": "src/graph/build.ts",
-      "span": "L1-L144",
+      "span": "L1-L147",
       "signature": null,
       "exported": true,
       "origin": "ast",
-      "body_hash": "8b05c94896ca63d9c66bf5b3340db53cb8600d536a36880a3012599edf1b3a44",
+      "body_hash": "b18f5fc18dffd77771f39722eb19963c1188fd298cbb5cfd5d71ef8dc45658c6",
       "summary_state": "ready",
-      "summary": "This file defines the logic to build a graph representation of a code repository, facilitating analysis and visualization of its structure.",
+      "summary": "This file defines the logic to build a graph representation from source code files in a repository.",
       "crux": {
-        "code": "  const edges = resolveEdges(nodes, rawEdges);\n\n  // graph.json is its own Tier-2 cache: fold in the prior meaning layer so an\n  // unchanged body is never re-summarized (and a Tier-1-only run never wipes it).\n  const prior = readGraph(wiringPath(outDir));\n  const priorById = new Map((prior?.nodes ?? []).map((n) => [n.id, n]));\n  const meaning = await enrichGraph(nodes, priorById, sources, {\n    summarizer: opts.summarizer,\n    onProgress: ({ index, total, node }) =>\n      opts.onProgress?.({ phase: \"enrich\", index, total, file: node }),\n  });\n  errors.push(...meaning.errors);",
-        "span": "L91-L102"
+        "code": "export async function buildGraph(\n  dir: string,\n  opts: GraphBuildOptions = {},\n): Promise<GraphBuildResult> {\n  const root = resolve(dir);\n  const outDir = contextDirFor(root, opts.contextDir);\n  const files = listSourceFiles(root, outDir);\n\n  const nodes: NodeV1[] = [];\n  const rawEdges: RawEdge[] = [];\n  const sources = new Map<string, string>();\n  const langs = new Set<Language>();",
+        "span": "L57-L68"
       }
     },
     {
@@ -2470,16 +2521,16 @@
       "name": "buildGraph",
       "kind": "function",
       "path": "src/graph/build.ts",
-      "span": "L55-L143",
+      "span": "L57-L146",
       "signature": "async function buildGraph( dir: string, opts: GraphBuildOptions = {}, ): Promise<GraphBuildResult>",
       "exported": true,
       "origin": "ast",
-      "body_hash": "694834a4a621098b82506032a8e46930190050190c3c0231bf264f8404529465",
+      "body_hash": "aa7152b35e0503aee7e9e7fdb56a5354e737f7b2c41313487906817be90776a2",
       "summary_state": "ready",
-      "summary": "This function orchestrates the process of building a graph from source files, including parsing, enriching, and writing the graph data.",
+      "summary": "This function orchestrates the process of reading source files, extracting nodes and edges, and writing the resulting graph to a file.",
       "crux": {
-        "code": "  const edges = resolveEdges(nodes, rawEdges);\n\n  // graph.json is its own Tier-2 cache: fold in the prior meaning layer so an\n  // unchanged body is never re-summarized (and a Tier-1-only run never wipes it).\n  const prior = readGraph(wiringPath(outDir));\n  const priorById = new Map((prior?.nodes ?? []).map((n) => [n.id, n]));\n  const meaning = await enrichGraph(nodes, priorById, sources, {\n    summarizer: opts.summarizer,\n    onProgress: ({ index, total, node }) =>\n      opts.onProgress?.({ phase: \"enrich\", index, total, file: node }),\n  });\n  errors.push(...meaning.errors);",
-        "span": "L91-L102"
+        "code": "  const edges = resolveEdges(nodes, rawEdges);\n\n  // graph.json is its own Tier-2 cache: fold in the prior meaning layer so an\n  // unchanged body is never re-summarized (and a Tier-1-only run never wipes it).\n  const prior = readGraph(wiringPath(outDir));\n  const priorById = new Map((prior?.nodes ?? []).map((n) => [n.id, n]));\n  const meaning = await enrichGraph(nodes, priorById, sources, {\n    summarizer: opts.summarizer,\n    concurrency: opts.concurrency,\n    onProgress: ({ index, total, node }) =>\n      opts.onProgress?.({ phase: \"enrich\", index, total, file: node }),\n  });",
+        "span": "L93-L104"
       }
     },
     {
@@ -2487,13 +2538,13 @@
       "name": "GraphBuildOptions",
       "kind": "interface",
       "path": "src/graph/build.ts",
-      "span": "L22-L33",
+      "span": "L22-L35",
       "signature": "interface GraphBuildOptions",
       "exported": true,
       "origin": "ast",
-      "body_hash": "71abfa189c81e3297978ab399e0918f9504d8fffe5730d8f604a6df9640bdd4f",
+      "body_hash": "09dc36c486449d7e17f9fe9ddb0fbed6ba20104b28ff1ab6f38a1de344975ea8",
       "summary_state": "ready",
-      "summary": "This interface specifies options for customizing the graph build process, including output directory and summarization behavior.",
+      "summary": "This interface specifies options for customizing the graph build process, including output directory and summarization settings.",
       "crux": null
     },
     {
@@ -2501,7 +2552,7 @@
       "name": "GraphBuildResult",
       "kind": "interface",
       "path": "src/graph/build.ts",
-      "span": "L35-L48",
+      "span": "L37-L50",
       "signature": "interface GraphBuildResult",
       "exported": true,
       "origin": "ast",
@@ -2515,7 +2566,7 @@
       "name": "listSourceFiles",
       "kind": "function",
       "path": "src/graph/build.ts",
-      "span": "L51-L53",
+      "span": "L53-L55",
       "signature": "function listSourceFiles(root: string, outDir: string): string[]",
       "exported": true,
       "origin": "ast",
@@ -2532,13 +2583,13 @@
       "name": "cards.ts",
       "kind": "file",
       "path": "src/graph/cards.ts",
-      "span": "L1-L284",
+      "span": "L1-L282",
       "signature": null,
       "exported": true,
       "origin": "ast",
-      "body_hash": "aef80e6f26a00e406385cd1faeb03d3b4e35a3cc7f1e0c50f7d94ad8a380f913",
+      "body_hash": "c45f4bd1be271a9c5ff01c04bae2a2d4fd761eb85bd8d4a302738e6744e636b1",
       "summary_state": "ready",
-      "summary": "This module generates markdown cards that summarize source files and their symbols for easier navigation and understanding of the codebase.",
+      "summary": "This module generates markdown cards that summarize source files and their symbols, facilitating easier navigation and understanding of the codebase.",
       "crux": null
     },
     {
@@ -2608,7 +2659,7 @@
       "name": "CoverRef",
       "kind": "interface",
       "path": "src/graph/cards.ts",
-      "span": "L227-L232",
+      "span": "L225-L230",
       "signature": "interface CoverRef",
       "exported": true,
       "origin": "ast",
@@ -2758,7 +2809,7 @@
       "name": "writeCovers",
       "kind": "function",
       "path": "src/graph/cards.ts",
-      "span": "L247-L283",
+      "span": "L245-L281",
       "signature": "function writeCovers(graph: GraphV1, outDir: string): number",
       "exported": true,
       "origin": "ast",
@@ -2775,16 +2826,16 @@
       "name": "writeIndex",
       "kind": "function",
       "path": "src/graph/cards.ts",
-      "span": "L189-L224",
+      "span": "L189-L222",
       "signature": "function writeIndex(outDir: string, files: CardFileInfo[]): void",
       "exported": true,
       "origin": "ast",
-      "body_hash": "ad4dcc7f053176ce9dd9173fa98751133ff049abb0138e0b59fbef8995f49cf3",
+      "body_hash": "e2e95c9595a5386036af4f9beeda3897fe1b22e53fcb5d79d2c07fa3276481c1",
       "summary_state": "ready",
-      "summary": "Creates an index markdown file that lists all concept nodes and per-file cards for easy navigation.",
+      "summary": "This function creates an index markdown file that lists concept nodes and per-file cards, providing a quick reference for navigating the repository.",
       "crux": {
-        "code": "  const lines: string[] = [\n    \"# graft — repo map\",\n    \"\",\n    \"Small markdown nodes summarising this repo. `grep` any term, symbol, or\",\n    'filename here, or run `graft ask \"<task>\"`. Each node carries prose plus exact',\n    \"`file:line`; open a source file only to edit the named span.\",\n    \"\",\n  ];\n\n  const concepts = readNodes(outDir).sort((a, b) => a.slug.localeCompare(b.slug));\n  if (concepts.length) {\n    lines.push(\"## Concepts\", \"\");",
-        "span": "L190-L201"
+        "code": "    \"# graft — repo map\",\n    \"\",\n    \"Small markdown nodes summarising this repo. `grep` any term, symbol, or\",\n    'filename here, or run `graft ask \"<task>\"`. Each node carries prose plus exact',\n    \"`file:line`; open a source file only to edit the named span.\",\n    \"\",\n  ];\n\n  const concepts = readNodes(outDir).sort((a, b) => a.slug.localeCompare(b.slug));\n  if (concepts.length) {\n    lines.push(\"## Concepts\", \"\");\n    for (const c of concepts) {",
+        "span": "L191-L202"
       }
     },
     {
@@ -2796,9 +2847,9 @@
       "signature": null,
       "exported": true,
       "origin": "ast",
-      "body_hash": "f0b73053e31d03ec1280d465d614c97044541691675f2b3d09e10bcab5078b58",
+      "body_hash": "5358023fe498fb2878e3aa9b6756272c39926dda865c6495d8f33d13c5ceb376",
       "summary_state": "ready",
-      "summary": "This file contains logic to verify if the committed graph is in sync with the current codebase, ensuring that any discrepancies are reported for CI purposes.",
+      "summary": "Ensures that the committed graph.json accurately reflects the current state of the codebase, identifying any discrepancies.",
       "crux": {
         "code": "  const committed = readGraph(wiringPath(outDir));\n  if (!committed) {\n    result.missing = true;\n    return result;\n  }\n\n  // Freshly extract Tier-1 nodes from the code on disk (same file set as build).\n  const current = new Map<string, string>(); // id → body_hash\n  for (const file of listSourceFiles(root, outDir)) {\n    const lang = languageOf(file)!;\n    let source: string;\n    try {",
         "span": "L57-L68"
@@ -2830,9 +2881,9 @@
       "signature": "function formatGraphCheckReport(r: GraphCheckResult): string",
       "exported": true,
       "origin": "ast",
-      "body_hash": "aadc77c803de8c04dac0f5c9bbb53d15c91944adfbc5a35dcebfc9983d105fd0",
+      "body_hash": "a2489371664b6c2729925dffd9852c85aecbd21a019f72549435ce51a4113b86",
       "summary_state": "ready",
-      "summary": "This function generates a human-readable report summarizing the results of the graph check, indicating any discrepancies found.",
+      "summary": "Generates a human-readable report summarizing the results of the graph check, indicating any issues found.",
       "crux": {
         "code": "  const lines: string[] = [\"graph check: STALE\", \"\"];\n  const structural = r.added.length + r.removed.length + r.changed.length;\n  if (r.changed.length) {\n    lines.push(`changed (${r.changed.length}):`);\n    for (const id of r.changed) lines.push(`  ~ ${id}`);\n  }\n  if (r.added.length) {\n    lines.push(`added (${r.added.length}):`);\n    for (const id of r.added) lines.push(`  + ${id}`);\n  }\n  if (r.removed.length) {\n    lines.push(`removed (${r.removed.length}):`);",
         "span": "L113-L124"
@@ -2871,16 +2922,16 @@
       "name": "enrich.ts",
       "kind": "file",
       "path": "src/graph/enrich.ts",
-      "span": "L1-L187",
+      "span": "L1-L213",
       "signature": null,
       "exported": true,
       "origin": "ast",
-      "body_hash": "7b8238702835246bfc446ae017157e627c7609fde83b090619de71d013edf8e6",
+      "body_hash": "c15a0aef99e54d4c24ac748a9b33373512f1511b1f5bcd830f9d2e407ff47917",
       "summary_state": "ready",
       "summary": "This file implements a mechanism to enrich graph nodes with summaries and cruxes based on their state and prior computations.",
       "crux": {
         "code": "  // Which nodes actually need an LLM call this run (after cache carry-over).\n  const dirty: NodeV1[] = [];\n\n  for (const node of nodes) {\n    const was = prior.get(node.id);\n    if (was?.summary_state === \"ready\" && was.body_hash === node.body_hash) {\n      node.summary = was.summary;\n      node.crux = was.crux;\n      node.summary_state = \"ready\";\n      stats.cached++;\n      continue;\n    }",
-        "span": "L51-L62"
+        "span": "L56-L67"
       }
     },
     {
@@ -2888,7 +2939,7 @@
       "name": "buildCrux",
       "kind": "function",
       "path": "src/graph/enrich.ts",
-      "span": "L162-L177",
+      "span": "L188-L203",
       "signature": "function buildCrux(r: NodeCrux, node: NodeV1, source: string, lineCount: number): Crux | null",
       "exported": false,
       "origin": "ast",
@@ -2905,7 +2956,7 @@
       "name": "collectFileCrux",
       "kind": "function",
       "path": "src/graph/enrich.ts",
-      "span": "L135-L155",
+      "span": "L161-L181",
       "signature": "async function collectFileCrux( summarizer: CruxSummarizer, path: string, source: string, refs: NodeRef[], ): Promise<{ results: Map<string, NodeCrux>; error?: string }>",
       "exported": false,
       "origin": "ast",
@@ -2922,16 +2973,16 @@
       "name": "enrichGraph",
       "kind": "function",
       "path": "src/graph/enrich.ts",
-      "span": "L43-L128",
+      "span": "L48-L136",
       "signature": "async function enrichGraph( nodes: NodeV1[], prior: Map<string, NodeV1>, sources: Map<string, string>, opts: EnrichOptions = {}, ): Promise<EnrichStats>",
       "exported": true,
       "origin": "ast",
-      "body_hash": "67bf09b50cd3f75e72e7c8ce7b7f20847e380dcc731531d00d17e8866945336b",
+      "body_hash": "f740a8a6957661bd4bedddbe0cbb0c5541e30a3b303cbd01830cf761644e0801",
       "summary_state": "ready",
-      "summary": "Enriches a set of graph nodes by determining which need new summaries and processing them accordingly.",
+      "summary": "This function processes graph nodes to update their summaries and cruxes based on their state and prior data, potentially invoking an LLM for new computations.",
       "crux": {
         "code": "  // Which nodes actually need an LLM call this run (after cache carry-over).\n  const dirty: NodeV1[] = [];\n\n  for (const node of nodes) {\n    const was = prior.get(node.id);\n    if (was?.summary_state === \"ready\" && was.body_hash === node.body_hash) {\n      node.summary = was.summary;\n      node.crux = was.crux;\n      node.summary_state = \"ready\";\n      stats.cached++;\n      continue;\n    }",
-        "span": "L51-L62"
+        "span": "L56-L67"
       }
     },
     {
@@ -2939,13 +2990,13 @@
       "name": "EnrichOptions",
       "kind": "interface",
       "path": "src/graph/enrich.ts",
-      "span": "L28-L33",
+      "span": "L31-L38",
       "signature": "interface EnrichOptions",
       "exported": true,
       "origin": "ast",
-      "body_hash": "5b1a8379d9c8f934883d81912390338ba9917af35f05b8eb378f405e114adddb",
+      "body_hash": "a721d24d1e8ad1777bd74f54cdc1f4edcc55d3576b065557a0b10b3fe4b4a183",
       "summary_state": "ready",
-      "summary": "Defines options for enriching graph nodes, including the ability to compute new summaries and report progress.",
+      "summary": "This interface defines options for enriching graph nodes, including whether to compute new summaries and the level of concurrency for processing.",
       "crux": null
     },
     {
@@ -2953,7 +3004,7 @@
       "name": "EnrichStats",
       "kind": "interface",
       "path": "src/graph/enrich.ts",
-      "span": "L35-L41",
+      "span": "L40-L46",
       "signature": "interface EnrichStats",
       "exported": true,
       "origin": "ast",
@@ -2963,11 +3014,25 @@
       "crux": null
     },
     {
+      "id": "src/graph/enrich.ts#mapWithConcurrency",
+      "name": "mapWithConcurrency",
+      "kind": "function",
+      "path": "src/graph/enrich.ts",
+      "span": "L139-L154",
+      "signature": "async function mapWithConcurrency<T, R>( items: T[], limit: number, fn: (item: T, index: number) => Promise<R>, ): Promise<R[]>",
+      "exported": false,
+      "origin": "ast",
+      "body_hash": "a4c9438ba7cb397b91c5ab695f081e20db5678db9eea0be35a086fda1d9714e5",
+      "summary_state": "ready",
+      "summary": "This function executes a provided asynchronous function over a list of items with a specified limit on concurrent executions, preserving the order of results.",
+      "crux": null
+    },
+    {
       "id": "src/graph/enrich.ts#spanLines",
       "name": "spanLines",
       "kind": "function",
       "path": "src/graph/enrich.ts",
-      "span": "L180-L186",
+      "span": "L206-L212",
       "signature": "function spanLines(span: string, fileLines: number): [number, number]",
       "exported": false,
       "origin": "ast",
@@ -3913,6 +3978,40 @@
       "summary_state": "ready",
       "summary": "Defines the configuration options required to start the visualization server.",
       "crux": null
+    },
+    {
+      "id": "test/ask.test.ts",
+      "name": "ask.test.ts",
+      "kind": "file",
+      "path": "test/ask.test.ts",
+      "span": "L1-L55",
+      "signature": null,
+      "exported": true,
+      "origin": "ast",
+      "body_hash": "b2d9beeea01fd6faab6225ea3b3a735d5dd808e8358ffe37bb82a2a5f5da3dce",
+      "summary_state": "ready",
+      "summary": "This file contains tests for the `graft ask` functionality, ensuring that the source option correctly inlines code from disk when requested.",
+      "crux": {
+        "code": "test(\"ask without source returns pointers but no inlined code\", async () => {\n  const dir = makeFixture();\n  try {\n    await buildGraph(dir); // $0, structure-only — cards + wiring.json\n    const r = ask(dir, \"addNumbers\");\n    const hit = r.hits.find((h) => h.title.startsWith(\"addNumbers\"));\n    assert.ok(hit, \"should locate the addNumbers symbol\");\n    assert.match(hit.pointer, /^math\\.ts:L\\d+-L\\d+$/);\n    assert.equal(hit.code, undefined, \"no source inlined without the option\");\n  } finally {\n    rmSync(dir, { recursive: true, force: true });\n  }",
+        "span": "L26-L37"
+      }
+    },
+    {
+      "id": "test/ask.test.ts#makeFixture",
+      "name": "makeFixture",
+      "kind": "function",
+      "path": "test/ask.test.ts",
+      "span": "L15-L24",
+      "signature": "function makeFixture(): string",
+      "exported": false,
+      "origin": "ast",
+      "body_hash": "2782fc6b3f2efa27b0c0195482a4b138e1ec02bd16da279313966e96a6d807e8",
+      "summary_state": "ready",
+      "summary": "Creates a temporary directory with a sample TypeScript file for testing purposes.",
+      "crux": {
+        "code": "  const dir = mkdtempSync(join(tmpdir(), \"graft-ask-\"));\n  writeFileSync(\n    join(dir, \"math.ts\"),\n    `export function addNumbers(a: number, b: number): number {\\n` +\n      `  return a + b;\\n` +\n      `}\\n`,\n  );\n  return dir;",
+        "span": "L16-L23"
+      }
     },
     {
       "id": "test/context.test.ts",
@@ -6110,6 +6209,12 @@
     },
     {
       "source": "src/ask/ask.ts",
+      "target": "src/ask/ask.ts#inlineSource",
+      "relation": "contains",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/ask/ask.ts",
       "target": "src/ask/ask.ts#lexical",
       "relation": "contains",
       "confidence": "extracted"
@@ -6122,7 +6227,19 @@
     },
     {
       "source": "src/ask/ask.ts",
+      "target": "src/ask/ask.ts#parseSpan",
+      "relation": "contains",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/ask/ask.ts",
       "target": "src/ask/ask.ts#score",
+      "relation": "contains",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/ask/ask.ts",
+      "target": "src/ask/ask.ts#sliceSpan",
       "relation": "contains",
       "confidence": "extracted"
     },
@@ -6176,6 +6293,12 @@
     },
     {
       "source": "src/ask/ask.ts#ask",
+      "target": "src/ask/ask.ts#inlineSource",
+      "relation": "calls",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/ask/ask.ts#ask",
       "target": "src/ask/ask.ts#lexical",
       "relation": "calls",
       "confidence": "extracted"
@@ -6197,6 +6320,18 @@
       "target": "src/context/node-file.ts#contextDirFor",
       "relation": "calls",
       "confidence": "inferred"
+    },
+    {
+      "source": "src/ask/ask.ts#inlineSource",
+      "target": "src/ask/ask.ts#parseSpan",
+      "relation": "calls",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/ask/ask.ts#inlineSource",
+      "target": "src/ask/ask.ts#sliceSpan",
+      "relation": "calls",
+      "confidence": "extracted"
     },
     {
       "source": "src/ask/ask.ts#lexical",
@@ -6239,6 +6374,12 @@
       "target": "src/ask/ask.ts#findSubject",
       "relation": "calls",
       "confidence": "extracted"
+    },
+    {
+      "source": "src/cli.ts",
+      "target": "src/ai/providers.ts#resolveConfig",
+      "relation": "calls",
+      "confidence": "inferred"
     },
     {
       "source": "src/cli.ts",
@@ -6339,6 +6480,12 @@
     {
       "source": "src/cli.ts",
       "target": "node:path",
+      "relation": "imports",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/cli.ts",
+      "target": "src/ai/providers.ts",
       "relation": "imports",
       "confidence": "extracted"
     },
@@ -7628,6 +7775,12 @@
     },
     {
       "source": "src/graph/enrich.ts",
+      "target": "src/graph/enrich.ts#mapWithConcurrency",
+      "relation": "contains",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/graph/enrich.ts",
       "target": "src/graph/enrich.ts#spanLines",
       "relation": "contains",
       "confidence": "extracted"
@@ -7665,6 +7818,12 @@
     {
       "source": "src/graph/enrich.ts#enrichGraph",
       "target": "src/graph/enrich.ts#collectFileCrux",
+      "relation": "calls",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/graph/enrich.ts#enrichGraph",
+      "target": "src/graph/enrich.ts#mapWithConcurrency",
       "relation": "calls",
       "confidence": "extracted"
     },
@@ -8242,6 +8401,78 @@
       "source": "src/viz/serve.ts#startVizServer.close",
       "target": "src/viz/serve.ts#startVizServer.close",
       "relation": "calls",
+      "confidence": "extracted"
+    },
+    {
+      "source": "test/ask.test.ts",
+      "target": "src/ask/ask.ts#ask",
+      "relation": "calls",
+      "confidence": "inferred"
+    },
+    {
+      "source": "test/ask.test.ts",
+      "target": "src/ask/ask.ts#formatAsk",
+      "relation": "calls",
+      "confidence": "inferred"
+    },
+    {
+      "source": "test/ask.test.ts",
+      "target": "src/graph/build.ts#buildGraph",
+      "relation": "calls",
+      "confidence": "inferred"
+    },
+    {
+      "source": "test/ask.test.ts",
+      "target": "test/ask.test.ts#makeFixture",
+      "relation": "calls",
+      "confidence": "extracted"
+    },
+    {
+      "source": "test/ask.test.ts",
+      "target": "test/ask.test.ts#makeFixture",
+      "relation": "contains",
+      "confidence": "extracted"
+    },
+    {
+      "source": "test/ask.test.ts",
+      "target": "node:assert/strict",
+      "relation": "imports",
+      "confidence": "extracted"
+    },
+    {
+      "source": "test/ask.test.ts",
+      "target": "node:fs",
+      "relation": "imports",
+      "confidence": "extracted"
+    },
+    {
+      "source": "test/ask.test.ts",
+      "target": "node:os",
+      "relation": "imports",
+      "confidence": "extracted"
+    },
+    {
+      "source": "test/ask.test.ts",
+      "target": "node:path",
+      "relation": "imports",
+      "confidence": "extracted"
+    },
+    {
+      "source": "test/ask.test.ts",
+      "target": "node:test",
+      "relation": "imports",
+      "confidence": "extracted"
+    },
+    {
+      "source": "test/ask.test.ts",
+      "target": "src/ask/ask.ts",
+      "relation": "imports",
+      "confidence": "extracted"
+    },
+    {
+      "source": "test/ask.test.ts",
+      "target": "src/graph/build.ts",
+      "relation": "imports",
       "confidence": "extracted"
     },
     {
