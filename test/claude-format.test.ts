@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { renderStatusline, enrichedSegment, incomingEdges, formatBlastRadius, formatRetrieval, formatOrientation } from '../src/claude/format.js';
+import { renderStatusline, enrichedSegment, incomingEdges, formatBlastRadius, formatRetrieval, formatOrientation, renderSubagent } from '../src/claude/format.js';
 import { emptyStats } from '../src/claude/state.js';
 
 const strip = (s: string) => s.replace(/\x1b\[[0-9;]*m/g, '');
@@ -82,4 +82,15 @@ test('formatOrientation labels and truncates to budget', () => {
   const out = strip(formatOrientation(md, 1500));
   assert.match(out, /repo map/);
   assert.ok(out.length < 1600, 'trimmed to budget + short header');
+});
+
+test('renderSubagent shows agent name and its last query', () => {
+  const out = strip(renderSubagent('Explore', { lastQuery: null, perAgentQuery: { Explore: 'pkce flow' }, graftReads: 0, sourceReads: 0 }));
+  assert.match(out, /Explore/);
+  assert.match(out, /pkce flow/);
+});
+
+test('renderSubagent without a query still shows the agent', () => {
+  const out = strip(renderSubagent('Plan', null));
+  assert.match(out, /Plan/);
 });

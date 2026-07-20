@@ -91,3 +91,9 @@ export function formatRetrieval(ask: AskJson, cap = 5): string | null {
 export function formatOrientation(indexMd: string, budgetBytes = 1500): string {
   return `[graft] repo map (graft/INDEX.md):\n${indexMd.slice(0, budgetBytes)}`;
 }
+
+export function renderSubagent(agentName: string, session: SessionState | null): string {
+  const q = session?.perAgentQuery?.[agentName];
+  const tail = q ? SEP + C.muted('graft: ') + C.text(q) : '';
+  return C.muted('◤ ') + C.indigo(agentName) + tail;
+}
