@@ -506,15 +506,15 @@ const wiring2 = {
     { id: 'src/pkce.ts#gen', name: 'gen', path: 'src/pkce.ts', summary_state: 'ready' },
   ],
   edges: [
-    { from: 'src/client.ts#exchange', to: 'src/pkce.ts#verify', relation: 'calls', confidence: 'extracted' },
-    { from: 'src/pkce.ts#gen', to: 'src/pkce.ts#verify', relation: 'calls', confidence: 'extracted' },
+    { source: 'src/client.ts#exchange', target: 'src/pkce.ts#verify', relation: 'calls', confidence: 'extracted' },
+    { source: 'src/pkce.ts#gen', target: 'src/pkce.ts#verify', relation: 'calls', confidence: 'extracted' },
   ],
 } as any;
 
 test('incomingEdges: external callers of nodes in the edited file', () => {
   const e = incomingEdges(wiring2, '/abs/repo/src/pkce.ts');
   assert.equal(e.length, 1, 'same-file edge (gen→verify) excluded');
-  assert.equal(e[0].from, 'src/client.ts#exchange');
+  assert.equal(e[0].source, 'src/client.ts#exchange');
 });
 
 test('formatBlastRadius renders callers or null', () => {
@@ -547,7 +547,7 @@ function nodeIdsInFile(w: GraphV1, filePath: string): Set<string> {
 export function incomingEdges(w: GraphV1, filePath: string): EdgeV1[] {
   const ids = nodeIdsInFile(w, filePath);
   if (!ids.size) return [];
-  return (w.edges ?? []).filter((e) => ids.has(e.to) && !ids.has(e.from));
+  return (w.edges ?? []).filter((e) => ids.has(e.target) && !ids.has(e.source));
 }
 
 export function formatBlastRadius(w: GraphV1, filePath: string, cap = 8): string | null {
@@ -555,7 +555,7 @@ export function formatBlastRadius(w: GraphV1, filePath: string, cap = 8): string
   if (!edges.length) return null;
   const byId = new Map((w.nodes ?? []).map((n) => [n.id, n]));
   const items = edges.slice(0, cap).map((e) => {
-    const n = byId.get(e.from);
+    const n = byId.get(e.source);
     const label = n ? `${n.name} (${basename(n.path)})` : e.from;
     return ` • ${e.relation} ← ${label}`;
   });
