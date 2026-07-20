@@ -1,8 +1,8 @@
 {
   "meta": {
     "version": 1,
-    "nodeCount": 325,
-    "edgeCount": 752,
+    "nodeCount": 402,
+    "edgeCount": 977,
     "languages": [
       "typescript"
     ]
@@ -18,6 +18,7 @@
       "exported": true,
       "origin": "ast",
       "body_hash": "e10d64f913c9517cef84cce58ea042d71bed3e94182c791245170eca54060e31",
+      "chars": 12147,
       "summary_state": "ready",
       "summary": "This file implements a benchmark agent that processes questions about a codebase using filesystem tools and a language model.",
       "crux": null
@@ -179,6 +180,7 @@
       "exported": true,
       "origin": "ast",
       "body_hash": "94c222341b066e4f3134b3d9d3f30f31b9ffe7b92967086b07c58f297d349936",
+      "chars": 3076,
       "summary_state": "ready",
       "summary": "This file implements a correctness scoring system that evaluates AI-generated answers against a reference answer using keyword checks and an LLM judge.",
       "crux": null
@@ -255,6 +257,7 @@
       "exported": true,
       "origin": "ast",
       "body_hash": "6c0d2a02ac6aa86de94f779355020700a4d9016e2f4b431bf75560e1d3c51229",
+      "chars": 960,
       "summary_state": "ready",
       "summary": "This file configures and provides access to the OpenRouter API for benchmarking LLMs without needing separate API keys.",
       "crux": null
@@ -286,6 +289,7 @@
       "exported": true,
       "origin": "ast",
       "body_hash": "775be8c40a8e4172521bba8f6a1f026fa23c4d24b9b5225da3ed5b745077a5b0",
+      "chars": 5288,
       "summary_state": "ready",
       "summary": "This file provides functionality for aggregating and reporting benchmark results for different agent configurations.",
       "crux": null
@@ -424,6 +428,7 @@
       "exported": true,
       "origin": "ast",
       "body_hash": "a0d2859628588f45ae31862f5f801d6219802449c23bbbdba9aa51b7b9febf47",
+      "chars": 9000,
       "summary_state": "ready",
       "summary": "This file orchestrates the benchmarking process for various corpora and tasks, managing the execution and reporting of results.",
       "crux": {
@@ -540,6 +545,7 @@
       "exported": true,
       "origin": "ast",
       "body_hash": "0eaf577938e20fa27d9cd0157bc8843fdc37165d85696789334b8605138f4bb4",
+      "chars": 5236,
       "summary_state": "ready",
       "summary": "This file performs an offline verification of the harness plumbing to ensure control flow works correctly without needing an API key.",
       "crux": {
@@ -591,6 +597,7 @@
       "exported": true,
       "origin": "ast",
       "body_hash": "d21168797f40d193a914aca0c438409d29d300441bc0a6a518c93869240b3b69",
+      "chars": 14060,
       "summary_state": "ready",
       "summary": "This file defines benchmark tasks and their corresponding reference answers for validating code understanding across multiple repositories.",
       "crux": {
@@ -644,6 +651,147 @@
       "crux": null
     },
     {
+      "id": "bench/token-ab.ts",
+      "name": "token-ab.ts",
+      "kind": "file",
+      "path": "bench/token-ab.ts",
+      "span": "L1-L298",
+      "signature": null,
+      "exported": true,
+      "origin": "ast",
+      "body_hash": "95a6cebca2a72bb8d1dff205392380b8e5ac7da123f9ea8802a3e048b80ea03c",
+      "chars": 11961,
+      "summary_state": "pending",
+      "summary": null,
+      "crux": null
+    },
+    {
+      "id": "bench/token-ab.ts#cost",
+      "name": "cost",
+      "kind": "function",
+      "path": "bench/token-ab.ts",
+      "span": "L242-L246",
+      "signature": "function cost(m: Metrics): string",
+      "exported": false,
+      "origin": "ast",
+      "body_hash": "f59a853dd420d918b63ac37c796298e8049f644b1c500928290d0fa095245818",
+      "summary_state": "pending",
+      "summary": null,
+      "crux": null
+    },
+    {
+      "id": "bench/token-ab.ts#graftPack",
+      "name": "graftPack",
+      "kind": "function",
+      "path": "bench/token-ab.ts",
+      "span": "L229-L240",
+      "signature": "function graftPack(): { pack: string; ms: number }",
+      "exported": false,
+      "origin": "ast",
+      "body_hash": "89a547d4352e3d9dbdb8c04f2a91fc04be812e2a0eb44165ee58e2df0f5f4bdf",
+      "summary_state": "pending",
+      "summary": null,
+      "crux": null
+    },
+    {
+      "id": "bench/token-ab.ts#main",
+      "name": "main",
+      "kind": "function",
+      "path": "bench/token-ab.ts",
+      "span": "L252-L292",
+      "signature": "async function main()",
+      "exported": false,
+      "origin": "ast",
+      "body_hash": "7e15d43e2c0c022b333db8c2727e7eb184209faff2799a4e8f381a8840072c70",
+      "summary_state": "pending",
+      "summary": null,
+      "crux": null
+    },
+    {
+      "id": "bench/token-ab.ts#main.pct",
+      "name": "pct",
+      "kind": "function",
+      "path": "bench/token-ab.ts",
+      "span": "L272-L272",
+      "signature": "pct = (a: number, b: number)",
+      "exported": false,
+      "origin": "ast",
+      "body_hash": "a696c500df6bf30f9d1c99fa5c77b12fd6b41d1441dcea77cb160f1ce867e1d3",
+      "summary_state": "pending",
+      "summary": null,
+      "crux": null
+    },
+    {
+      "id": "bench/token-ab.ts#Metrics",
+      "name": "Metrics",
+      "kind": "interface",
+      "path": "bench/token-ab.ts",
+      "span": "L59-L68",
+      "signature": "interface Metrics",
+      "exported": false,
+      "origin": "ast",
+      "body_hash": "4987dcdcf1ce8f9588ca811ca9c4c77d37368a043e39415784c9fde7dcff35d9",
+      "summary_state": "pending",
+      "summary": null,
+      "crux": null
+    },
+    {
+      "id": "bench/token-ab.ts#row",
+      "name": "row",
+      "kind": "function",
+      "path": "bench/token-ab.ts",
+      "span": "L248-L250",
+      "signature": "function row(label: string, a: string | number, b: string | number): string",
+      "exported": false,
+      "origin": "ast",
+      "body_hash": "b30daa5cdce52d4742bfca9c507fa0e60e335fdf6b67081f373a7e45f29ca92f",
+      "summary_state": "pending",
+      "summary": null,
+      "crux": null
+    },
+    {
+      "id": "bench/token-ab.ts#runAgent",
+      "name": "runAgent",
+      "kind": "function",
+      "path": "bench/token-ab.ts",
+      "span": "L160-L226",
+      "signature": "async function runAgent(arm: string, extraContext: string | null): Promise<Metrics>",
+      "exported": false,
+      "origin": "ast",
+      "body_hash": "00a26ff79d6edc7f2dbe2b394bf6370820c026a752b373cae257f32315a7f5b0",
+      "summary_state": "pending",
+      "summary": null,
+      "crux": null
+    },
+    {
+      "id": "bench/token-ab.ts#runRead",
+      "name": "runRead",
+      "kind": "function",
+      "path": "bench/token-ab.ts",
+      "span": "L140-L157",
+      "signature": "function runRead(path: string, start?: number, end?: number): { text: string; resolved: string }",
+      "exported": false,
+      "origin": "ast",
+      "body_hash": "79923e547c1f135e88cdda255eeffeb2faa75a5fc81be8703694c8eb45a090af",
+      "summary_state": "pending",
+      "summary": null,
+      "crux": null
+    },
+    {
+      "id": "bench/token-ab.ts#runSearch",
+      "name": "runSearch",
+      "kind": "function",
+      "path": "bench/token-ab.ts",
+      "span": "L108-L138",
+      "signature": "function runSearch(pattern: string): string",
+      "exported": false,
+      "origin": "ast",
+      "body_hash": "52208dc37e9ca679f7d182cfbb80de09e29cc2aa62bd0128bcd7c7c72c6747ea",
+      "summary_state": "pending",
+      "summary": null,
+      "crux": null
+    },
+    {
       "id": "scripts/build-viewer.mjs",
       "name": "build-viewer.mjs",
       "kind": "file",
@@ -653,6 +801,7 @@
       "exported": true,
       "origin": "ast",
       "body_hash": "fb4ba16d7815dbdbaf2fd818362f914671903132be5573fbdd9a7734549b833d",
+      "chars": 879,
       "summary_state": "ready",
       "summary": "This script automates the bundling of the viewer application and its static assets for deployment.",
       "crux": {
@@ -670,6 +819,7 @@
       "exported": true,
       "origin": "ast",
       "body_hash": "e81750029e4c8641cdaf2b4894f595297839e07a73076e4cdac1522515f923a8",
+      "chars": 5223,
       "summary_state": "ready",
       "summary": "This file provides a mechanism to summarize code definitions for better navigation and understanding of a codebase.",
       "crux": {
@@ -874,6 +1024,7 @@
       "exported": true,
       "origin": "ast",
       "body_hash": "c0d1294d6fa49f6d06ff9bb137b34ea897f94a67810a839cd5705a1fa5995483",
+      "chars": 2035,
       "summary_state": "ready",
       "summary": "This file defines configurations for an AI engine, allowing customization and default settings for its operation.",
       "crux": null
@@ -933,6 +1084,7 @@
       "exported": true,
       "origin": "ast",
       "body_hash": "6e67f3866c75d88a8b1d265e510578f3e3014d9cfd8b2469e6e4afbd67977f93",
+      "chars": 2519,
       "summary_state": "ready",
       "summary": "This file provides functionality to summarize source code files into plain English for a knowledge graph.",
       "crux": {
@@ -1032,6 +1184,7 @@
       "exported": true,
       "origin": "ast",
       "body_hash": "982ab91da10ae51fdba64466cbb614db14a51f2e100bb12a72178961d8dd97d7",
+      "chars": 7187,
       "summary_state": "ready",
       "summary": "This file defines the architecture for synthesizing a graph of nodes from file summaries, enabling a structured representation of a codebase.",
       "crux": {
@@ -1194,12 +1347,13 @@
       "name": "ask.ts",
       "kind": "file",
       "path": "src/ask/ask.ts",
-      "span": "L1-L332",
+      "span": "L1-L397",
       "signature": null,
       "exported": true,
       "origin": "ast",
-      "body_hash": "5dad6519214e9b58feb86b46e2f498338819643ec44dc69a8f70614aad2eb986",
-      "summary_state": "ready",
+      "body_hash": "adec0cff818d0e0981f668a7bb92af61312f24a673d27b676446c73871cd1a6e",
+      "chars": 14971,
+      "summary_state": "stale",
       "summary": "This file implements a query tool that routes natural language queries to relevant code symbols and returns structured context information.",
       "crux": null
     },
@@ -1208,12 +1362,12 @@
       "name": "ask",
       "kind": "function",
       "path": "src/ask/ask.ts",
-      "span": "L290-L305",
+      "span": "L327-L347",
       "signature": "function ask(dir: string, query: string, opts: AskOptions = {}): AskResult",
       "exported": true,
       "origin": "ast",
-      "body_hash": "1124c362b9a0ab463a7c14fe451fcb3ae476344dee54b361904ad0e536aba0f5",
-      "summary_state": "ready",
+      "body_hash": "4cecc60efa689e3b8751a00c500a1a48880e82d57f3bd08607b10d0947af04af",
+      "summary_state": "stale",
       "summary": "Processes a query against a code graph, returning structured results based on the query type and context.",
       "crux": {
         "code": "    const s = structural(query, corpus.graph, limit);\n    result = s ?? lexical(query, corpus, limit);",
@@ -1239,7 +1393,7 @@
       "name": "AskOptions",
       "kind": "interface",
       "path": "src/ask/ask.ts",
-      "span": "L244-L250",
+      "span": "L248-L254",
       "signature": "interface AskOptions",
       "exported": true,
       "origin": "ast",
@@ -1253,13 +1407,27 @@
       "name": "AskResult",
       "kind": "interface",
       "path": "src/ask/ask.ts",
-      "span": "L42-L49",
+      "span": "L42-L53",
       "signature": "interface AskResult",
       "exported": true,
       "origin": "ast",
-      "body_hash": "385acaee56a1f36f6f8dbafd0dcdb0e539ca47a774b1f14ec0d7ae2dde5b0101",
-      "summary_state": "ready",
+      "body_hash": "94988e1ce9251abf8e45eb8de671cb40f258c9ef83f60bcc973b58ccc6963483",
+      "summary_state": "stale",
       "summary": "Encapsulates the result of a query, including the query string, mode of operation, and the hits found.",
+      "crux": null
+    },
+    {
+      "id": "src/ask/ask.ts#baselineFor",
+      "name": "baselineFor",
+      "kind": "function",
+      "path": "src/ask/ask.ts",
+      "span": "L309-L324",
+      "signature": "function baselineFor(hits: AskHit[], graph: GraphV1 | null): AskResult[\"saved\"] | undefined",
+      "exported": false,
+      "origin": "ast",
+      "body_hash": "72fb36d83f07af995f68449fa92d57766850ea34ff5644a0a09dde44e0f19ae2",
+      "summary_state": "pending",
+      "summary": null,
       "crux": null
     },
     {
@@ -1267,7 +1435,7 @@
       "name": "Corpus",
       "kind": "interface",
       "path": "src/ask/ask.ts",
-      "span": "L83-L86",
+      "span": "L87-L90",
       "signature": "interface Corpus",
       "exported": false,
       "origin": "ast",
@@ -1281,7 +1449,7 @@
       "name": "counts",
       "kind": "function",
       "path": "src/ask/ask.ts",
-      "span": "L67-L71",
+      "span": "L71-L75",
       "signature": "function counts(tokens: string[]): Map<string, number>",
       "exported": false,
       "origin": "ast",
@@ -1298,7 +1466,7 @@
       "name": "findSubject",
       "kind": "function",
       "path": "src/ask/ask.ts",
-      "span": "L133-L151",
+      "span": "L137-L155",
       "signature": "function findSubject(query: string, graph: GraphV1): NodeV1[]",
       "exported": false,
       "origin": "ast",
@@ -1315,7 +1483,7 @@
       "name": "firstProse",
       "kind": "function",
       "path": "src/ask/ask.ts",
-      "span": "L74-L81",
+      "span": "L78-L85",
       "signature": "function firstProse(body: string): string",
       "exported": false,
       "origin": "ast",
@@ -1332,12 +1500,12 @@
       "name": "formatAsk",
       "kind": "function",
       "path": "src/ask/ask.ts",
-      "span": "L308-L331",
+      "span": "L355-L379",
       "signature": "function formatAsk(r: AskResult): string",
       "exported": true,
       "origin": "ast",
-      "body_hash": "8af467346c9f58e5f3fdc408b8eea980c3879d954cae8a32bbc62a19eb2cf4cc",
-      "summary_state": "ready",
+      "body_hash": "9d7ceb49391b7e126bb8e25b73d28e6747a515c831d2e9f8a2ae2e17b73567be",
+      "summary_state": "stale",
       "summary": "Formats the results of a query into a markdown context pack for easy readability and presentation.",
       "crux": {
         "code": "export function formatAsk(r: AskResult): string {\n  const head = `graft ask — \"${r.query}\"  (${r.mode}${r.note ? `: ${r.note}` : \"\"})`;\n  if (r.hits.length === 0) {\n    return `${head}\\n\\n${r.note ?? \"no matches.\"}`;\n  }\n  const lines = [head, \"\"];\n  if (r.mode === \"structural\") {\n    for (const h of r.hits) {\n      const tail = h.snippet ? ` — ${h.snippet}` : \"\";\n      lines.push(`- ${h.title}  ${h.pointer}  (${h.relation})${tail}`);\n      if (h.code) lines.push(\"\", \"```\", h.code, \"```\", \"\");\n    }",
@@ -1345,11 +1513,25 @@
       }
     },
     {
+      "id": "src/ask/ask.ts#hitFiles",
+      "name": "hitFiles",
+      "kind": "function",
+      "path": "src/ask/ask.ts",
+      "span": "L295-L304",
+      "signature": "function hitFiles(hits: AskHit[]): Set<string>",
+      "exported": false,
+      "origin": "ast",
+      "body_hash": "51b7d4fbb4e2ea5979c8e8b308c7158ad764595538ee72714f4aa2f93d5ee89b",
+      "summary_state": "pending",
+      "summary": null,
+      "crux": null
+    },
+    {
       "id": "src/ask/ask.ts#inlineSource",
       "name": "inlineSource",
       "kind": "function",
       "path": "src/ask/ask.ts",
-      "span": "L280-L287",
+      "span": "L284-L291",
       "signature": "function inlineSource(root: string, hits: AskHit[]): void",
       "exported": false,
       "origin": "ast",
@@ -1366,7 +1548,7 @@
       "name": "lexical",
       "kind": "function",
       "path": "src/ask/ask.ts",
-      "span": "L198-L242",
+      "span": "L202-L246",
       "signature": "function lexical(query: string, corpus: Corpus, limit: number): AskResult",
       "exported": false,
       "origin": "ast",
@@ -1383,7 +1565,7 @@
       "name": "loadCorpus",
       "kind": "function",
       "path": "src/ask/ask.ts",
-      "span": "L88-L113",
+      "span": "L92-L117",
       "signature": "function loadCorpus(outDir: string): Corpus",
       "exported": false,
       "origin": "ast",
@@ -1400,7 +1582,7 @@
       "name": "parseSpan",
       "kind": "function",
       "path": "src/ask/ask.ts",
-      "span": "L254-L258",
+      "span": "L258-L262",
       "signature": "function parseSpan(pointer: string): { path: string; from: number; to: number } | null",
       "exported": false,
       "origin": "ast",
@@ -1413,11 +1595,25 @@
       }
     },
     {
+      "id": "src/ask/ask.ts#savingsFooter",
+      "name": "savingsFooter",
+      "kind": "function",
+      "path": "src/ask/ask.ts",
+      "span": "L384-L396",
+      "signature": "function savingsFooter(r: AskResult, body: string): string",
+      "exported": false,
+      "origin": "ast",
+      "body_hash": "343954821ba1b41301acd0788cd9e648cd4aa44d498a57028a52d290d97de7c5",
+      "summary_state": "pending",
+      "summary": null,
+      "crux": null
+    },
+    {
       "id": "src/ask/ask.ts#score",
       "name": "score",
       "kind": "function",
       "path": "src/ask/ask.ts",
-      "span": "L116-L123",
+      "span": "L120-L127",
       "signature": "function score(query: Map<string, number>, doc: Map<string, number>): number",
       "exported": false,
       "origin": "ast",
@@ -1434,7 +1630,7 @@
       "name": "sliceSpan",
       "kind": "function",
       "path": "src/ask/ask.ts",
-      "span": "L262-L277",
+      "span": "L266-L281",
       "signature": "function sliceSpan(root: string, path: string, from: number, to: number): string | null",
       "exported": false,
       "origin": "ast",
@@ -1451,7 +1647,7 @@
       "name": "structural",
       "kind": "function",
       "path": "src/ask/ask.ts",
-      "span": "L153-L194",
+      "span": "L157-L198",
       "signature": "function structural(query: string, graph: GraphV1, limit: number): AskResult | null",
       "exported": false,
       "origin": "ast",
@@ -1468,7 +1664,7 @@
       "name": "tokenize",
       "kind": "function",
       "path": "src/ask/ask.ts",
-      "span": "L58-L64",
+      "span": "L62-L68",
       "signature": "function tokenize(text: string): string[]",
       "exported": false,
       "origin": "ast",
@@ -1481,6 +1677,754 @@
       }
     },
     {
+      "id": "src/ask/ask.ts#toTokens",
+      "name": "toTokens",
+      "kind": "function",
+      "path": "src/ask/ask.ts",
+      "span": "L350-L352",
+      "signature": "function toTokens(chars: number): number",
+      "exported": false,
+      "origin": "ast",
+      "body_hash": "c309fa8bd0227742b657331eb45be3225e5a5efc56b1967871624df6c83ab954",
+      "summary_state": "pending",
+      "summary": null,
+      "crux": null
+    },
+    {
+      "id": "src/claude/format.ts",
+      "name": "format.ts",
+      "kind": "file",
+      "path": "src/claude/format.ts",
+      "span": "L1-L134",
+      "signature": null,
+      "exported": true,
+      "origin": "ast",
+      "body_hash": "014b4077fa11ce2a07b1d7eb7b08c4fbcee9b08c3d06e4489d0c86f196930609",
+      "chars": 5479,
+      "summary_state": "pending",
+      "summary": null,
+      "crux": null
+    },
+    {
+      "id": "src/claude/format.ts#AskJson",
+      "name": "AskJson",
+      "kind": "interface",
+      "path": "src/claude/format.ts",
+      "span": "L77-L82",
+      "signature": "interface AskJson",
+      "exported": true,
+      "origin": "ast",
+      "body_hash": "b399ef3e1787b48619f044578ea2cf3cf63cd92876015d55979db78ee6f9e643",
+      "summary_state": "pending",
+      "summary": null,
+      "crux": null
+    },
+    {
+      "id": "src/claude/format.ts#enrichedSegment",
+      "name": "enrichedSegment",
+      "kind": "function",
+      "path": "src/claude/format.ts",
+      "span": "L13-L17",
+      "signature": "function enrichedSegment(s: Stats): string | null",
+      "exported": true,
+      "origin": "ast",
+      "body_hash": "13d408559074290e5bd519a136440f0021106ece96bde4eb9130807b43436421",
+      "summary_state": "pending",
+      "summary": null,
+      "crux": null
+    },
+    {
+      "id": "src/claude/format.ts#formatBlastRadius",
+      "name": "formatBlastRadius",
+      "kind": "function",
+      "path": "src/claude/format.ts",
+      "span": "L64-L75",
+      "signature": "function formatBlastRadius(w: GraphV1, filePath: string, cap = 8): string | null",
+      "exported": true,
+      "origin": "ast",
+      "body_hash": "060f1af7d88ad5d2667bc25431982a15e05986ab706b647d4881429fc22cf210",
+      "summary_state": "pending",
+      "summary": null,
+      "crux": null
+    },
+    {
+      "id": "src/claude/format.ts#formatOrientation",
+      "name": "formatOrientation",
+      "kind": "function",
+      "path": "src/claude/format.ts",
+      "span": "L125-L127",
+      "signature": "function formatOrientation(indexMd: string, budgetBytes = 1500): string",
+      "exported": true,
+      "origin": "ast",
+      "body_hash": "0da076da5c6f3cacf6a7e8d372517b658ae7cd073d52740909684ba5b5aff6f0",
+      "summary_state": "pending",
+      "summary": null,
+      "crux": null
+    },
+    {
+      "id": "src/claude/format.ts#formatRetrieval",
+      "name": "formatRetrieval",
+      "kind": "function",
+      "path": "src/claude/format.ts",
+      "span": "L110-L123",
+      "signature": "function formatRetrieval(ask: AskJson, cap = 5): string | null",
+      "exported": true,
+      "origin": "ast",
+      "body_hash": "0e749b34c587c31ea6261a491f49e90e0985ed5171ee2f205dcad3466177572c",
+      "summary_state": "pending",
+      "summary": null,
+      "crux": null
+    },
+    {
+      "id": "src/claude/format.ts#freshnessSegment",
+      "name": "freshnessSegment",
+      "kind": "function",
+      "path": "src/claude/format.ts",
+      "span": "L19-L24",
+      "signature": "function freshnessSegment(s: Stats): string",
+      "exported": true,
+      "origin": "ast",
+      "body_hash": "4017743e4d027d64db4d0d99f078e8b0f6694409539df5e72ea2951c08e00881",
+      "summary_state": "pending",
+      "summary": null,
+      "crux": null
+    },
+    {
+      "id": "src/claude/format.ts#incomingEdges",
+      "name": "incomingEdges",
+      "kind": "function",
+      "path": "src/claude/format.ts",
+      "span": "L58-L62",
+      "signature": "function incomingEdges(w: GraphV1, filePath: string): EdgeV1[]",
+      "exported": true,
+      "origin": "ast",
+      "body_hash": "df33e0b502eac5f85c753c6d6ba884e232e75ccbc8296eb1c2f74df403786114",
+      "summary_state": "pending",
+      "summary": null,
+      "crux": null
+    },
+    {
+      "id": "src/claude/format.ts#nodeIdsInFile",
+      "name": "nodeIdsInFile",
+      "kind": "function",
+      "path": "src/claude/format.ts",
+      "span": "L50-L56",
+      "signature": "function nodeIdsInFile(w: GraphV1, filePath: string): Set<string>",
+      "exported": false,
+      "origin": "ast",
+      "body_hash": "4364752508d77072bf49b2e9f5b788665932916b6c0c081c7d2825f4190d593d",
+      "summary_state": "pending",
+      "summary": null,
+      "crux": null
+    },
+    {
+      "id": "src/claude/format.ts#renderStatusline",
+      "name": "renderStatusline",
+      "kind": "function",
+      "path": "src/claude/format.ts",
+      "span": "L26-L48",
+      "signature": "function renderStatusline( stats: Stats | null, session: SessionState | null, ctx: { ctxPct: number | null }, ): string[]",
+      "exported": true,
+      "origin": "ast",
+      "body_hash": "2879019a5dec5846bba4fadb443068e54af2abb162af24c233c02cab01a82815",
+      "summary_state": "pending",
+      "summary": null,
+      "crux": null
+    },
+    {
+      "id": "src/claude/format.ts#renderSubagent",
+      "name": "renderSubagent",
+      "kind": "function",
+      "path": "src/claude/format.ts",
+      "span": "L129-L133",
+      "signature": "function renderSubagent(agentName: string, session: SessionState | null): string",
+      "exported": true,
+      "origin": "ast",
+      "body_hash": "654ed5b50e9a47279bcc15b69c0b45df6e6b5d5684f33520fd7dda9600392de0",
+      "summary_state": "pending",
+      "summary": null,
+      "crux": null
+    },
+    {
+      "id": "src/claude/format.ts#retrievalBody",
+      "name": "retrievalBody",
+      "kind": "function",
+      "path": "src/claude/format.ts",
+      "span": "L89-L99",
+      "signature": "function retrievalBody(hits: AskJson['hits']): string",
+      "exported": false,
+      "origin": "ast",
+      "body_hash": "2a965bab71b652325c4faf1974b0f4d148e49eb26b7e137156e0f573266bcb5d",
+      "summary_state": "pending",
+      "summary": null,
+      "crux": null
+    },
+    {
+      "id": "src/claude/format.ts#retrievalTokensSaved",
+      "name": "retrievalTokensSaved",
+      "kind": "function",
+      "path": "src/claude/format.ts",
+      "span": "L102-L108",
+      "signature": "function retrievalTokensSaved(ask: AskJson, cap = 5): number",
+      "exported": true,
+      "origin": "ast",
+      "body_hash": "fcfb9a5c94f35b59d228ea34edb8435c2f110e25c5a12ad572ec47646166d99a",
+      "summary_state": "pending",
+      "summary": null,
+      "crux": null
+    },
+    {
+      "id": "src/claude/format.ts#tokensOf",
+      "name": "tokensOf",
+      "kind": "function",
+      "path": "src/claude/format.ts",
+      "span": "L84-L84",
+      "signature": "function tokensOf(chars: number): number",
+      "exported": false,
+      "origin": "ast",
+      "body_hash": "a72a89f1099c37bae9e03a82e42ac3c2040789815176e99511f9bd5e31cbbe32",
+      "summary_state": "pending",
+      "summary": null,
+      "crux": null
+    },
+    {
+      "id": "src/claude/hooks.ts",
+      "name": "hooks.ts",
+      "kind": "file",
+      "path": "src/claude/hooks.ts",
+      "span": "L1-L111",
+      "signature": null,
+      "exported": true,
+      "origin": "ast",
+      "body_hash": "6505b9c22c766aa21c6b2bb50f029fec483fda0b0974afa0e8d8e6248b4f6862",
+      "chars": 4842,
+      "summary_state": "pending",
+      "summary": null,
+      "crux": null
+    },
+    {
+      "id": "src/claude/hooks.ts#checkStaleCount",
+      "name": "checkStaleCount",
+      "kind": "function",
+      "path": "src/claude/hooks.ts",
+      "span": "L43-L47",
+      "signature": "function checkStaleCount(dir: string): number",
+      "exported": false,
+      "origin": "ast",
+      "body_hash": "d805c2f6af0f8a76196f80902c408ebe14fd46fb43a79b3944af2bd3c11e1d6a",
+      "summary_state": "pending",
+      "summary": null,
+      "crux": null
+    },
+    {
+      "id": "src/claude/hooks.ts#emit",
+      "name": "emit",
+      "kind": "function",
+      "path": "src/claude/hooks.ts",
+      "span": "L48-L50",
+      "signature": "function emit(eventName: string, additionalContext: string): void",
+      "exported": false,
+      "origin": "ast",
+      "body_hash": "9f7384f6c6c8562520fdc78864670fe66220557504ab0c21cc4cc2278194c2f1",
+      "summary_state": "pending",
+      "summary": null,
+      "crux": null
+    },
+    {
+      "id": "src/claude/hooks.ts#graftCli",
+      "name": "graftCli",
+      "kind": "function",
+      "path": "src/claude/hooks.ts",
+      "span": "L24-L27",
+      "signature": "function graftCli(dir: string): { cmd: string; pre: string[] }",
+      "exported": false,
+      "origin": "ast",
+      "body_hash": "4617c7080204c5f47d35e9051f44df0440c30fc4035003573e7a575fde6e6aa7",
+      "summary_state": "pending",
+      "summary": null,
+      "crux": null
+    },
+    {
+      "id": "src/claude/hooks.ts#graftJson",
+      "name": "graftJson",
+      "kind": "function",
+      "path": "src/claude/hooks.ts",
+      "span": "L28-L42",
+      "signature": "function graftJson(dir: string, args: string[]): any | null",
+      "exported": false,
+      "origin": "ast",
+      "body_hash": "fb91f1d1a251edf20793ce914435d1c3857b6fcda91fc3e26645ba848b8a6dbc",
+      "summary_state": "pending",
+      "summary": null,
+      "crux": null
+    },
+    {
+      "id": "src/claude/hooks.ts#main",
+      "name": "main",
+      "kind": "function",
+      "path": "src/claude/hooks.ts",
+      "span": "L52-L110",
+      "signature": "async function main(event: string): Promise<void>",
+      "exported": true,
+      "origin": "ast",
+      "body_hash": "703ca99c2fd552472f099f0dd2784427a3c3ec7d1b62b31d39a6d7f6536d2fd4",
+      "summary_state": "pending",
+      "summary": null,
+      "crux": null
+    },
+    {
+      "id": "src/claude/hooks.ts#projectDir",
+      "name": "projectDir",
+      "kind": "function",
+      "path": "src/claude/hooks.ts",
+      "span": "L15-L17",
+      "signature": "function projectDir(input: any): string",
+      "exported": false,
+      "origin": "ast",
+      "body_hash": "4aa298cb59c252e2c2abe9c18294279b32f78eb55de1a883efd34affdf49cef8",
+      "summary_state": "pending",
+      "summary": null,
+      "crux": null
+    },
+    {
+      "id": "src/claude/hooks.ts#readStdin",
+      "name": "readStdin",
+      "kind": "function",
+      "path": "src/claude/hooks.ts",
+      "span": "L8-L12",
+      "signature": "function readStdin(): any",
+      "exported": false,
+      "origin": "ast",
+      "body_hash": "a0c855d260852d9ede8e16aa40adaf829ecc549c5c7ea5f23a128754abc363a0",
+      "summary_state": "pending",
+      "summary": null,
+      "crux": null
+    },
+    {
+      "id": "src/claude/hooks.ts#safeReadFd0",
+      "name": "safeReadFd0",
+      "kind": "function",
+      "path": "src/claude/hooks.ts",
+      "span": "L13-L13",
+      "signature": "function safeReadFd0(): string",
+      "exported": false,
+      "origin": "ast",
+      "body_hash": "7594a29f0e0cf58a56f3730cad00dc40d449de18fc2baf18deb20d6457a63c15",
+      "summary_state": "pending",
+      "summary": null,
+      "crux": null
+    },
+    {
+      "id": "src/claude/hooks.ts#underGraft",
+      "name": "underGraft",
+      "kind": "function",
+      "path": "src/claude/hooks.ts",
+      "span": "L18-L21",
+      "signature": "function underGraft(dir: string, file: string): boolean",
+      "exported": true,
+      "origin": "ast",
+      "body_hash": "b87aa3e7ba9049438b7750b8dc3767fc4a2630e3a347e20900d1beaea543df04",
+      "summary_state": "pending",
+      "summary": null,
+      "crux": null
+    },
+    {
+      "id": "src/claude/state.ts",
+      "name": "state.ts",
+      "kind": "file",
+      "path": "src/claude/state.ts",
+      "span": "L1-L77",
+      "signature": null,
+      "exported": true,
+      "origin": "ast",
+      "body_hash": "fa12661d1253f24bff684f6c9c3197ba5ebde17f7291acd67408165e5a2823f3",
+      "chars": 3385,
+      "summary_state": "pending",
+      "summary": null,
+      "crux": null
+    },
+    {
+      "id": "src/claude/state.ts#acquireLock",
+      "name": "acquireLock",
+      "kind": "function",
+      "path": "src/claude/state.ts",
+      "span": "L59-L75",
+      "signature": "function acquireLock(d: string): boolean",
+      "exported": true,
+      "origin": "ast",
+      "body_hash": "d10ac8134d1cc35d9bd14414ba7608b48646c70492b96b624f1e140f86dbd4b6",
+      "summary_state": "pending",
+      "summary": null,
+      "crux": null
+    },
+    {
+      "id": "src/claude/state.ts#cacheDir",
+      "name": "cacheDir",
+      "kind": "function",
+      "path": "src/claude/state.ts",
+      "span": "L28-L28",
+      "signature": "function cacheDir(projectDir: string): string",
+      "exported": true,
+      "origin": "ast",
+      "body_hash": "c5b57c650fe2af36c19b2cad9b398f6c77e16046d173394d0710edde24c516f2",
+      "summary_state": "pending",
+      "summary": null,
+      "crux": null
+    },
+    {
+      "id": "src/claude/state.ts#emptySession",
+      "name": "emptySession",
+      "kind": "function",
+      "path": "src/claude/state.ts",
+      "span": "L24-L26",
+      "signature": "function emptySession(): SessionState",
+      "exported": false,
+      "origin": "ast",
+      "body_hash": "fa6db80cab3fefe96f4cd2d65fe554e2d925a1ec82734d40e883c0ad79fdc542",
+      "summary_state": "pending",
+      "summary": null,
+      "crux": null
+    },
+    {
+      "id": "src/claude/state.ts#emptyStats",
+      "name": "emptyStats",
+      "kind": "function",
+      "path": "src/claude/state.ts",
+      "span": "L20-L23",
+      "signature": "function emptyStats(): Stats",
+      "exported": true,
+      "origin": "ast",
+      "body_hash": "f507d8c6bb5222d97af97220bed44ebab58221672fe4c0f1e43c410c7ad6f03f",
+      "summary_state": "pending",
+      "summary": null,
+      "crux": null
+    },
+    {
+      "id": "src/claude/state.ts#lockPath",
+      "name": "lockPath",
+      "kind": "function",
+      "path": "src/claude/state.ts",
+      "span": "L31-L31",
+      "signature": "function lockPath(d: string): string",
+      "exported": false,
+      "origin": "ast",
+      "body_hash": "d9e771038564b59c8e77023262cf3b4cb19cb67a11bdffd03596b55ba16abd19",
+      "summary_state": "pending",
+      "summary": null,
+      "crux": null
+    },
+    {
+      "id": "src/claude/state.ts#patchStats",
+      "name": "patchStats",
+      "kind": "function",
+      "path": "src/claude/state.ts",
+      "span": "L47-L51",
+      "signature": "function patchStats(d: string, patch: Partial<Stats>): Stats",
+      "exported": true,
+      "origin": "ast",
+      "body_hash": "44a7279d2463dc0c60b5992a1bbf3ca152a81fbf281ba3181f66306ea47bac0b",
+      "summary_state": "pending",
+      "summary": null,
+      "crux": null
+    },
+    {
+      "id": "src/claude/state.ts#readJson",
+      "name": "readJson",
+      "kind": "function",
+      "path": "src/claude/state.ts",
+      "span": "L33-L35",
+      "signature": "function readJson<T>(p: string): T | null",
+      "exported": false,
+      "origin": "ast",
+      "body_hash": "70bcbc68383bedc607095d101f70d8bf5a7c0bfa84d2fec3b9583674646386e0",
+      "summary_state": "pending",
+      "summary": null,
+      "crux": null
+    },
+    {
+      "id": "src/claude/state.ts#readSession",
+      "name": "readSession",
+      "kind": "function",
+      "path": "src/claude/state.ts",
+      "span": "L52-L54",
+      "signature": "function readSession(d: string, id: string): SessionState",
+      "exported": true,
+      "origin": "ast",
+      "body_hash": "9c9ff7506f27585bde3a8218144cc25959b1b5a460f65eedbec712dce641f391",
+      "summary_state": "pending",
+      "summary": null,
+      "crux": null
+    },
+    {
+      "id": "src/claude/state.ts#readStats",
+      "name": "readStats",
+      "kind": "function",
+      "path": "src/claude/state.ts",
+      "span": "L43-L43",
+      "signature": "function readStats(d: string): Stats | null",
+      "exported": true,
+      "origin": "ast",
+      "body_hash": "0fc71d400d255e986f4914c0a59304ed5b6d39684e7ddbae7e72fa4edd56a633",
+      "summary_state": "pending",
+      "summary": null,
+      "crux": null
+    },
+    {
+      "id": "src/claude/state.ts#releaseLock",
+      "name": "releaseLock",
+      "kind": "function",
+      "path": "src/claude/state.ts",
+      "span": "L76-L76",
+      "signature": "function releaseLock(d: string): void",
+      "exported": true,
+      "origin": "ast",
+      "body_hash": "0e65162ca2e768f56fcd08d222fb831dc50e2c8f69bf8e3a4b568178d3efb7bb",
+      "summary_state": "pending",
+      "summary": null,
+      "crux": null
+    },
+    {
+      "id": "src/claude/state.ts#sessionPath",
+      "name": "sessionPath",
+      "kind": "function",
+      "path": "src/claude/state.ts",
+      "span": "L30-L30",
+      "signature": "function sessionPath(d: string, id: string): string",
+      "exported": false,
+      "origin": "ast",
+      "body_hash": "2cb9cb73fc21b0857099f40d2df6a5b62657b5464ba8830cda3edd015ef1ccc3",
+      "summary_state": "pending",
+      "summary": null,
+      "crux": null
+    },
+    {
+      "id": "src/claude/state.ts#SessionState",
+      "name": "SessionState",
+      "kind": "interface",
+      "path": "src/claude/state.ts",
+      "span": "L10-L16",
+      "signature": "interface SessionState",
+      "exported": true,
+      "origin": "ast",
+      "body_hash": "8a88a78a3d3bd8120988cf348422bf7ce8214d1b6715cb1f5d4059413e6d9ca8",
+      "summary_state": "pending",
+      "summary": null,
+      "crux": null
+    },
+    {
+      "id": "src/claude/state.ts#Stats",
+      "name": "Stats",
+      "kind": "interface",
+      "path": "src/claude/state.ts",
+      "span": "L4-L9",
+      "signature": "interface Stats",
+      "exported": true,
+      "origin": "ast",
+      "body_hash": "c6f7b600be3741c9535991dad2a97f36768b6376460c696df32a279008044ab0",
+      "summary_state": "pending",
+      "summary": null,
+      "crux": null
+    },
+    {
+      "id": "src/claude/state.ts#statsPath",
+      "name": "statsPath",
+      "kind": "function",
+      "path": "src/claude/state.ts",
+      "span": "L29-L29",
+      "signature": "function statsPath(d: string): string",
+      "exported": false,
+      "origin": "ast",
+      "body_hash": "82bf554697f883d634f98df066c106f57a2dd1f90f5d2ff5575f04ae5237a829",
+      "summary_state": "pending",
+      "summary": null,
+      "crux": null
+    },
+    {
+      "id": "src/claude/state.ts#writeJsonAtomic",
+      "name": "writeJsonAtomic",
+      "kind": "function",
+      "path": "src/claude/state.ts",
+      "span": "L36-L41",
+      "signature": "function writeJsonAtomic(p: string, value: unknown): void",
+      "exported": false,
+      "origin": "ast",
+      "body_hash": "52709eed6470bfb5239dc6472ae93c63768fa95d1bc308cadc7f2c99f4961ba6",
+      "summary_state": "pending",
+      "summary": null,
+      "crux": null
+    },
+    {
+      "id": "src/claude/state.ts#writeSession",
+      "name": "writeSession",
+      "kind": "function",
+      "path": "src/claude/state.ts",
+      "span": "L55-L57",
+      "signature": "function writeSession(d: string, id: string, s: SessionState): void",
+      "exported": true,
+      "origin": "ast",
+      "body_hash": "a8eead65e532c3c1791cffad444c6fd7622cdb054e1eaae5cf7e441a83d58b81",
+      "summary_state": "pending",
+      "summary": null,
+      "crux": null
+    },
+    {
+      "id": "src/claude/state.ts#writeStats",
+      "name": "writeStats",
+      "kind": "function",
+      "path": "src/claude/state.ts",
+      "span": "L44-L44",
+      "signature": "function writeStats(d: string, s: Stats): void",
+      "exported": true,
+      "origin": "ast",
+      "body_hash": "9be95135d233dd6454caab02396b7a742dd79d3f7fc3bf7eb4ddc3d5991b56d6",
+      "summary_state": "pending",
+      "summary": null,
+      "crux": null
+    },
+    {
+      "id": "src/claude/stats.ts",
+      "name": "stats.ts",
+      "kind": "file",
+      "path": "src/claude/stats.ts",
+      "span": "L1-L26",
+      "signature": null,
+      "exported": true,
+      "origin": "ast",
+      "body_hash": "fc205923682e656d3e68bf301ba25702b827262f12057910615b4b648de3338b",
+      "chars": 853,
+      "summary_state": "pending",
+      "summary": null,
+      "crux": null
+    },
+    {
+      "id": "src/claude/stats.ts#computeStats",
+      "name": "computeStats",
+      "kind": "function",
+      "path": "src/claude/stats.ts",
+      "span": "L12-L25",
+      "signature": "function computeStats( w: GraphV1, ): Pick<Stats, 'nodeCount' | 'edgeCount' | 'languages' | 'totalCount' | 'readyCount'>",
+      "exported": true,
+      "origin": "ast",
+      "body_hash": "87947ad507814b67ebf5ac5ad9517c223db582a48a1731c266e3a2d9eb1ce289",
+      "summary_state": "pending",
+      "summary": null,
+      "crux": null
+    },
+    {
+      "id": "src/claude/stats.ts#readWiring",
+      "name": "readWiring",
+      "kind": "function",
+      "path": "src/claude/stats.ts",
+      "span": "L6-L10",
+      "signature": "function readWiring(projectDir: string): GraphV1 | null",
+      "exported": true,
+      "origin": "ast",
+      "body_hash": "af195cd730aedc42089766e76e9e82876adbc6ee689b7b06626ad3aa90ed9ac4",
+      "summary_state": "pending",
+      "summary": null,
+      "crux": null
+    },
+    {
+      "id": "src/claude/statusline.ts",
+      "name": "statusline.ts",
+      "kind": "file",
+      "path": "src/claude/statusline.ts",
+      "span": "L1-L34",
+      "signature": null,
+      "exported": true,
+      "origin": "ast",
+      "body_hash": "0708f2f773f65b931d488688d898c56344cd930fae1af6614a579e6fb47fae16",
+      "chars": 1668,
+      "summary_state": "pending",
+      "summary": null,
+      "crux": null
+    },
+    {
+      "id": "src/claude/statusline.ts#main",
+      "name": "main",
+      "kind": "function",
+      "path": "src/claude/statusline.ts",
+      "span": "L22-L33",
+      "signature": "function main(): void",
+      "exported": true,
+      "origin": "ast",
+      "body_hash": "bddbcc037fe00e01bb76e40b1ceed83b0a308423cc286bc4b3cc95bf9c98c825",
+      "summary_state": "pending",
+      "summary": null,
+      "crux": null
+    },
+    {
+      "id": "src/claude/statusline.ts#resolveStats",
+      "name": "resolveStats",
+      "kind": "function",
+      "path": "src/claude/statusline.ts",
+      "span": "L14-L20",
+      "signature": "function resolveStats(dir: string): Stats | null",
+      "exported": true,
+      "origin": "ast",
+      "body_hash": "080c7327bf26883f0575973010484e67024f57e455022563706d85582ca08891",
+      "summary_state": "pending",
+      "summary": null,
+      "crux": null
+    },
+    {
+      "id": "src/claude/sync-run.ts",
+      "name": "sync-run.ts",
+      "kind": "file",
+      "path": "src/claude/sync-run.ts",
+      "span": "L1-L36",
+      "signature": null,
+      "exported": true,
+      "origin": "ast",
+      "body_hash": "faec4572d1c6d8803dc90ae5c19498dd7a7f85661ae979980504c626de5bdf6e",
+      "chars": 1295,
+      "summary_state": "pending",
+      "summary": null,
+      "crux": null
+    },
+    {
+      "id": "src/claude/sync-run.ts#main",
+      "name": "main",
+      "kind": "function",
+      "path": "src/claude/sync-run.ts",
+      "span": "L29-L32",
+      "signature": "function main(): void",
+      "exported": true,
+      "origin": "ast",
+      "body_hash": "f4921fe8ea499e226c1d9a10d551ed55efcab2c954dfe44299c23bfe7c833b5d",
+      "summary_state": "pending",
+      "summary": null,
+      "crux": null
+    },
+    {
+      "id": "src/claude/sync-run.ts#realBuild",
+      "name": "realBuild",
+      "kind": "function",
+      "path": "src/claude/sync-run.ts",
+      "span": "L8-L11",
+      "signature": "function realBuild(dir: string): void",
+      "exported": false,
+      "origin": "ast",
+      "body_hash": "5acdf6616ad5ea5e32990f2868c92bc807bbb7dc75d6348d208acb5719237415",
+      "summary_state": "pending",
+      "summary": null,
+      "crux": null
+    },
+    {
+      "id": "src/claude/sync-run.ts#runSync",
+      "name": "runSync",
+      "kind": "function",
+      "path": "src/claude/sync-run.ts",
+      "span": "L13-L27",
+      "signature": "function runSync(dir: string, build: (d: string) => void = realBuild): void",
+      "exported": true,
+      "origin": "ast",
+      "body_hash": "31c8d6625fe3855ae2c854d45a6364ad66759b9098596ddacb95b9b8f883fccc",
+      "summary_state": "pending",
+      "summary": null,
+      "crux": null
+    },
+    {
       "id": "src/cli.ts",
       "name": "cli.ts",
       "kind": "file",
@@ -1490,6 +2434,7 @@
       "exported": true,
       "origin": "ast",
       "body_hash": "ba1d90ee4c0f7b5000fa4239461c19d54fdedcad12b8592589312f163e1357dc",
+      "chars": 8003,
       "summary_state": "ready",
       "summary": "This file implements the `graft` CLI tool for building and maintaining a context graph from code, ensuring it stays in sync with the repository.",
       "crux": {
@@ -1541,6 +2486,7 @@
       "exported": true,
       "origin": "ast",
       "body_hash": "8c614e5dc6b1ef2d6949016ce7480099f95f021ea6b0882f2919397f97a68ce7",
+      "chars": 11678,
       "summary_state": "ready",
       "summary": "This file builds a context graph from a code repository by summarizing source files and synthesizing nodes.",
       "crux": {
@@ -1830,6 +2776,7 @@
       "exported": true,
       "origin": "ast",
       "body_hash": "2444e1f4dfd78208a9b54942364ee1811d064459857c6d6cee178426e278d481",
+      "chars": 4846,
       "summary_state": "ready",
       "summary": "This file provides functionality to verify if the committed context graph is synchronized with the current codebase, ensuring consistency in CI environments.",
       "crux": {
@@ -1926,6 +2873,7 @@
       "exported": true,
       "origin": "ast",
       "body_hash": "9e958d74597b4d6d31fa5391882ddab8faab4076d7d33f93de861ab6c2e0b93a",
+      "chars": 8479,
       "summary_state": "ready",
       "summary": "This file defines the structure and operations for managing a context graph represented as markdown files.",
       "crux": {
@@ -2249,6 +3197,7 @@
       "exported": true,
       "origin": "ast",
       "body_hash": "e237ef6555d8bd2001eccfc32e314ef3881cef1c79d537ee701515a357f87d16",
+      "chars": 5112,
       "summary_state": "ready",
       "summary": "The Context Graph Engine builds and checks a code context graph from a repository without a database.",
       "crux": {
@@ -2509,6 +3458,7 @@
       "exported": true,
       "origin": "ast",
       "body_hash": "b18f5fc18dffd77771f39722eb19963c1188fd298cbb5cfd5d71ef8dc45658c6",
+      "chars": 5027,
       "summary_state": "ready",
       "summary": "This file defines the logic to build a graph representation from source code files in a repository.",
       "crux": {
@@ -2588,6 +3538,7 @@
       "exported": true,
       "origin": "ast",
       "body_hash": "c45f4bd1be271a9c5ff01c04bae2a2d4fd761eb85bd8d4a302738e6744e636b1",
+      "chars": 10357,
       "summary_state": "ready",
       "summary": "This module generates markdown cards that summarize source files and their symbols, facilitating easier navigation and understanding of the codebase.",
       "crux": null
@@ -2848,6 +3799,7 @@
       "exported": true,
       "origin": "ast",
       "body_hash": "5358023fe498fb2878e3aa9b6756272c39926dda865c6495d8f33d13c5ceb376",
+      "chars": 4952,
       "summary_state": "ready",
       "summary": "Ensures that the committed graph.json accurately reflects the current state of the codebase, identifying any discrepancies.",
       "crux": {
@@ -2927,6 +3879,7 @@
       "exported": true,
       "origin": "ast",
       "body_hash": "c15a0aef99e54d4c24ac748a9b33373512f1511b1f5bcd830f9d2e407ff47917",
+      "chars": 8350,
       "summary_state": "ready",
       "summary": "This file implements a mechanism to enrich graph nodes with summaries and cruxes based on their state and prior computations.",
       "crux": {
@@ -3046,12 +3999,13 @@
       "name": "extract.ts",
       "kind": "file",
       "path": "src/graph/extract.ts",
-      "span": "L1-L298",
+      "span": "L1-L299",
       "signature": null,
       "exported": true,
       "origin": "ast",
-      "body_hash": "58cd002d5ee7dfb750cb85293a795148ffbec31e68e2a9b693e0794543a7f727",
-      "summary_state": "ready",
+      "body_hash": "484f87a70563ab769ac185cd9737cce928ba5a7599cbdae1b7e1b1c6343f32d6",
+      "chars": 9927,
+      "summary_state": "stale",
       "summary": "This module extracts structured data from source files into a normalized format for further processing.",
       "crux": {
         "code": "  return { nodes, rawEdges };",
@@ -3063,7 +4017,7 @@
       "name": "calleeName",
       "kind": "function",
       "path": "src/graph/extract.ts",
-      "span": "L244-L260",
+      "span": "L245-L261",
       "signature": "function calleeName( node: Parser.SyntaxNode, lang: Language, ): { name: string; viaMember: boolean } | null",
       "exported": false,
       "origin": "ast",
@@ -3080,7 +4034,7 @@
       "name": "clean",
       "kind": "function",
       "path": "src/graph/extract.ts",
-      "span": "L280-L287",
+      "span": "L281-L288",
       "signature": "function clean(raw: string): string | null",
       "exported": false,
       "origin": "ast",
@@ -3111,7 +4065,7 @@
       "name": "describe",
       "kind": "function",
       "path": "src/graph/extract.ts",
-      "span": "L184-L213",
+      "span": "L185-L214",
       "signature": "function describe(node: Parser.SyntaxNode, ctx: WalkCtx): DefDescriptor | null",
       "exported": false,
       "origin": "ast",
@@ -3128,12 +4082,12 @@
       "name": "extractFile",
       "kind": "function",
       "path": "src/graph/extract.ts",
-      "span": "L94-L127",
+      "span": "L94-L128",
       "signature": "function extractFile(rel: string, source: string, lang: Language): ExtractResult",
       "exported": true,
       "origin": "ast",
-      "body_hash": "464dc6d27977ade3cd0a52213f5cc1b963e4dfafc328cc1e059925bac9c9436d",
-      "summary_state": "ready",
+      "body_hash": "691c4b4b02509177b75788a5a3dea7d46267db90702e092349e43a99bb37d9b4",
+      "summary_state": "stale",
       "summary": "Extracts nodes and edges from a source file based on its syntax tree.",
       "crux": {
         "code": "  return { nodes, rawEdges };",
@@ -3159,7 +4113,7 @@
       "name": "heritageEdges",
       "kind": "function",
       "path": "src/graph/extract.ts",
-      "span": "L215-L242",
+      "span": "L216-L243",
       "signature": "function heritageEdges(node: Parser.SyntaxNode, classId: string, ctx: WalkCtx): RawEdge[]",
       "exported": false,
       "origin": "ast",
@@ -3176,7 +4130,7 @@
       "name": "importSpecifier",
       "kind": "function",
       "path": "src/graph/extract.ts",
-      "span": "L266-L277",
+      "span": "L267-L278",
       "signature": "function importSpecifier(node: Parser.SyntaxNode, lang: Language): string | null",
       "exported": false,
       "origin": "ast",
@@ -3193,7 +4147,7 @@
       "name": "isImport",
       "kind": "function",
       "path": "src/graph/extract.ts",
-      "span": "L262-L264",
+      "span": "L263-L265",
       "signature": "function isImport(node: Parser.SyntaxNode): boolean",
       "exported": false,
       "origin": "ast",
@@ -3252,7 +4206,7 @@
       "name": "tsExported",
       "kind": "function",
       "path": "src/graph/extract.ts",
-      "span": "L290-L297",
+      "span": "L291-L298",
       "signature": "function tsExported(node: Parser.SyntaxNode): boolean",
       "exported": false,
       "origin": "ast",
@@ -3269,7 +4223,7 @@
       "name": "walk",
       "kind": "function",
       "path": "src/graph/extract.ts",
-      "span": "L129-L181",
+      "span": "L130-L182",
       "signature": "function walk(node: Parser.SyntaxNode, ctx: WalkCtx, out: NodeV1[], edges: RawEdge[]): void",
       "exported": false,
       "origin": "ast",
@@ -3305,6 +4259,7 @@
       "exported": true,
       "origin": "ast",
       "body_hash": "dad41f73d773c45f5237b85e10a36ae45331cd5959df578816ee8ab47622cffe",
+      "chars": 4289,
       "summary_state": "ready",
       "summary": "This file resolves raw edge intents into concrete edges by matching names against a node index, ensuring accurate relationships between nodes.",
       "crux": {
@@ -3399,12 +4354,13 @@
       "name": "types.ts",
       "kind": "file",
       "path": "src/graph/types.ts",
-      "span": "L1-L82",
+      "span": "L1-L84",
       "signature": null,
       "exported": true,
       "origin": "ast",
-      "body_hash": "757b84c059d13cda49e0f29518b31a5473f0d6e243b2ab1f374a7f7ff02492e4",
-      "summary_state": "ready",
+      "body_hash": "a7bc780be6180ddf19de4a520a6b83749d6f4503e39df86322990d5fe283d035",
+      "chars": 2692,
+      "summary_state": "stale",
       "summary": "Defines the schema for a code graph, outlining nodes and edges for code structure representation.",
       "crux": {
         "code": "/**\n * `graph.json` — the code graph schema (v1).\n *\n * One node per definition (file, class, function, method, interface, type, enum),\n * wired by edges (contains, imports, calls, ...). Field names follow the LSP /\n * SCIP vocabulary (`name`, `kind`, ...) rather than any one tool's conventions.\n *\n * Two tiers of data live on a node:\n *   - Tier-1 (deterministic, $0): everything from the AST. Rebuilt on every run.\n *   - Tier-2 (one LLM call, cached on `body_hash`): `summary` + `crux`.\n * M1 populates Tier-1 only; Tier-2 fields ship as `pending`/null.\n */",
@@ -3450,7 +4406,7 @@
       "name": "EdgeV1",
       "kind": "interface",
       "path": "src/graph/types.ts",
-      "span": "L65-L70",
+      "span": "L67-L72",
       "signature": "interface EdgeV1",
       "exported": true,
       "origin": "ast",
@@ -3467,7 +4423,7 @@
       "name": "GraphV1",
       "kind": "interface",
       "path": "src/graph/types.ts",
-      "span": "L72-L81",
+      "span": "L74-L83",
       "signature": "interface GraphV1",
       "exported": true,
       "origin": "ast",
@@ -3501,12 +4457,12 @@
       "name": "NodeV1",
       "kind": "interface",
       "path": "src/graph/types.ts",
-      "span": "L37-L55",
+      "span": "L37-L57",
       "signature": "interface NodeV1",
       "exported": true,
       "origin": "ast",
-      "body_hash": "beaac037e2ce6292f6f5883e10c6a1df41963629d9090bbde0d88ef5b6fd8309",
-      "summary_state": "ready",
+      "body_hash": "ed212ae4313b6fd9d229e646a67253b90a959f0546af1a2e7d7216b5fd9051f4",
+      "summary_state": "stale",
       "summary": "Represents a node in the graph with its identity, location, and meaning, essential for graph construction.",
       "crux": {
         "code": "export interface NodeV1 {\n  // identity\n  id: string; // path-scoped: \"src/cache.ts#Cache.get\"\n  name: string; // the symbol's own name: \"get\"\n  kind: Kind;\n\n  // location (Tier-1, deterministic)\n  path: string; // repo-relative: \"src/cache.ts\"\n  span: string; // whole definition: \"L165-L222\"\n  signature: string | null; // \"get(k: string): number\" — null for kind:\"file\"\n  exported: boolean;\n  origin: \"ast\";",
@@ -3518,7 +4474,7 @@
       "name": "Relation",
       "kind": "type",
       "path": "src/graph/types.ts",
-      "span": "L57-L63",
+      "span": "L59-L65",
       "signature": "type Relation = | \"contains\" // file → symbol, class → method (structural) | \"calls\" // function → function it invokes | \"imports\" // file → module | \"references\" // symbol → symbol it names but doesn't call | \"implements\" // TS: class → interface | \"extends\";",
       "exported": true,
       "origin": "ast",
@@ -3557,6 +4513,7 @@
       "exported": true,
       "origin": "ast",
       "body_hash": "55dd6ea840135ade4db7f49042234bee0db07a9c8c959ab57767deb8bebc6345",
+      "chars": 1940,
       "summary_state": "ready",
       "summary": "This file contains functions for managing the serialization and deserialization of a wiring graph used in a context directory.",
       "crux": null
@@ -3639,6 +4596,7 @@
       "exported": true,
       "origin": "ast",
       "body_hash": "e56e74612514fd45665b27e3c47b4a685b503a533b38e1674d256344511107fc",
+      "chars": 1542,
       "summary_state": "ready",
       "summary": "This file serves as the public API for the Graft library, facilitating the management and synchronization of linked markdown files in a repository.",
       "crux": {
@@ -3656,6 +4614,7 @@
       "exported": true,
       "origin": "ast",
       "body_hash": "a8339532da34b44d35eb9ad16e7106adb1262d73d9895b1bd94574337fb2019f",
+      "chars": 1218,
       "summary_state": "ready",
       "summary": "This file provides utilities for walking through a filesystem to identify source files while excluding certain directories and large files.",
       "crux": null
@@ -3687,6 +4646,7 @@
       "exported": true,
       "origin": "ast",
       "body_hash": "5fabc8ddcc3abc907ce69f04ad2ebe51933262cf44aa2dfd40589f71f1926e8a",
+      "chars": 626,
       "summary_state": "ready",
       "summary": "This file provides utility functions for generating unique identifiers, creating content hashes, and normalizing names for consistent matching.",
       "crux": null
@@ -3752,6 +4712,7 @@
       "exported": true,
       "origin": "ast",
       "body_hash": "58ad5caed087bd7b929f5b625501a607e79e0476f998636bec241e0296706ece",
+      "chars": 4233,
       "summary_state": "ready",
       "summary": "Assembles a comprehensive graph document from markdown files in a context directory, ensuring that only valid nodes and edges are included.",
       "crux": {
@@ -3862,6 +4823,7 @@
       "exported": true,
       "origin": "ast",
       "body_hash": "14283762f454c01fc95cfbe9c2b41ef063fc17c4c3e5d120b5dc7f66f541fc1c",
+      "chars": 4909,
       "summary_state": "ready",
       "summary": "This file implements a local server for serving a viewer and handling API requests related to context and code graphs.",
       "crux": {
@@ -3989,6 +4951,7 @@
       "exported": true,
       "origin": "ast",
       "body_hash": "b2d9beeea01fd6faab6225ea3b3a735d5dd808e8358ffe37bb82a2a5f5da3dce",
+      "chars": 2123,
       "summary_state": "ready",
       "summary": "This file contains tests for the `graft ask` functionality, ensuring that the source option correctly inlines code from disk when requested.",
       "crux": {
@@ -4014,6 +4977,165 @@
       }
     },
     {
+      "id": "test/claude-format.test.ts",
+      "name": "claude-format.test.ts",
+      "kind": "file",
+      "path": "test/claude-format.test.ts",
+      "span": "L1-L106",
+      "signature": null,
+      "exported": true,
+      "origin": "ast",
+      "body_hash": "bbbb252bb379e8a18ae263f277438c5dc31047374fc6d66ddc7dff206d64bb71",
+      "chars": 4810,
+      "summary_state": "pending",
+      "summary": null,
+      "crux": null
+    },
+    {
+      "id": "test/claude-format.test.ts#strip",
+      "name": "strip",
+      "kind": "function",
+      "path": "test/claude-format.test.ts",
+      "span": "L6-L6",
+      "signature": "strip = (s: string)",
+      "exported": false,
+      "origin": "ast",
+      "body_hash": "6381d72b2af2fa01d40d5fa8e463da782c5fe5655ad06caec8a3184ee6546edc",
+      "summary_state": "pending",
+      "summary": null,
+      "crux": null
+    },
+    {
+      "id": "test/claude-hooks.test.ts",
+      "name": "claude-hooks.test.ts",
+      "kind": "file",
+      "path": "test/claude-hooks.test.ts",
+      "span": "L1-L105",
+      "signature": null,
+      "exported": true,
+      "origin": "ast",
+      "body_hash": "2ce3f50d2a9908fa73baa41aea07f7b4e547ff803ae2167f48b4169617296599",
+      "chars": 4933,
+      "summary_state": "pending",
+      "summary": null,
+      "crux": null
+    },
+    {
+      "id": "test/claude-hooks.test.ts#fakeBuild",
+      "name": "fakeBuild",
+      "kind": "function",
+      "path": "test/claude-hooks.test.ts",
+      "span": "L49-L52",
+      "signature": "fakeBuild = (dir: string)",
+      "exported": false,
+      "origin": "ast",
+      "body_hash": "0eb606c28f6d7ec57d7fe9a9824b87942c0682ddb75d37fd911508366e5ac9e5",
+      "summary_state": "pending",
+      "summary": null,
+      "crux": null
+    },
+    {
+      "id": "test/claude-hooks.test.ts#runWithStdin",
+      "name": "runWithStdin",
+      "kind": "function",
+      "path": "test/claude-hooks.test.ts",
+      "span": "L38-L41",
+      "signature": "async function runWithStdin(text: string, fn: () => Promise<void>): Promise<void>",
+      "exported": false,
+      "origin": "ast",
+      "body_hash": "6bf4b171a46fcfcceccaedd45a273ed78fac5a1b4ae47bbd881df4e54c33b912",
+      "summary_state": "pending",
+      "summary": null,
+      "crux": null
+    },
+    {
+      "id": "test/claude-state.test.ts",
+      "name": "claude-state.test.ts",
+      "kind": "file",
+      "path": "test/claude-state.test.ts",
+      "span": "L1-L51",
+      "signature": null,
+      "exported": true,
+      "origin": "ast",
+      "body_hash": "eb26e78fa237e15f579019a2f9de75ed029e0f081b7175d83ce79367515fb164",
+      "chars": 1969,
+      "summary_state": "pending",
+      "summary": null,
+      "crux": null
+    },
+    {
+      "id": "test/claude-state.test.ts#fresh",
+      "name": "fresh",
+      "kind": "function",
+      "path": "test/claude-state.test.ts",
+      "span": "L11-L11",
+      "signature": "function fresh(): string",
+      "exported": false,
+      "origin": "ast",
+      "body_hash": "49e9f70f3b52532360521760ee5e0e5c907bdf3f55d1ed2c90bb3c3e48d93cda",
+      "summary_state": "pending",
+      "summary": null,
+      "crux": null
+    },
+    {
+      "id": "test/claude-stats.test.ts",
+      "name": "claude-stats.test.ts",
+      "kind": "file",
+      "path": "test/claude-stats.test.ts",
+      "span": "L1-L30",
+      "signature": null,
+      "exported": true,
+      "origin": "ast",
+      "body_hash": "f625d026d152a65017699e37e27534043dc0af0f43ba2d3ea778bac8ddab82c3",
+      "chars": 983,
+      "summary_state": "pending",
+      "summary": null,
+      "crux": null
+    },
+    {
+      "id": "test/claude-statusline.test.ts",
+      "name": "claude-statusline.test.ts",
+      "kind": "file",
+      "path": "test/claude-statusline.test.ts",
+      "span": "L1-L48",
+      "signature": null,
+      "exported": true,
+      "origin": "ast",
+      "body_hash": "07128b5b195af3a37c1e170a35c18378e36160d1a6f8e17be362bac315811cac",
+      "chars": 2137,
+      "summary_state": "pending",
+      "summary": null,
+      "crux": null
+    },
+    {
+      "id": "test/claude-statusline.test.ts#repo",
+      "name": "repo",
+      "kind": "function",
+      "path": "test/claude-statusline.test.ts",
+      "span": "L9-L9",
+      "signature": "function repo(): string",
+      "exported": false,
+      "origin": "ast",
+      "body_hash": "121eb027efad697b8021b3a994a7f977441a0a34c0e92fd9a1792851368850e5",
+      "summary_state": "pending",
+      "summary": null,
+      "crux": null
+    },
+    {
+      "id": "test/claude-statusline.test.ts#writeWiring",
+      "name": "writeWiring",
+      "kind": "function",
+      "path": "test/claude-statusline.test.ts",
+      "span": "L10-L13",
+      "signature": "function writeWiring(dir: string, obj: unknown): void",
+      "exported": false,
+      "origin": "ast",
+      "body_hash": "2e1f37e4395b142a5e04d343c3d72366ed3c3245acc13afc8eef46df21b1df21",
+      "summary_state": "pending",
+      "summary": null,
+      "crux": null
+    },
+    {
       "id": "test/context.test.ts",
       "name": "context.test.ts",
       "kind": "file",
@@ -4023,6 +5145,7 @@
       "exported": true,
       "origin": "ast",
       "body_hash": "7c1242872b127117c7cc50404895d7ffcf286a51b611cd23c4ffabd5db8d43f3",
+      "chars": 4632,
       "summary_state": "ready",
       "summary": "This file contains end-to-end tests for the markdown-graph pipeline to ensure proper functionality and integrity of the context building and checking processes.",
       "crux": {
@@ -4071,6 +5194,7 @@
       "exported": true,
       "origin": "ast",
       "body_hash": "f5a75f405be1a01ad43fc806588858df3a8988fee62ad4ec024440d3f5e0fc0c",
+      "chars": 3059,
       "summary_state": "ready",
       "summary": "This test suite verifies that the wiring build correctly populates the 'covers' field in concept nodes and maintains stability across builds.",
       "crux": {
@@ -4105,6 +5229,7 @@
       "exported": true,
       "origin": "ast",
       "body_hash": "e45af1d38d7c6d4abc804fc74e9ae4c3373cf78769c17b16b185c3ee0e2c3228",
+      "chars": 2012,
       "summary_state": "ready",
       "summary": "This file provides test doubles for offline, deterministic testing of components without external dependencies.",
       "crux": null
@@ -4218,6 +5343,7 @@
       "exported": true,
       "origin": "ast",
       "body_hash": "89a2a9f11f459a8110f9d89b2de780dfd164504f3b4c7dc61953a6c83c5911cb",
+      "chars": 3118,
       "summary_state": "ready",
       "summary": "This file contains tests that validate the assembly of a context graph from markdown frontmatter, ensuring proper relation normalization and error handling for malformed files.",
       "crux": {
@@ -4252,6 +5378,7 @@
       "exported": true,
       "origin": "ast",
       "body_hash": "d22168054844e83bc5257271c4cc80a6e3eb1315e600c03b48fe6b54afd5c243",
+      "chars": 4004,
       "summary_state": "ready",
       "summary": "This file contains tests for the viz server, ensuring it serves the correct endpoints and handles various scenarios like port fallback and context directory changes.",
       "crux": {
@@ -4286,6 +5413,7 @@
       "exported": true,
       "origin": "ast",
       "body_hash": "e9c5c89ad933e06004cbeddc1b1d7b60a6057726a463c66f9673ba20a3c61afd",
+      "chars": 4708,
       "summary_state": "ready",
       "summary": "This file defines data structures and functions for managing and visualizing graph data from a server.",
       "crux": null
@@ -4486,6 +5614,7 @@
       "exported": true,
       "origin": "ast",
       "body_hash": "fe8df7c5561f2a8588cf4e1ecb367d19cb6b480fe4855f05e4f96137d8078884",
+      "chars": 2421,
       "summary_state": "ready",
       "summary": "This file provides the logic to render a detailed view of a selected node in a graph, including its properties and relationships.",
       "crux": {
@@ -4571,6 +5700,7 @@
       "exported": true,
       "origin": "ast",
       "body_hash": "192a59b16da8327457de6723893fd9207dd9570a35cd664f96534a7b85e73e01",
+      "chars": 14262,
       "summary_state": "ready",
       "summary": "This file implements a force-directed graph visualization using D3.js, allowing interactive exploration of nodes and edges.",
       "crux": {
@@ -4964,6 +6094,7 @@
       "exported": true,
       "origin": "ast",
       "body_hash": "ab45ce4dfe66aafbe779b71d49d6370b3fe64482307b994e857ce34d3f317325",
+      "chars": 8654,
       "summary_state": "ready",
       "summary": "This file serves as the entry point for the graft visualization viewer, managing the user interface and interactions for displaying graphs.",
       "crux": {
@@ -5213,6 +6344,7 @@
       "exported": true,
       "origin": "ast",
       "body_hash": "d66e0157f4c2a1525c16505306eb3aabce82565c3d0e56199ea5b7a860290b01",
+      "chars": 2750,
       "summary_state": "ready",
       "summary": "Generates a collapsible tree view of a code graph's hierarchy, allowing users to navigate through files, classes, and methods.",
       "crux": {
@@ -5693,12 +6825,6 @@
     },
     {
       "source": "bench/run.ts#main",
-      "target": "bench/agent.ts#runAgent",
-      "relation": "calls",
-      "confidence": "inferred"
-    },
-    {
-      "source": "bench/run.ts#main",
       "target": "bench/judge.ts#judge",
       "relation": "calls",
       "confidence": "inferred"
@@ -5807,12 +6933,6 @@
     },
     {
       "source": "bench/selfcheck.ts#main",
-      "target": "bench/agent.ts#runAgent",
-      "relation": "calls",
-      "confidence": "inferred"
-    },
-    {
-      "source": "bench/selfcheck.ts#main",
       "target": "bench/judge.ts#judge",
       "relation": "calls",
       "confidence": "inferred"
@@ -5863,6 +6983,138 @@
       "source": "bench/tasks.ts",
       "target": "node:url",
       "relation": "imports",
+      "confidence": "extracted"
+    },
+    {
+      "source": "bench/token-ab.ts",
+      "target": "bench/token-ab.ts#main",
+      "relation": "calls",
+      "confidence": "extracted"
+    },
+    {
+      "source": "bench/token-ab.ts",
+      "target": "bench/token-ab.ts#cost",
+      "relation": "contains",
+      "confidence": "extracted"
+    },
+    {
+      "source": "bench/token-ab.ts",
+      "target": "bench/token-ab.ts#graftPack",
+      "relation": "contains",
+      "confidence": "extracted"
+    },
+    {
+      "source": "bench/token-ab.ts",
+      "target": "bench/token-ab.ts#main",
+      "relation": "contains",
+      "confidence": "extracted"
+    },
+    {
+      "source": "bench/token-ab.ts",
+      "target": "bench/token-ab.ts#Metrics",
+      "relation": "contains",
+      "confidence": "extracted"
+    },
+    {
+      "source": "bench/token-ab.ts",
+      "target": "bench/token-ab.ts#row",
+      "relation": "contains",
+      "confidence": "extracted"
+    },
+    {
+      "source": "bench/token-ab.ts",
+      "target": "bench/token-ab.ts#runAgent",
+      "relation": "contains",
+      "confidence": "extracted"
+    },
+    {
+      "source": "bench/token-ab.ts",
+      "target": "bench/token-ab.ts#runRead",
+      "relation": "contains",
+      "confidence": "extracted"
+    },
+    {
+      "source": "bench/token-ab.ts",
+      "target": "bench/token-ab.ts#runSearch",
+      "relation": "contains",
+      "confidence": "extracted"
+    },
+    {
+      "source": "bench/token-ab.ts",
+      "target": "dotenv/config",
+      "relation": "imports",
+      "confidence": "extracted"
+    },
+    {
+      "source": "bench/token-ab.ts",
+      "target": "node:child_process",
+      "relation": "imports",
+      "confidence": "extracted"
+    },
+    {
+      "source": "bench/token-ab.ts",
+      "target": "node:fs",
+      "relation": "imports",
+      "confidence": "extracted"
+    },
+    {
+      "source": "bench/token-ab.ts",
+      "target": "node:path",
+      "relation": "imports",
+      "confidence": "extracted"
+    },
+    {
+      "source": "bench/token-ab.ts",
+      "target": "openai",
+      "relation": "imports",
+      "confidence": "extracted"
+    },
+    {
+      "source": "bench/token-ab.ts#main",
+      "target": "bench/token-ab.ts#cost",
+      "relation": "calls",
+      "confidence": "extracted"
+    },
+    {
+      "source": "bench/token-ab.ts#main",
+      "target": "bench/token-ab.ts#graftPack",
+      "relation": "calls",
+      "confidence": "extracted"
+    },
+    {
+      "source": "bench/token-ab.ts#main",
+      "target": "bench/token-ab.ts#main.pct",
+      "relation": "calls",
+      "confidence": "extracted"
+    },
+    {
+      "source": "bench/token-ab.ts#main",
+      "target": "bench/token-ab.ts#row",
+      "relation": "calls",
+      "confidence": "extracted"
+    },
+    {
+      "source": "bench/token-ab.ts#main",
+      "target": "bench/token-ab.ts#runAgent",
+      "relation": "calls",
+      "confidence": "extracted"
+    },
+    {
+      "source": "bench/token-ab.ts#main",
+      "target": "bench/token-ab.ts#main.pct",
+      "relation": "contains",
+      "confidence": "extracted"
+    },
+    {
+      "source": "bench/token-ab.ts#runAgent",
+      "target": "bench/token-ab.ts#runRead",
+      "relation": "calls",
+      "confidence": "extracted"
+    },
+    {
+      "source": "bench/token-ab.ts#runAgent",
+      "target": "bench/token-ab.ts#runSearch",
+      "relation": "calls",
       "confidence": "extracted"
     },
     {
@@ -6179,6 +7431,12 @@
     },
     {
       "source": "src/ask/ask.ts",
+      "target": "src/ask/ask.ts#baselineFor",
+      "relation": "contains",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/ask/ask.ts",
       "target": "src/ask/ask.ts#Corpus",
       "relation": "contains",
       "confidence": "extracted"
@@ -6209,6 +7467,12 @@
     },
     {
       "source": "src/ask/ask.ts",
+      "target": "src/ask/ask.ts#hitFiles",
+      "relation": "contains",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/ask/ask.ts",
       "target": "src/ask/ask.ts#inlineSource",
       "relation": "contains",
       "confidence": "extracted"
@@ -6233,6 +7497,12 @@
     },
     {
       "source": "src/ask/ask.ts",
+      "target": "src/ask/ask.ts#savingsFooter",
+      "relation": "contains",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/ask/ask.ts",
       "target": "src/ask/ask.ts#score",
       "relation": "contains",
       "confidence": "extracted"
@@ -6252,6 +7522,12 @@
     {
       "source": "src/ask/ask.ts",
       "target": "src/ask/ask.ts#tokenize",
+      "relation": "contains",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/ask/ask.ts",
+      "target": "src/ask/ask.ts#toTokens",
       "relation": "contains",
       "confidence": "extracted"
     },
@@ -6293,6 +7569,12 @@
     },
     {
       "source": "src/ask/ask.ts#ask",
+      "target": "src/ask/ask.ts#baselineFor",
+      "relation": "calls",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/ask/ask.ts#ask",
       "target": "src/ask/ask.ts#inlineSource",
       "relation": "calls",
       "confidence": "extracted"
@@ -6320,6 +7602,24 @@
       "target": "src/context/node-file.ts#contextDirFor",
       "relation": "calls",
       "confidence": "inferred"
+    },
+    {
+      "source": "src/ask/ask.ts#baselineFor",
+      "target": "src/ask/ask.ts#hitFiles",
+      "relation": "calls",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/ask/ask.ts#formatAsk",
+      "target": "src/ask/ask.ts#savingsFooter",
+      "relation": "calls",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/ask/ask.ts#hitFiles",
+      "target": "src/ask/ask.ts#parseSpan",
+      "relation": "calls",
+      "confidence": "extracted"
     },
     {
       "source": "src/ask/ask.ts#inlineSource",
@@ -6370,10 +7670,796 @@
       "confidence": "inferred"
     },
     {
+      "source": "src/ask/ask.ts#savingsFooter",
+      "target": "src/ask/ask.ts#toTokens",
+      "relation": "calls",
+      "confidence": "extracted"
+    },
+    {
       "source": "src/ask/ask.ts#structural",
       "target": "src/ask/ask.ts#findSubject",
       "relation": "calls",
       "confidence": "extracted"
+    },
+    {
+      "source": "src/claude/format.ts",
+      "target": "src/claude/format.ts#AskJson",
+      "relation": "contains",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/claude/format.ts",
+      "target": "src/claude/format.ts#enrichedSegment",
+      "relation": "contains",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/claude/format.ts",
+      "target": "src/claude/format.ts#formatBlastRadius",
+      "relation": "contains",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/claude/format.ts",
+      "target": "src/claude/format.ts#formatOrientation",
+      "relation": "contains",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/claude/format.ts",
+      "target": "src/claude/format.ts#formatRetrieval",
+      "relation": "contains",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/claude/format.ts",
+      "target": "src/claude/format.ts#freshnessSegment",
+      "relation": "contains",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/claude/format.ts",
+      "target": "src/claude/format.ts#incomingEdges",
+      "relation": "contains",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/claude/format.ts",
+      "target": "src/claude/format.ts#nodeIdsInFile",
+      "relation": "contains",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/claude/format.ts",
+      "target": "src/claude/format.ts#renderStatusline",
+      "relation": "contains",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/claude/format.ts",
+      "target": "src/claude/format.ts#renderSubagent",
+      "relation": "contains",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/claude/format.ts",
+      "target": "src/claude/format.ts#retrievalBody",
+      "relation": "contains",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/claude/format.ts",
+      "target": "src/claude/format.ts#retrievalTokensSaved",
+      "relation": "contains",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/claude/format.ts",
+      "target": "src/claude/format.ts#tokensOf",
+      "relation": "contains",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/claude/format.ts",
+      "target": "node:path",
+      "relation": "imports",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/claude/format.ts",
+      "target": "src/claude/state.ts",
+      "relation": "imports",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/claude/format.ts",
+      "target": "src/graph/types.ts",
+      "relation": "imports",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/claude/format.ts#formatBlastRadius",
+      "target": "src/claude/format.ts#incomingEdges",
+      "relation": "calls",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/claude/format.ts#formatRetrieval",
+      "target": "src/claude/format.ts#retrievalBody",
+      "relation": "calls",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/claude/format.ts#formatRetrieval",
+      "target": "src/claude/format.ts#retrievalTokensSaved",
+      "relation": "calls",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/claude/format.ts#formatRetrieval",
+      "target": "src/claude/format.ts#tokensOf",
+      "relation": "calls",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/claude/format.ts#incomingEdges",
+      "target": "src/claude/format.ts#nodeIdsInFile",
+      "relation": "calls",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/claude/format.ts#renderStatusline",
+      "target": "src/claude/format.ts#enrichedSegment",
+      "relation": "calls",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/claude/format.ts#renderStatusline",
+      "target": "src/claude/format.ts#freshnessSegment",
+      "relation": "calls",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/claude/format.ts#retrievalTokensSaved",
+      "target": "src/claude/format.ts#retrievalBody",
+      "relation": "calls",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/claude/format.ts#retrievalTokensSaved",
+      "target": "src/claude/format.ts#tokensOf",
+      "relation": "calls",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/claude/hooks.ts",
+      "target": "src/claude/hooks.ts#checkStaleCount",
+      "relation": "contains",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/claude/hooks.ts",
+      "target": "src/claude/hooks.ts#emit",
+      "relation": "contains",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/claude/hooks.ts",
+      "target": "src/claude/hooks.ts#graftCli",
+      "relation": "contains",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/claude/hooks.ts",
+      "target": "src/claude/hooks.ts#graftJson",
+      "relation": "contains",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/claude/hooks.ts",
+      "target": "src/claude/hooks.ts#main",
+      "relation": "contains",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/claude/hooks.ts",
+      "target": "src/claude/hooks.ts#projectDir",
+      "relation": "contains",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/claude/hooks.ts",
+      "target": "src/claude/hooks.ts#readStdin",
+      "relation": "contains",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/claude/hooks.ts",
+      "target": "src/claude/hooks.ts#safeReadFd0",
+      "relation": "contains",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/claude/hooks.ts",
+      "target": "src/claude/hooks.ts#underGraft",
+      "relation": "contains",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/claude/hooks.ts",
+      "target": "node:child_process",
+      "relation": "imports",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/claude/hooks.ts",
+      "target": "node:fs",
+      "relation": "imports",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/claude/hooks.ts",
+      "target": "node:path",
+      "relation": "imports",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/claude/hooks.ts",
+      "target": "src/claude/format.ts",
+      "relation": "imports",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/claude/hooks.ts",
+      "target": "src/claude/state.ts",
+      "relation": "imports",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/claude/hooks.ts",
+      "target": "src/claude/stats.ts",
+      "relation": "imports",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/claude/hooks.ts#checkStaleCount",
+      "target": "src/claude/hooks.ts#graftJson",
+      "relation": "calls",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/claude/hooks.ts#graftJson",
+      "target": "src/claude/hooks.ts#graftCli",
+      "relation": "calls",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/claude/hooks.ts#main",
+      "target": "src/claude/format.ts#formatBlastRadius",
+      "relation": "calls",
+      "confidence": "inferred"
+    },
+    {
+      "source": "src/claude/hooks.ts#main",
+      "target": "src/claude/format.ts#formatOrientation",
+      "relation": "calls",
+      "confidence": "inferred"
+    },
+    {
+      "source": "src/claude/hooks.ts#main",
+      "target": "src/claude/format.ts#formatRetrieval",
+      "relation": "calls",
+      "confidence": "inferred"
+    },
+    {
+      "source": "src/claude/hooks.ts#main",
+      "target": "src/claude/format.ts#retrievalTokensSaved",
+      "relation": "calls",
+      "confidence": "inferred"
+    },
+    {
+      "source": "src/claude/hooks.ts#main",
+      "target": "src/claude/hooks.ts#checkStaleCount",
+      "relation": "calls",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/claude/hooks.ts#main",
+      "target": "src/claude/hooks.ts#emit",
+      "relation": "calls",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/claude/hooks.ts#main",
+      "target": "src/claude/hooks.ts#graftJson",
+      "relation": "calls",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/claude/hooks.ts#main",
+      "target": "src/claude/hooks.ts#projectDir",
+      "relation": "calls",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/claude/hooks.ts#main",
+      "target": "src/claude/hooks.ts#readStdin",
+      "relation": "calls",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/claude/hooks.ts#main",
+      "target": "src/claude/hooks.ts#underGraft",
+      "relation": "calls",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/claude/hooks.ts#main",
+      "target": "src/claude/state.ts#acquireLock",
+      "relation": "calls",
+      "confidence": "inferred"
+    },
+    {
+      "source": "src/claude/hooks.ts#main",
+      "target": "src/claude/state.ts#patchStats",
+      "relation": "calls",
+      "confidence": "inferred"
+    },
+    {
+      "source": "src/claude/hooks.ts#main",
+      "target": "src/claude/state.ts#readSession",
+      "relation": "calls",
+      "confidence": "inferred"
+    },
+    {
+      "source": "src/claude/hooks.ts#main",
+      "target": "src/claude/state.ts#readStats",
+      "relation": "calls",
+      "confidence": "inferred"
+    },
+    {
+      "source": "src/claude/hooks.ts#main",
+      "target": "src/claude/state.ts#writeSession",
+      "relation": "calls",
+      "confidence": "inferred"
+    },
+    {
+      "source": "src/claude/hooks.ts#main",
+      "target": "src/claude/stats.ts#readWiring",
+      "relation": "calls",
+      "confidence": "inferred"
+    },
+    {
+      "source": "src/claude/hooks.ts#readStdin",
+      "target": "src/claude/hooks.ts#safeReadFd0",
+      "relation": "calls",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/claude/state.ts",
+      "target": "src/claude/state.ts#acquireLock",
+      "relation": "contains",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/claude/state.ts",
+      "target": "src/claude/state.ts#cacheDir",
+      "relation": "contains",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/claude/state.ts",
+      "target": "src/claude/state.ts#emptySession",
+      "relation": "contains",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/claude/state.ts",
+      "target": "src/claude/state.ts#emptyStats",
+      "relation": "contains",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/claude/state.ts",
+      "target": "src/claude/state.ts#lockPath",
+      "relation": "contains",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/claude/state.ts",
+      "target": "src/claude/state.ts#patchStats",
+      "relation": "contains",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/claude/state.ts",
+      "target": "src/claude/state.ts#readJson",
+      "relation": "contains",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/claude/state.ts",
+      "target": "src/claude/state.ts#readSession",
+      "relation": "contains",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/claude/state.ts",
+      "target": "src/claude/state.ts#readStats",
+      "relation": "contains",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/claude/state.ts",
+      "target": "src/claude/state.ts#releaseLock",
+      "relation": "contains",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/claude/state.ts",
+      "target": "src/claude/state.ts#sessionPath",
+      "relation": "contains",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/claude/state.ts",
+      "target": "src/claude/state.ts#SessionState",
+      "relation": "contains",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/claude/state.ts",
+      "target": "src/claude/state.ts#Stats",
+      "relation": "contains",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/claude/state.ts",
+      "target": "src/claude/state.ts#statsPath",
+      "relation": "contains",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/claude/state.ts",
+      "target": "src/claude/state.ts#writeJsonAtomic",
+      "relation": "contains",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/claude/state.ts",
+      "target": "src/claude/state.ts#writeSession",
+      "relation": "contains",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/claude/state.ts",
+      "target": "src/claude/state.ts#writeStats",
+      "relation": "contains",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/claude/state.ts",
+      "target": "node:fs",
+      "relation": "imports",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/claude/state.ts",
+      "target": "node:path",
+      "relation": "imports",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/claude/state.ts#acquireLock",
+      "target": "src/claude/state.ts#cacheDir",
+      "relation": "calls",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/claude/state.ts#acquireLock",
+      "target": "src/claude/state.ts#lockPath",
+      "relation": "calls",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/claude/state.ts#lockPath",
+      "target": "src/claude/state.ts#cacheDir",
+      "relation": "calls",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/claude/state.ts#patchStats",
+      "target": "src/claude/state.ts#emptyStats",
+      "relation": "calls",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/claude/state.ts#patchStats",
+      "target": "src/claude/state.ts#readStats",
+      "relation": "calls",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/claude/state.ts#patchStats",
+      "target": "src/claude/state.ts#writeStats",
+      "relation": "calls",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/claude/state.ts#readSession",
+      "target": "src/claude/state.ts#emptySession",
+      "relation": "calls",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/claude/state.ts#readSession",
+      "target": "src/claude/state.ts#readJson",
+      "relation": "calls",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/claude/state.ts#readSession",
+      "target": "src/claude/state.ts#sessionPath",
+      "relation": "calls",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/claude/state.ts#readStats",
+      "target": "src/claude/state.ts#readJson",
+      "relation": "calls",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/claude/state.ts#readStats",
+      "target": "src/claude/state.ts#statsPath",
+      "relation": "calls",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/claude/state.ts#releaseLock",
+      "target": "src/claude/state.ts#lockPath",
+      "relation": "calls",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/claude/state.ts#sessionPath",
+      "target": "src/claude/state.ts#cacheDir",
+      "relation": "calls",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/claude/state.ts#statsPath",
+      "target": "src/claude/state.ts#cacheDir",
+      "relation": "calls",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/claude/state.ts#writeSession",
+      "target": "src/claude/state.ts#sessionPath",
+      "relation": "calls",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/claude/state.ts#writeSession",
+      "target": "src/claude/state.ts#writeJsonAtomic",
+      "relation": "calls",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/claude/state.ts#writeStats",
+      "target": "src/claude/state.ts#statsPath",
+      "relation": "calls",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/claude/state.ts#writeStats",
+      "target": "src/claude/state.ts#writeJsonAtomic",
+      "relation": "calls",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/claude/stats.ts",
+      "target": "src/claude/stats.ts#computeStats",
+      "relation": "contains",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/claude/stats.ts",
+      "target": "src/claude/stats.ts#readWiring",
+      "relation": "contains",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/claude/stats.ts",
+      "target": "node:fs",
+      "relation": "imports",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/claude/stats.ts",
+      "target": "node:path",
+      "relation": "imports",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/claude/stats.ts",
+      "target": "src/claude/state.ts",
+      "relation": "imports",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/claude/stats.ts",
+      "target": "src/graph/types.ts",
+      "relation": "imports",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/claude/statusline.ts",
+      "target": "src/claude/statusline.ts#main",
+      "relation": "contains",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/claude/statusline.ts",
+      "target": "src/claude/statusline.ts#resolveStats",
+      "relation": "contains",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/claude/statusline.ts",
+      "target": "node:fs",
+      "relation": "imports",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/claude/statusline.ts",
+      "target": "src/claude/format.ts",
+      "relation": "imports",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/claude/statusline.ts",
+      "target": "src/claude/state.ts",
+      "relation": "imports",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/claude/statusline.ts",
+      "target": "src/claude/stats.ts",
+      "relation": "imports",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/claude/statusline.ts#main",
+      "target": "src/claude/format.ts#renderStatusline",
+      "relation": "calls",
+      "confidence": "inferred"
+    },
+    {
+      "source": "src/claude/statusline.ts#main",
+      "target": "src/claude/format.ts#renderSubagent",
+      "relation": "calls",
+      "confidence": "inferred"
+    },
+    {
+      "source": "src/claude/statusline.ts#main",
+      "target": "src/claude/state.ts#readSession",
+      "relation": "calls",
+      "confidence": "inferred"
+    },
+    {
+      "source": "src/claude/statusline.ts#main",
+      "target": "src/claude/statusline.ts#resolveStats",
+      "relation": "calls",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/claude/statusline.ts#resolveStats",
+      "target": "src/claude/state.ts#emptyStats",
+      "relation": "calls",
+      "confidence": "inferred"
+    },
+    {
+      "source": "src/claude/statusline.ts#resolveStats",
+      "target": "src/claude/state.ts#readStats",
+      "relation": "calls",
+      "confidence": "inferred"
+    },
+    {
+      "source": "src/claude/statusline.ts#resolveStats",
+      "target": "src/claude/stats.ts#computeStats",
+      "relation": "calls",
+      "confidence": "inferred"
+    },
+    {
+      "source": "src/claude/statusline.ts#resolveStats",
+      "target": "src/claude/stats.ts#readWiring",
+      "relation": "calls",
+      "confidence": "inferred"
+    },
+    {
+      "source": "src/claude/sync-run.ts",
+      "target": "src/claude/sync-run.ts#main",
+      "relation": "calls",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/claude/sync-run.ts",
+      "target": "src/claude/sync-run.ts#main",
+      "relation": "contains",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/claude/sync-run.ts",
+      "target": "src/claude/sync-run.ts#realBuild",
+      "relation": "contains",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/claude/sync-run.ts",
+      "target": "src/claude/sync-run.ts#runSync",
+      "relation": "contains",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/claude/sync-run.ts",
+      "target": "node:child_process",
+      "relation": "imports",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/claude/sync-run.ts",
+      "target": "node:path",
+      "relation": "imports",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/claude/sync-run.ts",
+      "target": "node:url",
+      "relation": "imports",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/claude/sync-run.ts",
+      "target": "src/claude/state.ts",
+      "relation": "imports",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/claude/sync-run.ts",
+      "target": "src/claude/stats.ts",
+      "relation": "imports",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/claude/sync-run.ts#main",
+      "target": "src/claude/sync-run.ts#runSync",
+      "relation": "calls",
+      "confidence": "extracted"
+    },
+    {
+      "source": "src/claude/sync-run.ts#runSync",
+      "target": "src/claude/state.ts#patchStats",
+      "relation": "calls",
+      "confidence": "inferred"
+    },
+    {
+      "source": "src/claude/sync-run.ts#runSync",
+      "target": "src/claude/state.ts#releaseLock",
+      "relation": "calls",
+      "confidence": "inferred"
+    },
+    {
+      "source": "src/claude/sync-run.ts#runSync",
+      "target": "src/claude/stats.ts#computeStats",
+      "relation": "calls",
+      "confidence": "inferred"
+    },
+    {
+      "source": "src/claude/sync-run.ts#runSync",
+      "target": "src/claude/stats.ts#readWiring",
+      "relation": "calls",
+      "confidence": "inferred"
     },
     {
       "source": "src/cli.ts",
@@ -8472,6 +10558,402 @@
     {
       "source": "test/ask.test.ts",
       "target": "src/graph/build.ts",
+      "relation": "imports",
+      "confidence": "extracted"
+    },
+    {
+      "source": "test/claude-format.test.ts",
+      "target": "src/claude/format.ts#enrichedSegment",
+      "relation": "calls",
+      "confidence": "inferred"
+    },
+    {
+      "source": "test/claude-format.test.ts",
+      "target": "src/claude/format.ts#formatBlastRadius",
+      "relation": "calls",
+      "confidence": "inferred"
+    },
+    {
+      "source": "test/claude-format.test.ts",
+      "target": "src/claude/format.ts#formatOrientation",
+      "relation": "calls",
+      "confidence": "inferred"
+    },
+    {
+      "source": "test/claude-format.test.ts",
+      "target": "src/claude/format.ts#formatRetrieval",
+      "relation": "calls",
+      "confidence": "inferred"
+    },
+    {
+      "source": "test/claude-format.test.ts",
+      "target": "src/claude/format.ts#incomingEdges",
+      "relation": "calls",
+      "confidence": "inferred"
+    },
+    {
+      "source": "test/claude-format.test.ts",
+      "target": "src/claude/format.ts#renderStatusline",
+      "relation": "calls",
+      "confidence": "inferred"
+    },
+    {
+      "source": "test/claude-format.test.ts",
+      "target": "src/claude/format.ts#renderSubagent",
+      "relation": "calls",
+      "confidence": "inferred"
+    },
+    {
+      "source": "test/claude-format.test.ts",
+      "target": "src/claude/state.ts#emptyStats",
+      "relation": "calls",
+      "confidence": "inferred"
+    },
+    {
+      "source": "test/claude-format.test.ts",
+      "target": "test/claude-format.test.ts#strip",
+      "relation": "calls",
+      "confidence": "extracted"
+    },
+    {
+      "source": "test/claude-format.test.ts",
+      "target": "test/claude-format.test.ts#strip",
+      "relation": "contains",
+      "confidence": "extracted"
+    },
+    {
+      "source": "test/claude-format.test.ts",
+      "target": "node:assert/strict",
+      "relation": "imports",
+      "confidence": "extracted"
+    },
+    {
+      "source": "test/claude-format.test.ts",
+      "target": "node:test",
+      "relation": "imports",
+      "confidence": "extracted"
+    },
+    {
+      "source": "test/claude-format.test.ts",
+      "target": "src/claude/format.ts",
+      "relation": "imports",
+      "confidence": "extracted"
+    },
+    {
+      "source": "test/claude-format.test.ts",
+      "target": "src/claude/state.ts",
+      "relation": "imports",
+      "confidence": "extracted"
+    },
+    {
+      "source": "test/claude-hooks.test.ts",
+      "target": "src/claude/hooks.ts#underGraft",
+      "relation": "calls",
+      "confidence": "inferred"
+    },
+    {
+      "source": "test/claude-hooks.test.ts",
+      "target": "src/claude/state.ts#acquireLock",
+      "relation": "calls",
+      "confidence": "inferred"
+    },
+    {
+      "source": "test/claude-hooks.test.ts",
+      "target": "src/claude/state.ts#emptyStats",
+      "relation": "calls",
+      "confidence": "inferred"
+    },
+    {
+      "source": "test/claude-hooks.test.ts",
+      "target": "src/claude/state.ts#readStats",
+      "relation": "calls",
+      "confidence": "inferred"
+    },
+    {
+      "source": "test/claude-hooks.test.ts",
+      "target": "src/claude/state.ts#writeStats",
+      "relation": "calls",
+      "confidence": "inferred"
+    },
+    {
+      "source": "test/claude-hooks.test.ts",
+      "target": "src/claude/sync-run.ts#runSync",
+      "relation": "calls",
+      "confidence": "inferred"
+    },
+    {
+      "source": "test/claude-hooks.test.ts",
+      "target": "test/claude-hooks.test.ts#runWithStdin",
+      "relation": "calls",
+      "confidence": "extracted"
+    },
+    {
+      "source": "test/claude-hooks.test.ts",
+      "target": "test/claude-hooks.test.ts#fakeBuild",
+      "relation": "contains",
+      "confidence": "extracted"
+    },
+    {
+      "source": "test/claude-hooks.test.ts",
+      "target": "test/claude-hooks.test.ts#runWithStdin",
+      "relation": "contains",
+      "confidence": "extracted"
+    },
+    {
+      "source": "test/claude-hooks.test.ts",
+      "target": "node:assert/strict",
+      "relation": "imports",
+      "confidence": "extracted"
+    },
+    {
+      "source": "test/claude-hooks.test.ts",
+      "target": "node:fs",
+      "relation": "imports",
+      "confidence": "extracted"
+    },
+    {
+      "source": "test/claude-hooks.test.ts",
+      "target": "node:os",
+      "relation": "imports",
+      "confidence": "extracted"
+    },
+    {
+      "source": "test/claude-hooks.test.ts",
+      "target": "node:path",
+      "relation": "imports",
+      "confidence": "extracted"
+    },
+    {
+      "source": "test/claude-hooks.test.ts",
+      "target": "node:test",
+      "relation": "imports",
+      "confidence": "extracted"
+    },
+    {
+      "source": "test/claude-hooks.test.ts",
+      "target": "src/claude/hooks.ts",
+      "relation": "imports",
+      "confidence": "extracted"
+    },
+    {
+      "source": "test/claude-hooks.test.ts",
+      "target": "src/claude/state.ts",
+      "relation": "imports",
+      "confidence": "extracted"
+    },
+    {
+      "source": "test/claude-hooks.test.ts",
+      "target": "src/claude/sync-run.ts",
+      "relation": "imports",
+      "confidence": "extracted"
+    },
+    {
+      "source": "test/claude-state.test.ts",
+      "target": "src/claude/state.ts#acquireLock",
+      "relation": "calls",
+      "confidence": "inferred"
+    },
+    {
+      "source": "test/claude-state.test.ts",
+      "target": "src/claude/state.ts#cacheDir",
+      "relation": "calls",
+      "confidence": "inferred"
+    },
+    {
+      "source": "test/claude-state.test.ts",
+      "target": "src/claude/state.ts#emptyStats",
+      "relation": "calls",
+      "confidence": "inferred"
+    },
+    {
+      "source": "test/claude-state.test.ts",
+      "target": "src/claude/state.ts#patchStats",
+      "relation": "calls",
+      "confidence": "inferred"
+    },
+    {
+      "source": "test/claude-state.test.ts",
+      "target": "src/claude/state.ts#readSession",
+      "relation": "calls",
+      "confidence": "inferred"
+    },
+    {
+      "source": "test/claude-state.test.ts",
+      "target": "src/claude/state.ts#readStats",
+      "relation": "calls",
+      "confidence": "inferred"
+    },
+    {
+      "source": "test/claude-state.test.ts",
+      "target": "src/claude/state.ts#releaseLock",
+      "relation": "calls",
+      "confidence": "inferred"
+    },
+    {
+      "source": "test/claude-state.test.ts",
+      "target": "src/claude/state.ts#writeSession",
+      "relation": "calls",
+      "confidence": "inferred"
+    },
+    {
+      "source": "test/claude-state.test.ts",
+      "target": "src/claude/state.ts#writeStats",
+      "relation": "calls",
+      "confidence": "inferred"
+    },
+    {
+      "source": "test/claude-state.test.ts",
+      "target": "test/claude-state.test.ts#fresh",
+      "relation": "calls",
+      "confidence": "extracted"
+    },
+    {
+      "source": "test/claude-state.test.ts",
+      "target": "test/claude-state.test.ts#fresh",
+      "relation": "contains",
+      "confidence": "extracted"
+    },
+    {
+      "source": "test/claude-state.test.ts",
+      "target": "node:assert/strict",
+      "relation": "imports",
+      "confidence": "extracted"
+    },
+    {
+      "source": "test/claude-state.test.ts",
+      "target": "node:fs",
+      "relation": "imports",
+      "confidence": "extracted"
+    },
+    {
+      "source": "test/claude-state.test.ts",
+      "target": "node:os",
+      "relation": "imports",
+      "confidence": "extracted"
+    },
+    {
+      "source": "test/claude-state.test.ts",
+      "target": "node:path",
+      "relation": "imports",
+      "confidence": "extracted"
+    },
+    {
+      "source": "test/claude-state.test.ts",
+      "target": "node:test",
+      "relation": "imports",
+      "confidence": "extracted"
+    },
+    {
+      "source": "test/claude-state.test.ts",
+      "target": "src/claude/state.ts",
+      "relation": "imports",
+      "confidence": "extracted"
+    },
+    {
+      "source": "test/claude-stats.test.ts",
+      "target": "src/claude/stats.ts#computeStats",
+      "relation": "calls",
+      "confidence": "inferred"
+    },
+    {
+      "source": "test/claude-stats.test.ts",
+      "target": "node:assert/strict",
+      "relation": "imports",
+      "confidence": "extracted"
+    },
+    {
+      "source": "test/claude-stats.test.ts",
+      "target": "node:test",
+      "relation": "imports",
+      "confidence": "extracted"
+    },
+    {
+      "source": "test/claude-stats.test.ts",
+      "target": "src/claude/stats.ts",
+      "relation": "imports",
+      "confidence": "extracted"
+    },
+    {
+      "source": "test/claude-statusline.test.ts",
+      "target": "src/claude/state.ts#emptyStats",
+      "relation": "calls",
+      "confidence": "inferred"
+    },
+    {
+      "source": "test/claude-statusline.test.ts",
+      "target": "src/claude/state.ts#writeStats",
+      "relation": "calls",
+      "confidence": "inferred"
+    },
+    {
+      "source": "test/claude-statusline.test.ts",
+      "target": "src/claude/statusline.ts#resolveStats",
+      "relation": "calls",
+      "confidence": "inferred"
+    },
+    {
+      "source": "test/claude-statusline.test.ts",
+      "target": "test/claude-statusline.test.ts#repo",
+      "relation": "calls",
+      "confidence": "extracted"
+    },
+    {
+      "source": "test/claude-statusline.test.ts",
+      "target": "test/claude-statusline.test.ts#writeWiring",
+      "relation": "calls",
+      "confidence": "extracted"
+    },
+    {
+      "source": "test/claude-statusline.test.ts",
+      "target": "test/claude-statusline.test.ts#repo",
+      "relation": "contains",
+      "confidence": "extracted"
+    },
+    {
+      "source": "test/claude-statusline.test.ts",
+      "target": "test/claude-statusline.test.ts#writeWiring",
+      "relation": "contains",
+      "confidence": "extracted"
+    },
+    {
+      "source": "test/claude-statusline.test.ts",
+      "target": "node:assert/strict",
+      "relation": "imports",
+      "confidence": "extracted"
+    },
+    {
+      "source": "test/claude-statusline.test.ts",
+      "target": "node:fs",
+      "relation": "imports",
+      "confidence": "extracted"
+    },
+    {
+      "source": "test/claude-statusline.test.ts",
+      "target": "node:os",
+      "relation": "imports",
+      "confidence": "extracted"
+    },
+    {
+      "source": "test/claude-statusline.test.ts",
+      "target": "node:path",
+      "relation": "imports",
+      "confidence": "extracted"
+    },
+    {
+      "source": "test/claude-statusline.test.ts",
+      "target": "node:test",
+      "relation": "imports",
+      "confidence": "extracted"
+    },
+    {
+      "source": "test/claude-statusline.test.ts",
+      "target": "src/claude/state.ts",
+      "relation": "imports",
+      "confidence": "extracted"
+    },
+    {
+      "source": "test/claude-statusline.test.ts",
+      "target": "src/claude/statusline.ts",
       "relation": "imports",
       "confidence": "extracted"
     },
