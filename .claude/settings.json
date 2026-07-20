@@ -11,6 +11,13 @@
           { "type": "command", "command": "node \"${CLAUDE_PROJECT_DIR:-.}/.claude/helpers/graft-hooks.cjs\" post-edit", "timeout": 10000 }
         ]
       }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          { "type": "command", "command": "node \"${CLAUDE_PROJECT_DIR:-.}/.claude/helpers/graft-hooks.cjs\" stop", "timeout": 8000 }
+        ]
+      }
     ]
   }
 }
