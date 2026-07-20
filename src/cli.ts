@@ -1,21 +1,25 @@
 #!/usr/bin/env node
 /**
- * `graft` CLI. Two commands:
+ * `graft` CLI. Commands:
  *
- *   init    build .context/ from your code (one markdown node per system,
- *           API, or concept; linked to each other; committed to the repo).
- *   check   fail if .context/ has drifted from the code — for CI.
+ *   build   build graft/ from your code (structural graph; --deep adds LLM summaries).
+ *   ask     query the graph ($0, no LLM).
+ *   check   fail if graft/ has drifted from the code — for CI.
+ *   viz     serve the interactive graph viewer.
+ *   init    set up the Claude Code integration (.claude/ statusline + hooks) in this repo.
  *
- * Git is the sync: commit .context/ and anyone who clones the repo has the
+ * Git is the sync: commit graft/ and anyone who clones the repo has the
  * graph, with no setup.
  */
 import "dotenv/config";
 import { Command } from "commander";
-import { relative } from "node:path";
+import { relative, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { Graft } from "./engine.js";
 import { resolveConfig } from "./ai/providers.js";
 import { formatCheckReport } from "./context/check.js";
 import { formatGraphCheckReport } from "./graph/check.js";
+import { runInit } from "./claude/init.js";
 
 const program = new Command();
 
@@ -178,6 +182,22 @@ program
       const opener = process.platform === "darwin" ? "open" : process.platform === "win32" ? "start" : "xdg-open";
       spawn(opener, [srv.url], { stdio: "ignore", detached: true, shell: process.platform === "win32" }).unref();
     }
+  });
+
+program
+  .command("init")
+  .description("Set up the Claude Code integration (.claude/ statusline + hooks) in this repo")
+  .argument("[dir]", "target repo directory", ".")
+  .option("--no-build", "skip building the graph (wire files only)")
+  .action((dir: string, opts: { build?: boolean }) => {
+    const cliPath = fileURLToPath(import.meta.url);
+    const res = runInit(resolve(dir), { build: opts.build, cliPath });
+    console.error(`✓ wrote ${res.settingsPath}`);
+    for (const s of res.shims) console.error(`✓ wrote ${s}`);
+    console.error(res.built ? "✓ built the graph (graft build)" : "· skipped graph build");
+    for (const w of res.warnings) console.error(`⚠ ${w}`);
+    console.error("\nDone. The statusline + hooks activate in Claude Code sessions in this repo.");
+    console.error("For LLM summaries: set OPENROUTER_API_KEY and run `graft build --deep`.");
   });
 
 program.parseAsync().catch((err) => {

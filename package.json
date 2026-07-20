@@ -1,6 +1,6 @@
 {
   "name": "@nanonets/graft",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "Build a repo's context graph as a folder of linked markdown files that live in the repo and stay in sync with the code through git.",
   "keywords": [
     "ai",
@@ -30,13 +30,15 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
-    }
+    },
+    "./package.json": "./package.json"
   },
   "bin": {
     "graft": "dist/cli.js"
   },
   "files": [
     "dist",
+    "scripts",
     "README.md",
     "LICENSE"
   ],
@@ -47,7 +49,8 @@
     "bench": "tsx bench/run.ts",
     "test": "node --import tsx --test test/*.test.ts",
     "prepare": "npm run build",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "npm run build",
+    "postinstall": "node scripts/postinstall.mjs"
   },
   "engines": {
     "node": ">=20"
