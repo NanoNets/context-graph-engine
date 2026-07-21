@@ -64,3 +64,36 @@ test('CLI: unknown agent id exits non-zero', () => {
     }),
   );
 });
+
+test('explicit empty agents list writes nothing, even when home has agent dirs (no fallback to detection)', () => {
+  const home = fresh(); const repo = fresh();
+  mkdirSync(join(home, '.cursor'));
+  const r = runHostsInit(repo, { home, agents: [] });
+  assert.deepEqual(r.written, []);
+  assert.ok(!existsSync(join(repo, '.cursor')));
+});
+
+test('CLI: --agents claude with --no-build writes .claude/ but no other-agent files', () => {
+  const repo = fresh();
+  execFileSync(process.execPath, ['--import', 'tsx', 'src/cli.ts', 'init', repo, '--no-build', '--agents', 'claude'], {
+    encoding: 'utf8',
+  });
+  assert.ok(existsSync(join(repo, '.claude')));
+  assert.ok(!existsSync(join(repo, 'AGENTS.md')));
+  assert.ok(!existsSync(join(repo, 'GEMINI.md')));
+  assert.ok(!existsSync(join(repo, '.cursor')));
+});
+
+test('CLI: --agents claude gemini nope exits non-zero and leaves repo untouched (validation before writes)', () => {
+  const repo = fresh();
+  assert.throws(() =>
+    execFileSync(
+      process.execPath,
+      ['--import', 'tsx', 'src/cli.ts', 'init', repo, '--no-build', '--agents', 'claude', 'gemini', 'nope'],
+      { encoding: 'utf8', stdio: 'pipe' },
+    ),
+  );
+  assert.ok(!existsSync(join(repo, '.claude')));
+  assert.ok(!existsSync(join(repo, 'GEMINI.md')));
+  assert.ok(!existsSync(join(repo, 'AGENTS.md')));
+});

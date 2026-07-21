@@ -202,6 +202,16 @@ program
     }
     const repo = resolve(dir);
     const explicit = Array.isArray(opts.agents) ? opts.agents : undefined;
+
+    if (explicit) {
+      const validIds = [...hostIds(), "claude"];
+      const unknown = explicit.filter((id) => !validIds.includes(id));
+      if (unknown.length) {
+        console.error(`✗ unknown agent id(s): ${unknown.join(", ")} — valid: ${validIds.join(", ")}`);
+        process.exit(1);
+      }
+    }
+
     const wantClaude = !explicit || explicit.includes("claude");
 
     if (wantClaude) {
@@ -223,10 +233,7 @@ program
       for (const w of r.written) console.error(`✓ ${w.id}: ${w.path} (${w.action})`);
       if (!explicit && !opts.allAgents && r.written.length === 0)
         console.error("· no other agents detected (see --list-agents / --all-agents)");
-      if (r.unknown.length) {
-        console.error(`✗ unknown agent id(s): ${r.unknown.join(", ")} — valid: ${[...hostIds(), "claude"].join(", ")}`);
-        process.exit(1);
-      }
+      // r.unknown is always empty here — ids are validated above, before any writes.
     }
     console.error("\nDone. Claude Code gets live hooks + statusline; other agents read their instruction files.");
     console.error("For LLM summaries: set OPENROUTER_API_KEY and run `graft build --deep`.");

@@ -39,7 +39,7 @@ export function runHostsInit(
 
   let selected: HostTarget[];
   let unknown: string[] = [];
-  if (opts.agents?.length) {
+  if (opts.agents !== undefined) {
     const byId = new Map(HOSTS.map((h) => [h.id, h]));
     selected = opts.agents.flatMap((id) => byId.get(id) ?? []);
     unknown = opts.agents.filter((id) => !byId.has(id));
