@@ -20,6 +20,8 @@ import { resolveConfig } from "./ai/providers.js";
 import { formatCheckReport } from "./context/check.js";
 import { formatGraphCheckReport } from "./graph/check.js";
 import { runInit } from "./claude/init.js";
+import { runHostsInit } from "./hosts/init.js";
+import { hostIds } from "./hosts/registry.js";
 
 const program = new Command();
 
@@ -186,18 +188,47 @@ program
 
 program
   .command("init")
-  .description("Set up the Claude Code integration (.claude/ statusline + hooks) in this repo")
+  .description("Wire Graft into the AI coding agents used with this repo (instruction files; full hooks + statusline for Claude Code)")
   .argument("[dir]", "target repo directory", ".")
   .option("--no-build", "skip building the graph (wire files only)")
-  .action((dir: string, opts: { build?: boolean }) => {
-    const cliPath = fileURLToPath(import.meta.url);
-    const res = runInit(resolve(dir), { build: opts.build, cliPath });
-    console.error(`✓ wrote ${res.settingsPath}`);
-    for (const s of res.shims) console.error(`✓ wrote ${s}`);
-    console.error(`✓ wrote ${res.skill}`);
-    console.error(res.built ? "✓ built the graph (graft build)" : "· skipped graph build");
-    for (const w of res.warnings) console.error(`⚠ ${w}`);
-    console.error("\nDone. The statusline + hooks activate in Claude Code sessions in this repo.");
+  .option("--agents <ids...>", `only these agents (${hostIds().join(", ")}, claude)`)
+  .option("--all-agents", "write instruction files for every known agent, detected or not")
+  .option("--no-agents", "Claude Code wiring only; skip other agents")
+  .option("--list-agents", "list known agent ids and exit")
+  .action((dir: string, opts: { build?: boolean; agents?: string[]; allAgents?: boolean; listAgents?: boolean }) => {
+    if (opts.listAgents) {
+      for (const id of [...hostIds(), "claude"]) console.log(id);
+      return;
+    }
+    const repo = resolve(dir);
+    const explicit = Array.isArray(opts.agents) ? opts.agents : undefined;
+    const wantClaude = !explicit || explicit.includes("claude");
+
+    if (wantClaude) {
+      const cliPath = fileURLToPath(import.meta.url);
+      const res = runInit(repo, { build: opts.build, cliPath });
+      console.error(`✓ wrote ${res.settingsPath}`);
+      for (const s of res.shims) console.error(`✓ wrote ${s}`);
+      console.error(`✓ wrote ${res.skill}`);
+      console.error(res.built ? "✓ built the graph (graft build)" : "· skipped graph build");
+      for (const w of res.warnings) console.error(`⚠ ${w}`);
+    }
+
+    const skipOthers = (opts as { agents?: unknown }).agents === false;
+    if (!skipOthers) {
+      const r = runHostsInit(repo, {
+        agents: explicit?.filter((id) => id !== "claude"),
+        all: opts.allAgents,
+      });
+      for (const w of r.written) console.error(`✓ ${w.id}: ${w.path} (${w.action})`);
+      if (!explicit && !opts.allAgents && r.written.length === 0)
+        console.error("· no other agents detected (see --list-agents / --all-agents)");
+      if (r.unknown.length) {
+        console.error(`✗ unknown agent id(s): ${r.unknown.join(", ")} — valid: ${[...hostIds(), "claude"].join(", ")}`);
+        process.exit(1);
+      }
+    }
+    console.error("\nDone. Claude Code gets live hooks + statusline; other agents read their instruction files.");
     console.error("For LLM summaries: set OPENROUTER_API_KEY and run `graft build --deep`.");
   });
 

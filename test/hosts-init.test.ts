@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, mkdirSync, readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { execFileSync } from 'node:child_process';
 import { runHostsInit } from '../src/hosts/init.js';
 
 function fresh(): string { return mkdtempSync(join(tmpdir(), 'graft-hostsinit-')); }
@@ -45,4 +46,21 @@ test('preserves user content around the fenced section', () => {
   const text = readFileSync(target, 'utf8');
   assert.ok(text.startsWith('# House rules'));
   assert.ok(text.includes('graft ask'));
+});
+
+test('CLI: graft init --agents gemini writes GEMINI.md and exits 0', () => {
+  const repo = fresh();
+  execFileSync(process.execPath, ['--import', 'tsx', 'src/cli.ts', 'init', repo, '--no-build', '--agents', 'gemini'], {
+    encoding: 'utf8',
+  });
+  assert.ok(readFileSync(join(repo, 'GEMINI.md'), 'utf8').includes('graft ask'));
+});
+
+test('CLI: unknown agent id exits non-zero', () => {
+  const repo = fresh();
+  assert.throws(() =>
+    execFileSync(process.execPath, ['--import', 'tsx', 'src/cli.ts', 'init', repo, '--no-build', '--agents', 'nope'], {
+      encoding: 'utf8', stdio: 'pipe',
+    }),
+  );
 });
