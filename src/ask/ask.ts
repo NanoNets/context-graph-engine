@@ -20,6 +20,7 @@ import { contextDirFor } from "../context/node-file.js";
 import { readGraph, wiringPath } from "../graph/write.js";
 import type { EdgeV1, GraphV1, NodeV1, Relation } from "../graph/types.js";
 import { personalizedPageRank } from "./graphrank.js";
+import { counts, readAskIndex, tokenize, type AskIndex, type AskIndexDoc } from "./index-file.js";
 
 export interface AskHit {
   kind: "concept" | "symbol" | "caller" | "callee";
@@ -53,28 +54,6 @@ export interface AskResult {
   saved?: { files: number; baselineChars: number };
 }
 
-const STOP = new Set([
-  "the", "a", "an", "of", "to", "in", "is", "are", "how", "does", "do", "what",
-  "where", "which", "that", "this", "it", "for", "on", "and", "or", "with",
-  "i", "we", "get", "set", "use", "used", "using", "when", "why", "can",
-]);
-
-/** Split prose + identifiers into lowercased subword tokens (camelCase, snake, kebab). */
-function tokenize(text: string): string[] {
-  return text
-    .replace(/([a-z0-9])([A-Z])/g, "$1 $2") // camelCase → camel Case
-    .toLowerCase()
-    .split(/[^a-z0-9]+/)
-    .filter((t) => t.length > 1 && !STOP.has(t));
-}
-
-/** Term-frequency count map. */
-function counts(tokens: string[]): Map<string, number> {
-  const m = new Map<string, number>();
-  for (const t of tokens) m.set(t, (m.get(t) ?? 0) + 1);
-  return m;
-}
-
 /** First real prose line of a node body (skips headings, markers, blanks). */
 function firstProse(body: string): string {
   for (const raw of body.split("\n")) {
@@ -88,6 +67,10 @@ function firstProse(body: string): string {
 interface Corpus {
   concepts: Array<{ slug: string; name: string; sources: string[]; related: string[]; snippet: string; text: string }>;
   graph: GraphV1 | null;
+  /** Build-time token/df sidecar (`.cache/ask-index.json`), or null when absent,
+   * unparseable, an unknown version, or stale (checked against `graph.nodes.length`
+   * by the caller — see `lexical()`). Null means: fall back to live tokenization. */
+  askIndex: AskIndex | null;
 }
 
 function loadCorpus(outDir: string): Corpus {
@@ -114,7 +97,7 @@ function loadCorpus(outDir: string): Corpus {
       });
     }
   }
-  return { concepts, graph: readGraph(wiringPath(outDir)) };
+  return { concepts, graph: readGraph(wiringPath(outDir)), askIndex: readAskIndex(outDir) };
 }
 
 /** Score a document's token counts against the query counts (name field
@@ -141,14 +124,31 @@ function score(
  * documents (concept nodes + symbol nodes) contain each token; N is the corpus
  * size. `log(1 + N/(1+df))` is the smoothed standard form: monotonically
  * decreasing in df, always positive, ~0 extra weight for a token in every doc. */
-function computeIdf(docBags: Array<Set<string>>): Map<string, number> {
-  const n = docBags.length;
-  const df = new Map<string, number>();
-  for (const bag of docBags)
-    for (const t of bag) df.set(t, (df.get(t) ?? 0) + 1);
+function idfFromDf(df: Map<string, number>, n: number): Map<string, number> {
   const idf = new Map<string, number>();
   for (const [t, d] of df) idf.set(t, Math.log(1 + n / (1 + d)));
   return idf;
+}
+
+function computeIdf(docBags: Array<Set<string>>): Map<string, number> {
+  const df = new Map<string, number>();
+  for (const bag of docBags)
+    for (const t of bag) df.set(t, (df.get(t) ?? 0) + 1);
+  return idfFromDf(df, docBags.length);
+}
+
+/** Same idf as {@link computeIdf}, but the symbol half of `df` and the doc
+ * count come from the build-time sidecar instead of tokenizing the corpus
+ * live; only the concept bags (always tokenized live — there are only dozens)
+ * are folded in here, the same way `computeIdf` would fold them into the full
+ * docBags array. `df` is a commutative sum and `n` is the same total document
+ * count either way, so this produces byte-identical idf values to `computeIdf`
+ * run over concept-bags + live-tokenized-symbol-bags. */
+function computeIdfFromIndex(index: AskIndex, conceptBags: Array<Set<string>>): Map<string, number> {
+  const df = new Map(index.df);
+  for (const bag of conceptBags)
+    for (const t of bag) df.set(t, (df.get(t) ?? 0) + 1);
+  return idfFromDf(df, index.docCount + conceptBags.length);
 }
 
 /** BM25 term score for a document field, used for the (potentially large) body
@@ -273,25 +273,47 @@ function lexical(query: string, corpus: Corpus, limit: number, graphRank: boolea
     name: counts(tokenize(c.name)),
     body: counts(tokenize(c.text)),
   }));
+
+  // A build-time sidecar (`.cache/ask-index.json`) is usable only when it covers
+  // every node in the current graph: `docs.length === graph.nodes.length` is a
+  // cheap staleness guard (an id-level check below catches a same-count but
+  // mismatched set, e.g. a hand-edited or corrupt sidecar). Anything short of
+  // that — missing, unparseable, unknown version, wrong count, mismatched ids —
+  // falls back to live tokenization so results never depend on the sidecar
+  // existing; see `readAskIndex`'s own null-on-anything-off contract.
+  let docById: Map<string, AskIndexDoc> | null = null;
+  if (corpus.askIndex && graph && corpus.askIndex.docs.length === graph.nodes.length) {
+    const map = new Map(corpus.askIndex.docs.map((d) => [d.id, d]));
+    if (graph.nodes.every((n) => map.has(n.id))) docById = map;
+  }
+  const askIndex = docById ? corpus.askIndex : null;
+
   // Symbols AND file nodes are scored: a symbol's body_text is its definition;
   // a file's body_text is the module-level residual (imports/constants not in
   // any symbol). Including files closes the recall gap where a gold file's only
   // query-relevant text lives outside every function/class.
-  const symbolDocs = (graph?.nodes ?? []).map((n) => ({
-    n,
-    name: counts(tokenize(n.name)),
-    path: counts(tokenize(n.path)),
-    // The body (indexed at build) joins the signature + summary as the low-weight
-    // body field, so a term that appears only in the code — not the name/signature
-    // — still makes the node findable. IDF (from these same bags) keeps a word
-    // common across many bodies from dominating.
-    body: counts(tokenize(`${n.signature ?? ""} ${n.summary ?? ""} ${n.body_text ?? ""}`)),
-  }));
-  const docBags: Array<Set<string>> = [];
-  for (const d of conceptDocs) docBags.push(new Set([...d.name.keys(), ...d.body.keys()]));
-  for (const d of symbolDocs)
-    docBags.push(new Set([...d.name.keys(), ...d.path.keys(), ...d.body.keys()]));
-  const idf = computeIdf(docBags);
+  const symbolDocs = (graph?.nodes ?? []).map((n) => {
+    const d = docById?.get(n.id);
+    if (d) return { n, name: new Map(d.name), path: new Map(d.path), body: new Map(d.body) };
+    return {
+      n,
+      name: counts(tokenize(n.name)),
+      path: counts(tokenize(n.path)),
+      // The body (indexed at build) joins the signature + summary as the low-weight
+      // body field, so a term that appears only in the code — not the name/signature
+      // — still makes the node findable. IDF (from these same bags) keeps a word
+      // common across many bodies from dominating.
+      body: counts(tokenize(`${n.signature ?? ""} ${n.summary ?? ""} ${n.body_text ?? ""}`)),
+    };
+  });
+
+  const conceptBags = conceptDocs.map((d) => new Set([...d.name.keys(), ...d.body.keys()]));
+  // IDF must see the SAME inputs either way: with a sidecar, its `df` (stored
+  // WITHOUT concepts) plus these live concept bags reproduces exactly what
+  // `computeIdf` below would compute from concept+symbol bags tokenized live.
+  const idf = askIndex
+    ? computeIdfFromIndex(askIndex, conceptBags)
+    : computeIdf([...conceptBags, ...symbolDocs.map((d) => new Set([...d.name.keys(), ...d.path.keys(), ...d.body.keys()]))]);
 
   // ── Concepts (prose nodes; not in the wiring graph) ──
   const conceptHits: AskHit[] = [];
@@ -318,9 +340,11 @@ function lexical(query: string, corpus: Corpus, limit: number, graphRank: boolea
     for (const v of m.values()) s += v;
     return s;
   };
-  const avgBodyLen = symbolDocs.length
-    ? symbolDocs.reduce((a, d) => a + bodyLen(d.body), 0) / symbolDocs.length
-    : 0;
+  const avgBodyLen = askIndex
+    ? askIndex.avgBodyLen
+    : symbolDocs.length
+      ? symbolDocs.reduce((a, d) => a + bodyLen(d.body), 0) / symbolDocs.length
+      : 0;
   const lex = new Map<string, number>(); // node id → lexical score (>0 only)
   let maxLex = 0;
   for (const { n, name, path, body } of symbolDocs) {

@@ -16,6 +16,7 @@ import { resolveEdges, type GoModule } from "./resolve.js";
 import { enrichGraph, type EnrichStats } from "./enrich.js";
 import { readGraph, writeGraph, wiringPath } from "./write.js";
 import { writeCards, writeIndex, writeCovers } from "./cards.js";
+import { writeAskIndex } from "../ask/index-file.js";
 import type { GraphV1, Kind, NodeV1, Relation } from "./types.js";
 import type { CruxSummarizer } from "../ai/crux.js";
 
@@ -136,6 +137,17 @@ export async function buildGraph(
   };
 
   const graphPath = writeGraph(graph, outDir);
+  // `ask`'s token/IDF sidecar — moves per-query corpus tokenization to build
+  // time (~45% of query time on a 32k-node graph, profiled). Lives in the
+  // cache dir; `ask` falls back to live tokenization when it's absent/stale.
+  // Best-effort: wiring.json is already on disk at this point, so a sidecar
+  // write failure (e.g. an unwritable cache dir) must not abort cards/index/
+  // covers below — record it and keep going, same as other recoverable errors.
+  try {
+    writeAskIndex(outDir, graph);
+  } catch (err) {
+    errors.push(`ask-index: ${err instanceof Error ? err.message : String(err)}`);
+  }
 
   // Tier-2 passive surface: project the nodes into per-file markdown cards, and
   // refresh the INDEX roster. Pure projection — no LLM, no network.
