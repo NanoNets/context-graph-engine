@@ -19,7 +19,10 @@ function dirExists(p: string): boolean {
 
 function writeOwned(id: string, path: string, content: string, mode?: number): HookWrite {
   const existed = existsSync(path);
-  if (existed && readFileSync(path, 'utf8') === content) return { id, path, action: 'unchanged' };
+  if (existed && readFileSync(path, 'utf8') === content) {
+    if (mode !== undefined && (statSync(path).mode & 0o777) !== mode) chmodSync(path, mode);
+    return { id, path, action: 'unchanged' };
+  }
   mkdirSync(dirname(path), { recursive: true });
   writeFileSync(path, content);
   if (mode !== undefined) chmodSync(path, mode);
@@ -51,6 +54,9 @@ export function installCodexHooks(home: string): HookWrite[] {
   const before = JSON.stringify(root);
   const hooks = (root.hooks ??= {});
   if (typeof hooks !== 'object' || hooks === null || Array.isArray(hooks)) {
+    return [shimWrite, { id: 'codex-hooks', path: cfgPath, action: 'skipped-unparseable' }];
+  }
+  if (hooks.PostToolUse !== undefined && !Array.isArray(hooks.PostToolUse)) {
     return [shimWrite, { id: 'codex-hooks', path: cfgPath, action: 'skipped-unparseable' }];
   }
   const prior: unknown[] = Array.isArray(hooks.PostToolUse) ? hooks.PostToolUse : [];

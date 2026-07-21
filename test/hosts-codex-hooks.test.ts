@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, readFileSync, writeFileSync, existsSync, statSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, readFileSync, writeFileSync, existsSync, statSync, chmodSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { installCodexHooks } from '../src/hosts/codex-hooks.js';
@@ -53,4 +53,27 @@ test('unparseable hooks.json is never rewritten', () => {
   const w = installCodexHooks(home);
   assert.ok(w.some((x) => x.action === 'skipped-unparseable'));
   assert.equal(readFileSync(join(home, '.codex', 'hooks.json'), 'utf8'), '{ nope');
+});
+
+test('non-array PostToolUse (foreign single object) is never rewritten', () => {
+  const home = fresh();
+  mkdirSync(join(home, '.codex'), { recursive: true });
+  const original = JSON.stringify({
+    hooks: { PostToolUse: { matcher: 'Bash', hooks: [{ type: 'command', command: 'other-tool' }] } },
+  });
+  writeFileSync(join(home, '.codex', 'hooks.json'), original);
+  const w = installCodexHooks(home);
+  assert.ok(w.some((x) => x.action === 'skipped-unparseable'));
+  assert.equal(readFileSync(join(home, '.codex', 'hooks.json'), 'utf8'), original);
+});
+
+test('re-heals shim exec bit when a prior install had its mode stripped', () => {
+  const home = fresh();
+  mkdirSync(join(home, '.codex'), { recursive: true });
+  installCodexHooks(home);
+  const shim = join(home, '.codex', 'hooks', 'graft', 'graft-hooks.cjs');
+  chmodSync(shim, 0o644);
+  assert.ok(!(statSync(shim).mode & 0o111), 'exec bit stripped before re-run');
+  installCodexHooks(home);
+  assert.ok(statSync(shim).mode & 0o111, 'exec bit restored after re-run');
 });
