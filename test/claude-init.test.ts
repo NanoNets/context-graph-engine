@@ -15,16 +15,29 @@ function runPostinstall(env: Record<string, string>): string {
   } catch { return ''; }
 }
 
-test('runInit scaffolds settings + both shims (build skipped)', () => {
+test('runInit scaffolds settings + both shims + the skill (build skipped)', () => {
   const d = fresh();
   const r = runInit(d, { build: false });
   assert.ok(existsSync(join(d, '.claude', 'settings.json')));
   assert.ok(existsSync(join(d, '.claude', 'helpers', 'graft-statusline.cjs')));
   assert.ok(existsSync(join(d, '.claude', 'helpers', 'graft-hooks.cjs')));
+  const skillPath = join(d, '.claude', 'skills', 'graft', 'SKILL.md');
+  assert.ok(existsSync(skillPath), 'writes the graft skill');
+  assert.equal(r.skill, skillPath);
+  assert.match(readFileSync(skillPath, 'utf8'), /name: graft/);
   assert.equal(r.built, false);
   const s = JSON.parse(readFileSync(join(d, '.claude', 'settings.json'), 'utf8'));
   assert.ok(s.statusLine.command.includes('graft-statusline.cjs'));
   assert.ok(s.hooks.Stop[0].hooks[0].command.includes('graft-hooks.cjs'));
+});
+
+test('runInit overwrites a stale skill file', () => {
+  const d = fresh();
+  const skillPath = join(d, '.claude', 'skills', 'graft', 'SKILL.md');
+  mkdirSync(join(d, '.claude', 'skills', 'graft'), { recursive: true });
+  writeFileSync(skillPath, 'stale junk');
+  runInit(d, { build: false });
+  assert.match(readFileSync(skillPath, 'utf8'), /name: graft/);
 });
 
 test('runInit preserves foreign settings and warns on foreign statusLine', () => {

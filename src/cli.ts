@@ -194,6 +194,7 @@ program
     const res = runInit(resolve(dir), { build: opts.build, cliPath });
     console.error(`✓ wrote ${res.settingsPath}`);
     for (const s of res.shims) console.error(`✓ wrote ${s}`);
+    console.error(`✓ wrote ${res.skill}`);
     console.error(res.built ? "✓ built the graph (graft build)" : "· skipped graph build");
     for (const w of res.warnings) console.error(`⚠ ${w}`);
     console.error("\nDone. The statusline + hooks activate in Claude Code sessions in this repo.");
