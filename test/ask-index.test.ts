@@ -1,5 +1,5 @@
 /**
- * Tests for the `ask` build-time sidecar (`.graph/index.json`).
+ * Tests for the `ask` build-time sidecar (`.cache/ask-index.json`).
  *
  * `graft build` writes token/document-frequency bags once so `ask` doesn't
  * re-tokenize the whole corpus per query. These tests pin down the contract
@@ -10,8 +10,8 @@
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { mkdtempSync, writeFileSync, rmSync, readFileSync, unlinkSync } from "node:fs";
-import { join } from "node:path";
+import { mkdtempSync, writeFileSync, mkdirSync, rmSync, readFileSync, unlinkSync } from "node:fs";
+import { join, dirname } from "node:path";
 import { tmpdir } from "node:os";
 import { buildGraph } from "../src/graph/build.js";
 import { ask } from "../src/ask/ask.js";
@@ -176,6 +176,52 @@ test("readAskIndex returns null when the sidecar is simply missing", () => {
   const dir = mkdtempSync(join(tmpdir(), "graft-ask-index-missing-"));
   try {
     assert.equal(readAskIndex(contextDirFor(dir)), null);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("readAskIndex returns null when docCount doesn't match docs.length", () => {
+  const dir = mkdtempSync(join(tmpdir(), "graft-ask-index-doccount-"));
+  try {
+    const outDir = contextDirFor(dir);
+    const idxPath = askIndexPath(outDir);
+    mkdirSync(dirname(idxPath), { recursive: true });
+    const corrupted = {
+      version: 1,
+      avgBodyLen: 3,
+      df: [["foo", 1]],
+      docCount: 5, // deliberately mismatched with docs below
+      docs: [{ id: "a", name: [], path: [], body: [["foo", 1]] }],
+    };
+    writeFileSync(idxPath, JSON.stringify(corrupted));
+    assert.equal(readAskIndex(outDir), null, "docCount !== docs.length must read as null");
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("a failed sidecar write is recorded in build errors, not fatal", async () => {
+  const dir = makeFixture();
+  try {
+    const outDir = contextDirFor(dir);
+    const idxPath = askIndexPath(outDir);
+    // Pre-create the sidecar's own path AS A DIRECTORY so writeAskIndex's
+    // writeFileSync fails with EISDIR — simulates any write failure without
+    // needing real permission tricks.
+    mkdirSync(idxPath, { recursive: true });
+
+    const result = await buildGraph(dir);
+
+    assert.ok(
+      result.errors.some((e) => e.startsWith("ask-index:")),
+      `expected an "ask-index: ..." entry in result.errors, got: ${JSON.stringify(result.errors)}`,
+    );
+    // The rest of the build must still have completed: wiring.json, cards,
+    // and INDEX all still get written even though the sidecar write failed.
+    const graph = readGraph(wiringPath(outDir));
+    assert.ok(graph, "wiring graph should still be written despite the sidecar failure");
+    assert.ok(result.cards > 0, "cards should still be written despite the sidecar failure");
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }

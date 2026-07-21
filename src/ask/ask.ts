@@ -67,7 +67,7 @@ function firstProse(body: string): string {
 interface Corpus {
   concepts: Array<{ slug: string; name: string; sources: string[]; related: string[]; snippet: string; text: string }>;
   graph: GraphV1 | null;
-  /** Build-time token/df sidecar (`.graph/index.json`), or null when absent,
+  /** Build-time token/df sidecar (`.cache/ask-index.json`), or null when absent,
    * unparseable, an unknown version, or stale (checked against `graph.nodes.length`
    * by the caller — see `lexical()`). Null means: fall back to live tokenization. */
   askIndex: AskIndex | null;
@@ -274,7 +274,7 @@ function lexical(query: string, corpus: Corpus, limit: number, graphRank: boolea
     body: counts(tokenize(c.text)),
   }));
 
-  // A build-time sidecar (`.graph/index.json`) is usable only when it covers
+  // A build-time sidecar (`.cache/ask-index.json`) is usable only when it covers
   // every node in the current graph: `docs.length === graph.nodes.length` is a
   // cheap staleness guard (an id-level check below catches a same-count but
   // mismatched set, e.g. a hand-edited or corrupt sidecar). Anything short of

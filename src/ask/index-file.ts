@@ -1,11 +1,13 @@
 /**
- * Build-time sidecar for `graft ask` — `<outDir>/.graph/index.json`.
+ * Build-time sidecar for `graft ask` — `<outDir>/.cache/ask-index.json`.
  *
  * `ask`'s lexical pass tokenizes every symbol node's name/path/body on every
  * query; at 32k nodes that re-tokenization is ~45% of query time (profiled).
- * `graft build` writes this sidecar once, alongside `wiring.json`, with the
- * token→count bags per node plus the corpus-wide document frequencies, so a
- * query just reads counts instead of re-splitting every node's text.
+ * `graft build` writes this sidecar once, with the token→count bags per node
+ * plus the corpus-wide document frequencies, so a query just reads counts
+ * instead of re-splitting every node's text. It's a derived cache, not
+ * checked-in graph data, so it lives under the gitignored `.cache/` dir
+ * (see `CACHE_DIR` in `context/node-file.ts`) rather than `.graph/`.
  *
  * `tokenize`/`counts` live here (not duplicated in `ask.ts`) so build-time and
  * query-time text-splitting are provably the same function — the sidecar can
@@ -20,6 +22,7 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import type { GraphV1 } from "../graph/types.js";
+import { CACHE_DIR } from "../context/node-file.js";
 
 /** Words too common/short to carry query intent — dropped before scoring. */
 const STOP = new Set([
@@ -65,12 +68,13 @@ export interface AskIndex {
   docs: AskIndexDoc[];
 }
 
-const ASK_INDEX_DIR = ".graph";
-const ASK_INDEX_FILE = "index.json";
+const ASK_INDEX_FILE = "ask-index.json";
 
-/** Absolute path to the ask sidecar for a context dir: `<dir>/.graph/index.json`. */
+/** Absolute path to the ask sidecar for a context dir: `<dir>/.cache/ask-index.json`.
+ * `.cache/` is the established uncommitted-cache location — this sidecar is a
+ * derived, regenerate-anytime cache, not checked-in graph data. */
 export function askIndexPath(outDir: string): string {
-  return join(outDir, ASK_INDEX_DIR, ASK_INDEX_FILE);
+  return join(outDir, CACHE_DIR, ASK_INDEX_FILE);
 }
 
 function pairs(m: Map<string, number>): [string, number][] {
@@ -86,9 +90,10 @@ function bagLen(p: [string, number][]): number {
 
 /**
  * Tokenize every node in `graph` (exactly as `ask.ts`'s lexical pass does) and
- * write the resulting bags + document frequencies to `<outDir>/.graph/index.json`.
- * Returns the path written. Deterministic: nodes are indexed in id order, so an
- * unchanged graph produces a byte-identical sidecar.
+ * write the resulting bags + document frequencies to
+ * `<outDir>/.cache/ask-index.json`. Returns the path written. Deterministic:
+ * nodes are indexed in id order, so an unchanged graph produces a
+ * byte-identical sidecar.
  */
 export function writeAskIndex(outDir: string, graph: GraphV1): string {
   const nodes = [...graph.nodes].sort((a, b) => a.id.localeCompare(b.id));
@@ -126,8 +131,10 @@ export function writeAskIndex(outDir: string, graph: GraphV1): string {
 }
 
 /** Read the ask sidecar. Returns null on a missing file, unparseable JSON, an
- * unrecognized shape, or an unknown `version` — any of which means the caller
- * should fall back to live tokenization, never crash. */
+ * unrecognized shape, an unknown `version`, or a `docCount` that doesn't match
+ * the number of docs actually stored (a corrupted/truncated sidecar would
+ * otherwise silently skew IDF) — any of which means the caller should fall
+ * back to live tokenization, never crash or trust bad data. */
 export function readAskIndex(outDir: string): AskIndex | null {
   const path = askIndexPath(outDir);
   if (!existsSync(path)) return null;
@@ -140,7 +147,8 @@ export function readAskIndex(outDir: string): AskIndex | null {
       typeof raw.docCount !== "number" ||
       typeof raw.avgBodyLen !== "number" ||
       !Array.isArray(raw.df) ||
-      !Array.isArray(raw.docs)
+      !Array.isArray(raw.docs) ||
+      raw.docCount !== raw.docs.length
     ) {
       return null;
     }
