@@ -13,7 +13,10 @@ export type UpsertAction = 'created' | 'appended' | 'replaced' | 'unchanged';
 type LineEnding = '\n' | '\r\n';
 
 export function fencedBlock(body: string, eol: LineEnding = '\n'): string {
-  const block = `${START}\n${body.replace(/\s+$/, '')}\n${END}`;
+  // Normalize any pre-existing '\r' out of the body first so callers passing
+  // a CRLF (or stray-CR) body never get doubled '\r' when eol is '\r\n'.
+  const normalizedBody = body.replace(/\r/g, '');
+  const block = `${START}\n${normalizedBody.replace(/\s+$/, '')}\n${END}`;
   return eol === '\n' ? block : block.replace(/\n/g, '\r\n');
 }
 
@@ -39,17 +42,24 @@ export function upsertSection(filePath: string, body: string): { action: UpsertA
   }
   const text = readFileSync(filePath, 'utf8');
   const eol = detectEol(text);
-  const block = fencedBlock(body, eol);
-  const lines = text.split('\n');
+  // Split on either eol so lines never carry an embedded '\r' — that keeps
+  // the marker/content comparison clean and lets us rejoin deliberately with
+  // the detected eol instead of relying on '\r' characters riding along
+  // inside array elements (which broke down whenever the block-with-no-
+  // trailing-'\r' element sat next to a '\n' join, e.g. right after END, or
+  // when the block was the entire file).
+  const lines = text.split(/\r\n|\n/);
   const s = markerLineIndex(lines, START);
   const e = s === -1 ? -1 : markerLineIndex(lines, END, s + 1);
   if (s !== -1 && e !== -1) {
     const current = lines.slice(s, e + 1).join('\n');
-    if (current.replace(/\r/g, '') === block.replace(/\r/g, '')) return { action: 'unchanged' };
-    const next = [...lines.slice(0, s), ...block.split('\n'), ...lines.slice(e + 1)];
-    writeFileSync(filePath, next.join('\n'));
+    if (current === fencedBlock(body)) return { action: 'unchanged' };
+    const block = fencedBlock(body, eol);
+    const next = [...lines.slice(0, s), ...block.split(eol), ...lines.slice(e + 1)];
+    writeFileSync(filePath, next.join(eol));
     return { action: 'replaced' };
   }
+  const block = fencedBlock(body, eol);
   const doubleEol = eol + eol;
   const sep = text.endsWith(doubleEol) ? '' : text.endsWith(eol) ? eol : doubleEol;
   writeFileSync(filePath, `${text}${sep}${block}${eol}`);

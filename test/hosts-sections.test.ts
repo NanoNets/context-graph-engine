@@ -77,3 +77,35 @@ test('CRLF file: appending produces a block using CRLF line endings throughout',
   // No bare '\n' without a preceding '\r' anywhere in the result.
   assert.equal(/(?<!\r)\n/.test(text), false, 'result must not mix LF into a CRLF file');
 });
+
+test('CRLF file: replacing the block with surrounding content keeps CRLF throughout', () => {
+  const f = join(fresh(), 'AGENTS.md');
+  const block = fencedBlock('old body', '\r\n');
+  writeFileSync(f, `above\r\n\r\n${block}\r\nbelow\r\n`);
+  const r = upsertSection(f, 'new body');
+  assert.equal(r.action, 'replaced');
+  const text = readFileSync(f, 'utf8');
+  assert.ok(text.includes('above'));
+  assert.ok(text.includes('below'));
+  assert.ok(text.includes('new body'));
+  assert.ok(!text.includes('old body'));
+  assert.equal(/(?<!\r)\n/.test(text), false, 'result must not mix LF into a CRLF file');
+});
+
+test('CRLF file: replacing when the block IS the entire file keeps CRLF throughout', () => {
+  const f = join(fresh(), 'AGENTS.md');
+  const block = fencedBlock('old body', '\r\n');
+  writeFileSync(f, `${block}\r\n`);
+  const r = upsertSection(f, 'new body');
+  assert.equal(r.action, 'replaced');
+  const text = readFileSync(f, 'utf8');
+  assert.ok(text.includes('new body'));
+  assert.ok(!text.includes('old body'));
+  assert.equal(/(?<!\r)\n/.test(text), false, 'result must not mix LF into a CRLF file');
+});
+
+test('fencedBlock does not double "\\r" when the body already has CRLF line endings', () => {
+  const block = fencedBlock('line one\r\nline two', '\r\n');
+  assert.equal(/\r\r/.test(block), false, 'must not contain doubled carriage returns');
+  assert.equal(/(?<!\r)\n/.test(block), false, 'every \\n must be preceded by \\r');
+});
