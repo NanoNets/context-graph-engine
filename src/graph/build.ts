@@ -16,6 +16,7 @@ import { resolveEdges, type GoModule } from "./resolve.js";
 import { enrichGraph, type EnrichStats } from "./enrich.js";
 import { readGraph, writeGraph, wiringPath } from "./write.js";
 import { writeCards, writeIndex, writeCovers } from "./cards.js";
+import { writeAskIndex } from "../ask/index-file.js";
 import type { GraphV1, Kind, NodeV1, Relation } from "./types.js";
 import type { CruxSummarizer } from "../ai/crux.js";
 
@@ -136,6 +137,10 @@ export async function buildGraph(
   };
 
   const graphPath = writeGraph(graph, outDir);
+  // `ask`'s token/IDF sidecar — moves per-query corpus tokenization to build
+  // time (~45% of query time on a 32k-node graph, profiled). Lands next to
+  // wiring.json; `ask` falls back to live tokenization when it's absent/stale.
+  writeAskIndex(outDir, graph);
 
   // Tier-2 passive surface: project the nodes into per-file markdown cards, and
   // refresh the INDEX roster. Pure projection — no LLM, no network.
