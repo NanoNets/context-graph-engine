@@ -6,10 +6,11 @@
 - nodeIdsInFile · function · L50-L56 — function nodeIdsInFile(w: GraphV1, filePath: string): Set<string>
 - incomingEdges · function · L58-L62 — function incomingEdges(w: GraphV1, filePath: string): EdgeV1[]
 - formatBlastRadius · function · L64-L75 — function formatBlastRadius(w: GraphV1, filePath: string, cap = 8): string | null
-- AskJson · interface · L77-L82 — interface AskJson
-- tokensOf · function · L84-L84 — function tokensOf(chars: number): number
-- retrievalBody · function · L89-L99 — function retrievalBody(hits: AskJson['hits']): string
-- retrievalTokensSaved · function · L102-L108 — function retrievalTokensSaved(ask: AskJson, cap = 5): number
-- formatRetrieval · function · L110-L123 — function formatRetrieval(ask: AskJson, cap = 5): string | null
-- formatOrientation · function · L125-L127 — function formatOrientation(indexMd: string, budgetBytes = 1500): string
-- renderSubagent · function · L129-L133 — function renderSubagent(agentName: string, session: SessionState | null): string
+- AskJson · interface · L77-L84 — interface AskJson
+- tokensOf · function · L86-L86 — function tokensOf(chars: number): number
+- retrievalBody · function · L91-L108 — function retrievalBody(hits: AskJson['hits']): string
+- retrievalTokensSaved · function · L111-L117 — function retrievalTokensSaved(ask: AskJson, cap = 5): number
+- formatRetrieval · function · L119-L132 — function formatRetrieval(ask: AskJson, cap = 5): string | null
+- relevantRetrieval · function · L152-L163 — function relevantRetrieval(ask: AskJson, s: SessionState, cap = 3): string | null
+- formatOrientation · function · L165-L167 — function formatOrientation(indexMd: string, budgetBytes = 1500): string
+- renderSubagent · function · L169-L173 — function renderSubagent(agentName: string, session: SessionState | null): string

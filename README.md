@@ -17,8 +17,8 @@
   <img src="https://img.shields.io/badge/telemetry-none-546FFF?style=for-the-badge" />
 </p>
 
-<!-- placeholder: numbers pending a committed benchmark run, see Benchmark below -->
-**31% fewer tool calls · 23% less cost · 17% lower latency.** That is what an agent gets from reading the graph first instead of going in cold.
+<!-- numbers from the committed run in bench/results/ (2026-07-22, 162 agent runs, 2 repos) — see Benchmark below -->
+**32% less cost · 46% fewer tool calls · 60% lower latency** with the graph bundle pushed up front, at equal correctness — or **16% less cost with correctness up 5 points** when the agent pulls from the graph on demand. Measured against the same agent going in cold.
 
 </div>
 
@@ -290,22 +290,23 @@ normalized on load — no regeneration needed.
 
 ## Benchmark
 
-<!-- placeholder: fill from a committed bench/results/ run before launch -->
+The claim Graft has to earn is simple: an agent that gets its context from the graph is cheaper and faster without getting more answers wrong. The harness runs every task through three arms of the same Claude Sonnet 5 agent with the same file tools: **cold** (explores from zero), **graph (push)** (a `graft ask --source` bundle injected up front), and **graft (pull)** (graft_ask/graft_skeleton tools, nothing injected — context paid for only when asked). An Opus 4.8 judge scores correctness with a required-keyword floor so a fast-but-wrong answer cannot win. Cost is cache-aware (reads ≈0.1×, writes 1.25×) — the billing model agents actually run under.
 
-The claim Graft has to earn is simple: an agent that reads the graph first is cheaper and faster without getting more answers wrong. The harness runs every task twice through the same agent with the same file tools. One run is **cold** (it explores from zero) and one is **graph** (it gets the `graft/` bundle up front). A separate model judges correctness, with a required-keyword floor so a fast-but-wrong answer cannot win.
+Committed run: `bench/results/2026-07-22T13-19-14-246Z` — 162 runs across two repos (graft itself and a real Node/Express auth service), 3 trials each, tasks split between localized (single-file) and multi-file questions.
 
-| Metric | Cold | Graph | Change |
+| Metric (mean/task) | Cold | Graph (push) | Graft (pull) |
 |---|---|---|---|
-| Tool calls | _TBD_ | _TBD_ | **−31%** |
-| Cost | _TBD_ | _TBD_ | **−23%** |
-| Latency | _TBD_ | _TBD_ | **−17%** |
-| Correctness | _TBD_ | _TBD_ | _at least as good as cold_ |
+| Cost ($) | 0.0429 | **0.0292 (−32%)** | 0.0362 (−16%) |
+| Uncached input tokens | 8,070 | **4,650 (−42%)** | 5,965 (−26%) |
+| Tool calls | 4.2 | **2.3 (−46%)** | 4.2 (−1%) |
+| Latency (s) | 39.8 | **15.8 (−60%)** | 39.5 (−1%) |
+| Correctness | 93% | 93% | **98% (+5 pts)** |
 
-_The numbers above are placeholders pending a committed run._ Reproduce it yourself:
+Push is the cost/latency win; pull is the correctness win (and never lost to cold anywhere, including single-file tasks). On one corpus push traded 3 correctness points for its savings — the per-corpus and per-locality splits are in the committed results, not averaged away. Reproduce it yourself:
 
 ```bash
-npm run bench -- --smoke   # 1 corpus, 1 task, a quick plumbing check
-npm run bench              # full: all corpora, all tasks
+npm run bench -- --smoke   # 1 corpus, 1 task, all arms — a quick plumbing check
+npm run bench              # full: all corpora, all tasks, 3 arms × 3 trials
 ```
 
 See [`bench/README.md`](bench/README.md) for the method and how to add your own repo.

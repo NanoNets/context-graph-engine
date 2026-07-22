@@ -44,6 +44,7 @@ Produce a CURATED set of nodes of mixed granularity:
 - "concept" nodes: cross-cutting ideas, design decisions, or invariants that span multiple files (e.g. "local-first provider fallback", "staleness checking", "content-hash provenance"). Include several — they are the most valuable nodes for an agent.
 
 Rules:
+- Every summary must earn its tokens with NON-OBVIOUS information: invariants, ordering constraints, conventions, failure modes, "X must never happen after Y" facts, and the WHY behind a design. Never restate what a README says or what a directory listing already makes obvious ("src/api contains the API code" is worthless); an agent reading the node already sees the file paths. If all you can say about a group of files is what their names say, fold them into a larger node instead.
 - Strongly prefer FEWER, larger, meaningful nodes. For a repo of N files, aim for well under N nodes. Do NOT emit one node per file, and never a node per incidental identifier (a local interface, helper, or third-party symbol).
 - Merge duplicates and surface-form variants into one node.
 - For each node give: a canonical human-readable name; a type ("system" | "file" | "concept"); a 1-3 sentence summary of its ROLE in the system; "sources" = the exact file paths (from the input) it is grounded in (a system lists all its files; a concept lists the files that motivate it); and "links" to other nodes you define, each with a relation and a short description of what concretely happens in the code.

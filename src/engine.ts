@@ -90,8 +90,8 @@ export class Graft {
    * channel. Deterministic and $0: routes structural queries to the wiring
    * edges and everything else to a lexical rank over concepts + symbols.
    */
-  ask(dir: string, query: string, opts: { limit?: number; source?: boolean } = {}): AskResult {
-    return ask(dir, query, { contextDir: this.cfg.contextDir, limit: opts.limit, source: opts.source });
+  ask(dir: string, query: string, opts: { limit?: number; source?: boolean; full?: boolean } = {}): AskResult {
+    return ask(dir, query, { contextDir: this.cfg.contextDir, limit: opts.limit, source: opts.source, full: opts.full });
   }
 
   /** The OpenRouter API key, or a clear error telling the user how to set it. */

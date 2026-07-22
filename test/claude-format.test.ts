@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { renderStatusline, enrichedSegment, incomingEdges, formatBlastRadius, formatRetrieval, formatOrientation, renderSubagent } from '../src/claude/format.js';
+import { renderStatusline, enrichedSegment, incomingEdges, formatBlastRadius, formatRetrieval, formatOrientation, renderSubagent, relevantRetrieval, INJECT_MIN_COVERAGE } from '../src/claude/format.js';
 import { emptyStats } from '../src/claude/state.js';
 
 const strip = (s: string) => s.replace(/\x1b\[[0-9;]*m/g, '');
@@ -68,10 +68,17 @@ test('formatRetrieval renders top hits, trims snippet, first pointer only', () =
     { kind: 'concept', title: 'PKCE', pointer: 'src/pkce.ts, src/client.ts', snippet: 'Validates   the   challenge.', score: 1 },
   ] } as any;
   const txt = strip(formatRetrieval(ask)!);
-  assert.match(txt, /retrieved context/);
+  assert.match(txt, /likely starting points/); // pointers-only header (no inlined code)
   assert.match(txt, /PKCE — src\/pkce\.ts/);
   assert.match(txt, /Validates the challenge\./); // snippet trimmed, own line
   assert.doesNotMatch(txt, /client\.ts/); // only the first pointer segment
+});
+
+test('formatRetrieval keeps the substitutive header when code is inlined', () => {
+  const ask = { query: 'pkce', mode: 'lexical', hits: [
+    { kind: 'symbol', title: 'verify', pointer: 'src/pkce.ts:L1-L4', snippet: 's', score: 1, code: 'a\nb' },
+  ] } as any;
+  assert.match(strip(formatRetrieval(ask)!), /retrieved context — read these spans/);
 });
 
 test('formatRetrieval appends a tokens-saved line when ask reports a baseline', () => {
@@ -84,6 +91,48 @@ test('formatRetrieval appends a tokens-saved line when ask reports a baseline', 
 
 test('formatRetrieval returns null for no hits', () => {
   assert.equal(formatRetrieval({ query: 'x', mode: 'empty', hits: [] } as any), null);
+});
+
+// ── relevantRetrieval: the per-prompt injection gate ──
+const gateAsk = (over: Record<string, unknown> = {}) => ({
+  query: 'pkce', mode: 'lexical', coverage: 1,
+  hits: [
+    { kind: 'symbol', title: 'verify', pointer: 'src/pkce.ts:L1-L4', snippet: 's', score: 1 },
+    { kind: 'symbol', title: 'gen', pointer: 'src/pkce.ts:L6-L9', snippet: 's', score: 0.8 },
+  ],
+  ...over,
+}) as any;
+const freshSession = () => ({ lastQuery: null, perAgentQuery: {}, graftReads: 0, sourceReads: 0, savedTokens: 0, injectedPointers: [] as string[] });
+
+test('relevantRetrieval injects on good coverage and records pointers', () => {
+  const s = freshSession();
+  const txt = relevantRetrieval(gateAsk(), s);
+  assert.ok(txt && /verify/.test(strip(txt)));
+  assert.deepEqual(s.injectedPointers, ['src/pkce.ts:L1-L4', 'src/pkce.ts:L6-L9']);
+});
+
+test('relevantRetrieval skips when coverage is below the floor', () => {
+  const s = freshSession();
+  assert.equal(relevantRetrieval(gateAsk({ coverage: INJECT_MIN_COVERAGE - 0.01 }), s), null);
+  assert.deepEqual(s.injectedPointers, [], 'nothing recorded on skip');
+});
+
+test('relevantRetrieval treats missing coverage (structural mode) as relevant', () => {
+  const txt = relevantRetrieval(gateAsk({ coverage: undefined, mode: 'structural' }), freshSession());
+  assert.ok(txt);
+});
+
+test('relevantRetrieval drops already-injected pointers, skips when none are fresh', () => {
+  const s = freshSession();
+  assert.ok(relevantRetrieval(gateAsk(), s), 'first prompt injects');
+  assert.equal(relevantRetrieval(gateAsk(), s), null, 'same hits again → silent');
+  const oneNew = gateAsk({ hits: [
+    { kind: 'symbol', title: 'verify', pointer: 'src/pkce.ts:L1-L4', snippet: 's', score: 1 },
+    { kind: 'symbol', title: 'exchange', pointer: 'src/client.ts:L2-L8', snippet: 's', score: 0.9 },
+  ] });
+  const txt = strip(relevantRetrieval(oneNew, s)!);
+  assert.match(txt, /exchange/, 'fresh hit injected');
+  assert.doesNotMatch(txt, /verify/, 'stale hit dropped from the pack');
 });
 
 test('formatOrientation labels and truncates to budget', () => {

@@ -22,9 +22,13 @@ same understanding costs thousands.
 
 - Ask: \`graft ask "<your task, in plain words>"\` — returns the relevant nodes,
   ranked, with file:line pointers. Add \`--source\` to inline the actual code at
-  each span, so the result IS the code you need — no separate file read.
+  each span, so the result IS the code you need — no separate file read. By
+  default \`--source\` inlines each hit's crux (the ≤8-line core of the
+  definition, marked as such); add \`--full\` only when the crux isn't enough.
   Ask is cheap (<1s) — re-ask with different phrasings for each sub-question,
   and use structural forms too: \`graft ask "who calls <symbol>"\`.
+- Skim a file's API without reading it: \`graft skeleton <file>\` — every
+  definition's signature + span in ~200 tokens, ~10× cheaper than the file.
 - Or explore as usual: grep / ls / cat inside \`graft/\`. A grep for any concept,
   symbol, or filename hits the node that covers it; \`graft/INDEX.md\` lists them
   all.

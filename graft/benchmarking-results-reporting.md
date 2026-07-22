@@ -13,30 +13,42 @@ links:
 generator:
   version: 1
 covers:
+  - symbol: Arm
+    kind: type
+    at: 'bench/report.ts:L6-L6'
   - symbol: Row
     kind: interface
-    at: 'bench/report.ts:L6-L26'
+    at: 'bench/report.ts:L8-L30'
   - symbol: costOf
     kind: function
-    at: 'bench/report.ts:L33-L38'
+    at: 'bench/report.ts:L37-L42'
   - symbol: mean
     kind: function
-    at: 'bench/report.ts:L40-L42'
+    at: 'bench/report.ts:L44-L46'
   - symbol: ArmAgg
     kind: interface
-    at: 'bench/report.ts:L44-L54'
+    at: 'bench/report.ts:L48-L58'
   - symbol: aggregate
     kind: function
-    at: 'bench/report.ts:L56-L68'
+    at: 'bench/report.ts:L60-L72'
   - symbol: pctDelta
     kind: function
-    at: 'bench/report.ts:L70-L74'
+    at: 'bench/report.ts:L74-L78'
   - symbol: fmt
     kind: function
-    at: 'bench/report.ts:L76-L78'
+    at: 'bench/report.ts:L80-L82'
+  - symbol: metricTable
+    kind: function
+    at: 'bench/report.ts:L88-L114'
+  - symbol: cells
+    kind: function
+    at: 'bench/report.ts:L93-L102'
+  - symbol: verdictFor
+    kind: function
+    at: 'bench/report.ts:L117-L127'
   - symbol: buildMarkdown
     kind: function
-    at: 'bench/report.ts:L80-L125'
+    at: 'bench/report.ts:L129-L175'
 ---
 <!-- context:generated:start -->
 ## Summary

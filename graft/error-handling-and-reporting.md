@@ -19,22 +19,19 @@ generator:
 covers:
   - symbol: Args
     kind: interface
-    at: 'bench/run.ts:L29-L35'
+    at: 'bench/run.ts:L38-L44'
   - symbol: parseArgs
     kind: function
-    at: 'bench/run.ts:L37-L52'
+    at: 'bench/run.ts:L46-L66'
   - symbol: pool
     kind: function
-    at: 'bench/run.ts:L55-L66'
+    at: 'bench/run.ts:L69-L80'
   - symbol: worker
     kind: function
-    at: 'bench/run.ts:L58-L63'
-  - symbol: makeDocsWorkdir
-    kind: function
-    at: 'bench/run.ts:L69-L82'
+    at: 'bench/run.ts:L72-L77'
   - symbol: main
     kind: function
-    at: 'bench/run.ts:L84-L201'
+    at: 'bench/run.ts:L82-L202'
   - symbol: GraphBuildOptions
     kind: interface
     at: 'src/graph/build.ts:L23-L36'

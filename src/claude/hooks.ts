@@ -2,9 +2,14 @@ import { readFileSync, existsSync } from 'node:fs';
 import { execFileSync, spawn } from 'node:child_process';
 import { join, basename } from 'node:path';
 import { readWiring } from './stats.js';
-import { formatBlastRadius, formatRetrieval, retrievalTokensSaved, formatOrientation } from './format.js';
+import { formatBlastRadius, relevantRetrieval, formatOrientation } from './format.js';
 import { patchStats, readStats, acquireLock, readSession, writeSession } from './state.js';
 import { graftCliPath, claudeScriptPath } from './paths.js';
+
+/** Prompts shorter than this never trigger retrieval — they are almost always
+ * conversational ("yes go ahead", "thanks") and the coverage gate can't judge
+ * them reliably with so few terms. */
+const MIN_PROMPT_CHARS = 12;
 
 function readStdin(): any {
   const seam = process.env.GRAFT_TEST_STDIN;
@@ -87,24 +92,22 @@ export async function main(event: string): Promise<void> {
 
   if (event === 'prompt') {
     const prompt = String(input?.prompt ?? '').trim();
-    if (prompt.length < 8) return;
-    // --source: inline the actual code spans so the injected pack is substitutive
-    // (the agent reads the span here instead of opening the file), and so `ask`
-    // returns the `saved` baseline used for the tokens-saved line.
-    const ask = graftJson(dir, ['ask', prompt, '.', '--json', '--source', '-n', '5']);
+    if (prompt.length < MIN_PROMPT_CHARS) return;
+    // Pointers-only, small, gated. No --source: per-prompt injected tokens are
+    // fresh full-price input on every turn (unlike the cached SessionStart
+    // orientation), so the pack carries locators, never inlined code — the agent
+    // pulls spans itself via `graft ask --source` when a pointer looks right.
+    // relevantRetrieval then drops the pack entirely when the prompt barely
+    // overlaps the top hit or when every hit was already injected this session.
+    const ask = graftJson(dir, ['ask', prompt, '.', '--json', '-n', '3']);
     if (!ask) return;
-    const txt = formatRetrieval(ask);
-    if (!txt) return;
-    emit('UserPromptSubmit', txt);
     const id = input.session_id || 'default';
     const s = readSession(dir, id);
     s.lastQuery = prompt;
-    // Accumulate tokens saved this session (baseline − pack), so the statusline
-    // can show a running total. Guarded: only when `ask` returned a baseline.
-    const saved = retrievalTokensSaved(ask);
-    if (saved > 0) s.savedTokens = (s.savedTokens ?? 0) + saved;
     const agent = input?.agent?.name;
     if (agent) s.perAgentQuery[agent] = prompt;
+    const txt = relevantRetrieval(ask, s);
+    if (txt) emit('UserPromptSubmit', txt);
     writeSession(dir, id, s);
   }
 }

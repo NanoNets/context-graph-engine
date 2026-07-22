@@ -17,12 +17,16 @@ Run \`graft map\` first — a token-budgeted orientation (dir clusters, hubs,
 hotspots), no LLM, no key.
 
 - Run \`graft ask "<your question>" --source\` → ranked nodes with the relevant
-  code spans inlined. Match the tool to the task shape: for understanding or
-  editing, the top node IS the answer — cite its \`covers:\` file:line spans and
-  edit straight from \`--source\`. For exhaustive tasks ("every occurrence /
-  every caller of this pattern"), ranked results are top-N, not complete — run
-  \`graft grep "<literal>"\` instead (exhaustive over indexed files, grouped by
-  enclosing symbol), falling back to raw \`grep -rn\` only for unindexed files.
+  code spans inlined (each hit's ≤8-line crux by default; \`--full\` for whole
+  definitions when the crux isn't enough). Match the tool to the task shape:
+  for understanding or editing, the top node IS the answer — cite its
+  \`covers:\` file:line spans and edit straight from \`--source\`. For
+  exhaustive tasks ("every occurrence / every caller of this pattern"), ranked
+  results are top-N, not complete — run \`graft grep "<literal>"\` instead
+  (exhaustive over indexed files, grouped by enclosing symbol), falling back
+  to raw \`grep -rn\` only for unindexed files.
+- \`graft skeleton <file>\` → every definition's signature + span, ~10× cheaper
+  than reading the file; use it to skim an API surface.
 - \`graft callers/callees <symbol>\` and \`graft impact <symbol> [-d N]\` give
   precomputed, exact edges — who calls/is called by a symbol, and the full
   blast radius — for structural questions, skip ranking and use these directly.

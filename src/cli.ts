@@ -143,16 +143,31 @@ program
   .argument("[dir]", "repository root", ".")
   .option("-n, --limit <n>", "max results", "8")
   .option("--source", "inline the source at each file:line hit (retriever mode — the pack IS the answer, no need to re-open files)")
+  .option("--full", "with --source: inline whole definition spans instead of the default ≤8-line crux excerpts")
   .option("--json", "output the result as JSON")
-  .action(async (query: string, dir: string, opts: { limit: string; source?: boolean; json?: boolean }) => {
+  .action(async (query: string, dir: string, opts: { limit: string; source?: boolean; full?: boolean; json?: boolean }) => {
     const engine = engineFrom();
-    const r = engine.ask(dir, query, { limit: Number(opts.limit), source: opts.source });
+    const r = engine.ask(dir, query, { limit: Number(opts.limit), source: opts.source, full: opts.full });
     if (opts.json) {
       console.log(JSON.stringify(r, null, 2));
     } else {
       const { formatAsk } = await import("./ask/ask.js");
       process.stdout.write(formatAsk(r));
     }
+  });
+
+program
+  .command("skeleton")
+  .description("Signatures-only view of one file from the wiring graph — the cheapest way to see a file's API surface")
+  .argument("<file>", "repo-relative path (or unique basename) of the file")
+  .argument("[dir]", "repository root", ".")
+  .option("--json", "output the result as JSON")
+  .action(async (file: string, dir: string, opts: { json?: boolean }) => {
+    const { skeleton, formatSkeleton } = await import("./ask/ask.js");
+    const globalOpts = program.opts<{ dir?: string }>();
+    const r = skeleton(dir, file, { contextDir: globalOpts.dir });
+    if (opts.json) console.log(JSON.stringify(r, null, 2));
+    else process.stdout.write(formatSkeleton(r));
   });
 
 program

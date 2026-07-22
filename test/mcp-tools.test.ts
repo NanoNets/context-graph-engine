@@ -72,9 +72,10 @@ function multiDirRepo(): string {
   return d;
 }
 
-test('TOOLS lists all seven tools with schemas', () => {
+test('TOOLS lists all eight tools with schemas', () => {
   assert.deepEqual(TOOLS.map((t) => t.name), [
     'graft_ask',
+    'graft_skeleton',
     'graft_check',
     'graft_blast_radius',
     'graft_callers',
@@ -275,4 +276,14 @@ test('callTool honors a dirOverride for a graph built in a non-default dir', () 
   const noOverride = callTool(repo, 'graft_callers', { symbol: 'add' });
   assert.equal(noOverride.isError, true);
   assert.match(noOverride.text, /graft build/);
+});
+
+test('graft_skeleton returns signatures for a file, errors on unknown file', () => {
+  const d = builtRepo();
+  const r = callTool(d, 'graft_skeleton', { file: 'src/math.ts' });
+  assert.equal(r.isError, false);
+  assert.match(r.text, /graft skeleton — src\/math\.ts/);
+  assert.match(r.text, /function add {2}function add\(a: number, b: number\): number/);
+  const miss = callTool(d, 'graft_skeleton', { file: 'src/nope.ts' });
+  assert.equal(miss.isError, true);
 });

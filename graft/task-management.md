@@ -15,13 +15,13 @@ generator:
 covers:
   - symbol: repoPath
     kind: function
-    at: 'bench/tasks.ts:L26-L29'
+    at: 'bench/tasks.ts:L30-L33'
   - symbol: Task
     kind: interface
-    at: 'bench/tasks.ts:L31-L37'
+    at: 'bench/tasks.ts:L35-L45'
   - symbol: Corpus
     kind: interface
-    at: 'bench/tasks.ts:L39-L45'
+    at: 'bench/tasks.ts:L47-L53'
 ---
 <!-- context:generated:start -->
 ## Summary

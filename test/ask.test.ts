@@ -9,8 +9,9 @@ import assert from "node:assert/strict";
 import { mkdtempSync, writeFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
+import { readFileSync } from "node:fs";
 import { buildGraph } from "../src/graph/build.js";
-import { ask, formatAsk } from "../src/ask/ask.js";
+import { ask, formatAsk, skeleton, formatSkeleton } from "../src/ask/ask.js";
 
 function makeFixture(): string {
   const dir = mkdtempSync(join(tmpdir(), "graft-ask-"));
@@ -32,6 +33,86 @@ test("ask without source returns pointers but no inlined code", async () => {
     assert.ok(hit, "should locate the addNumbers symbol");
     assert.match(hit.pointer, /^math\.ts:L\d+-L\d+$/);
     assert.equal(hit.code, undefined, "no source inlined without the option");
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+/** Stamp a crux onto the addNumbers node in the fixture's committed wiring.json
+ * (fixtures build keyless, so Tier-2 fields ship null). */
+function stampCrux(dir: string, code: string): void {
+  const p = join(dir, "graft", ".graph", "wiring.json");
+  const g = JSON.parse(readFileSync(p, "utf8"));
+  const n = g.nodes.find((n: any) => n.name === "addNumbers");
+  n.crux = { code, span: "L2-L2" };
+  writeFileSync(p, JSON.stringify(g));
+}
+
+test("ask --source inlines the crux by default, the whole span with full", async () => {
+  const dir = makeFixture();
+  try {
+    await buildGraph(dir);
+    stampCrux(dir, "return a + b;");
+    const cruxed = ask(dir, "addNumbers", { source: true });
+    const hit = cruxed.hits.find((h) => h.title.startsWith("addNumbers"))!;
+    assert.match(hit.code!, /^return a \+ b;/, "crux excerpt inlined, not the definition");
+    assert.match(hit.code!, /rerun with --full/, "escalation marker present");
+    const full = ask(dir, "addNumbers", { source: true, full: true });
+    const fullHit = full.hits.find((h) => h.title.startsWith("addNumbers"))!;
+    assert.match(fullHit.code!, /export function addNumbers/, "full definition span inlined");
+    assert.doesNotMatch(fullHit.code!, /rerun with --full/);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("ask --source falls back to the span when a node has no crux", async () => {
+  const dir = makeFixture();
+  try {
+    await buildGraph(dir); // keyless: crux is null on every node
+    const r = ask(dir, "addNumbers", { source: true });
+    const hit = r.hits.find((h) => h.title.startsWith("addNumbers"))!;
+    assert.match(hit.code!, /export function addNumbers/);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("skeleton lists a file's definitions in span order, matches by basename", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "graft-skel-"));
+  try {
+    writeFileSync(
+      join(dir, "api.ts"),
+      `export function first(a: number): number {\n  return a;\n}\n\n` +
+        `export function second(b: string): string {\n  return b;\n}\n`,
+    );
+    await buildGraph(dir);
+    const r = skeleton(dir, "api.ts");
+    assert.deepEqual(r.entries.map((e) => e.name), ["first", "second"], "span order");
+    assert.match(r.entries[0].signature ?? "", /first/);
+    const byBase = skeleton(dir, "api.ts");
+    assert.equal(byBase.file, "api.ts");
+    const txt = formatSkeleton(r);
+    assert.match(txt, /graft skeleton — api\.ts/);
+    assert.match(txt, /L\d+-L\d+ {2}function first/);
+    assert.match(skeleton(dir, "nope.ts").note ?? "", /no definitions/);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("ask reports coverage: 1.0 when every query term hits, low on mostly-off-corpus prompts", async () => {
+  const dir = makeFixture();
+  try {
+    await buildGraph(dir);
+    const exact = ask(dir, "addNumbers");
+    assert.equal(exact.coverage, 1, "single term, fully matched");
+    // Conversational prompt: only "numbers" overlaps the corpus (a common term
+    // there, so low idf weight); the six off-corpus words each carry the heavy
+    // df=0 weight unmatched, sinking the share under the injection floor.
+    const chatty = ask(dir, "thanks looks good please continue numbers tomorrow morning");
+    assert.ok(chatty.hits.length > 0, "still returns lexical hits");
+    assert.ok((chatty.coverage ?? 1) < 0.15, `coverage should be under the floor, got ${chatty.coverage}`);
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }

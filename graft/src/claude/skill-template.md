@@ -1,3 +1,3 @@
 # src/claude/skill-template.ts
 
-- skillTemplate · function · L6-L72 — function skillTemplate(): string
+- skillTemplate · function · L6-L76 — function skillTemplate(): string
