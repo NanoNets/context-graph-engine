@@ -2,36 +2,36 @@
    Visual reference of record: docs/superpowers/specs/2026-07-15-graft-viz-design.md */
 :root{
   --bg:#F4F6F6; --panel:#FFFFFF; --panel2:#FBFCFC; --ink:#17191B; --muted:#6B7278;
-  --border:#E2E6E7; --border2:#EDF0F1; --accent:#0B7A69; --accent-ink:#0B7A69;
+  --border:#E2E6E7; --border2:#EDF0F1; --accent:#546FFF; --accent-ink:#546FFF;
   --chip:#F0F3F3;
-  --sys:#4A7DF0; --con:#A06BDB; --fil:#D98E2B; --api:#D65C7E;
-  --k-file:#D98E2B; --k-class:#4A7DF0; --k-fn:#0FA38A; --k-method:#3AA7C9; --k-iface:#A06BDB; --k-type:#D65C7E; --k-enum:#6BAA3F;
+  --sys:#4A7DF0; --con:#A06BDB; --fil:#D98E2B; --api:#C95CB8;
+  --k-file:#D98E2B; --k-class:#4A7DF0; --k-fn:#4F86C6; --k-method:#3AA7C9; --k-iface:#A06BDB; --k-type:#C95CB8; --k-enum:#B69B3D;
   --edge:#9AA4A9; --canvas:#F8FAFA;
 }
 @media (prefers-color-scheme: dark){
   :root{
     --bg:#0E1012; --panel:#15181B; --panel2:#111417; --ink:#E7E9EA; --muted:#8B9298;
-    --border:#252B30; --border2:#1D2226; --accent:#2FBFA4; --accent-ink:#2FBFA4;
+    --border:#252B30; --border2:#1D2226; --accent:#7B8FFF; --accent-ink:#7B8FFF;
     --chip:#1C2125;
-    --sys:#6B94F5; --con:#B487E0; --fil:#E0A04A; --api:#E07A97;
-    --k-file:#E0A04A; --k-class:#6B94F5; --k-fn:#2FBFA4; --k-method:#56B9D8; --k-iface:#B487E0; --k-type:#E07A97; --k-enum:#8CC45E;
+    --sys:#6B94F5; --con:#B487E0; --fil:#E0A04A; --api:#D183C9;
+    --k-file:#E0A04A; --k-class:#6B94F5; --k-fn:#7EAEDD; --k-method:#56B9D8; --k-iface:#B487E0; --k-type:#D183C9; --k-enum:#D4BB5E;
     --edge:#4A545B; --canvas:#101315;
   }
 }
 :root[data-theme="dark"]{
   --bg:#0E1012; --panel:#15181B; --panel2:#111417; --ink:#E7E9EA; --muted:#8B9298;
-  --border:#252B30; --border2:#1D2226; --accent:#2FBFA4; --accent-ink:#2FBFA4;
+  --border:#252B30; --border2:#1D2226; --accent:#7B8FFF; --accent-ink:#7B8FFF;
   --chip:#1C2125;
-  --sys:#6B94F5; --con:#B487E0; --fil:#E0A04A; --api:#E07A97;
-  --k-file:#E0A04A; --k-class:#6B94F5; --k-fn:#2FBFA4; --k-method:#56B9D8; --k-iface:#B487E0; --k-type:#E07A97; --k-enum:#8CC45E;
+  --sys:#6B94F5; --con:#B487E0; --fil:#E0A04A; --api:#D183C9;
+  --k-file:#E0A04A; --k-class:#6B94F5; --k-fn:#7EAEDD; --k-method:#56B9D8; --k-iface:#B487E0; --k-type:#D183C9; --k-enum:#D4BB5E;
   --edge:#4A545B; --canvas:#101315;
 }
 :root[data-theme="light"]{
   --bg:#F4F6F6; --panel:#FFFFFF; --panel2:#FBFCFC; --ink:#17191B; --muted:#6B7278;
-  --border:#E2E6E7; --border2:#EDF0F1; --accent:#0B7A69; --accent-ink:#0B7A69;
+  --border:#E2E6E7; --border2:#EDF0F1; --accent:#546FFF; --accent-ink:#546FFF;
   --chip:#F0F3F3;
-  --sys:#4A7DF0; --con:#A06BDB; --fil:#D98E2B; --api:#D65C7E;
-  --k-file:#D98E2B; --k-class:#4A7DF0; --k-fn:#0FA38A; --k-method:#3AA7C9; --k-iface:#A06BDB; --k-type:#D65C7E; --k-enum:#6BAA3F;
+  --sys:#4A7DF0; --con:#A06BDB; --fil:#D98E2B; --api:#C95CB8;
+  --k-file:#D98E2B; --k-class:#4A7DF0; --k-fn:#4F86C6; --k-method:#3AA7C9; --k-iface:#A06BDB; --k-type:#C95CB8; --k-enum:#B69B3D;
   --edge:#9AA4A9; --canvas:#F8FAFA;
 }
 

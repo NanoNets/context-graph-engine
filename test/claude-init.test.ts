@@ -93,25 +93,27 @@ test('formatInitEpilogue: graph built shows stats, wordmark, and the 3-step list
   const out = formatInitEpilogue({ graphBuilt: true, nodes: 6398, edges: 10912 });
   assert.match(out, /\|___\/\s*$/m);
   assert.ok(out.includes('6,398 nodes · 10,912 edges'));
-  assert.ok(out.includes('1. commit the map'));
-  assert.ok(out.includes('2. restart your agent'));
-  assert.ok(out.includes('3. try it'));
+  assert.ok(out.includes('1. restart your agent'));
+  assert.ok(out.includes('2. code as usual'));
+  assert.ok(out.includes('3. explore by hand'));
   assert.ok(out.includes('graft ask'));
   assert.ok(!out.includes('build the graph'));
   assert.ok(!out.includes('OPENROUTER'));
+  assert.ok(out.includes('git add graft'));
 });
 
 test('formatInitEpilogue: graph not built shows "build the graph" as step 1, no stats, same column alignment', () => {
   const built = formatInitEpilogue({ graphBuilt: true, nodes: 4, edges: 4 });
   const notBuilt = formatInitEpilogue({ graphBuilt: false });
   assert.ok(notBuilt.includes('1. build the graph'));
-  assert.ok(notBuilt.includes('2. commit the map'));
-  assert.ok(notBuilt.includes('3. restart your agent'));
-  assert.ok(notBuilt.includes('4. try it'));
+  assert.ok(notBuilt.includes('2. restart your agent'));
+  assert.ok(notBuilt.includes('3. code as usual'));
+  assert.ok(notBuilt.includes('4. explore by hand'));
   assert.ok(!notBuilt.includes('nodes ·'));
+  assert.ok(notBuilt.includes('git add graft'));
   // the command column (after "restart your agent", the longest label) lines up
   // identically whether there are 3 or 4 numbered steps.
-  const col = (text: string, marker: string) => text.split('\n').find((l) => l.includes(marker))!.indexOf('the next session');
+  const col = (text: string, marker: string) => text.split('\n').find((l) => l.includes(marker))!.indexOf('a new session');
   assert.equal(col(built, 'restart your agent'), col(notBuilt, 'restart your agent'));
 });
 
@@ -124,7 +126,9 @@ test('CLI: graft init epilogue has the wordmark + next steps, and never mentions
   );
   assert.equal(res.status, 0, res.stderr);
   assert.ok(res.stderr.includes('|___/'), 'wordmark present');
-  assert.ok(res.stderr.includes('commit the map'));
+  assert.ok(res.stderr.includes('code as usual'));
+  assert.ok(res.stderr.includes('restart your agent'));
+  assert.ok(res.stderr.includes('git add graft'));
   assert.ok(res.stderr.includes('graft ask'));
   assert.ok(!res.stderr.includes('OPENROUTER'));
   // --no-build, never built before → "build the graph" is step 1

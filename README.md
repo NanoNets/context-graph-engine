@@ -204,8 +204,12 @@ graft init --agents cursor kiro      # wire only these agents (ids: agents, curs
 graft init --all-agents              # wire every known agent, detected or not
 graft init --list-agents             # list known agent ids and exit
 
+graft version                        # print the installed + latest published npm version
+graft upgrade                        # npm install -g the latest published version
+
 # global
 graft --dir <path>                   # use a context dir other than <repo>/graft
+graft --version, -v                  # print the installed version and exit
 ```
 
 ## Visualize it (`graft viz`)

@@ -17,6 +17,12 @@ const WORDMARK_LINES = [
 ];
 const STATS_LINE_INDEX = 4;
 
+// Nanonets indigo, and a muted grey for the secondary stats suffix — only
+// applied when stderr is a real TTY (tests spawn/call this without one, so
+// existing plain-text assertions keep passing).
+const indigo = (s: string) => `\x1b[38;2;84;111;255m${s}\x1b[0m`;
+const muted = (s: string) => `\x1b[38;5;244m${s}\x1b[0m`;
+
 interface Step {
   label: string;
   command: string;
@@ -37,21 +43,25 @@ export interface InitEpilogueOptions {
  * caller's `console.error` adds the one trailing newline). */
 export function formatInitEpilogue(opts: InitEpilogueOptions): string {
   const { graphBuilt, nodes, edges } = opts;
+  const tty = Boolean(process.stderr.isTTY);
 
-  const wordmark = [...WORDMARK_LINES];
+  const wordmark = WORDMARK_LINES.map((l) => (tty ? indigo(l) : l));
   if (graphBuilt && nodes !== undefined && edges !== undefined) {
-    wordmark[STATS_LINE_INDEX] =
-      `${wordmark[STATS_LINE_INDEX]}  ${nodes.toLocaleString("en-US")} nodes · ${edges.toLocaleString("en-US")} edges`;
+    const stats = `  ${nodes.toLocaleString("en-US")} nodes · ${edges.toLocaleString("en-US")} edges`;
+    wordmark[STATS_LINE_INDEX] += tty ? muted(stats) : stats;
   }
 
   const steps: Step[] = [
     ...(graphBuilt ? [] : [{ label: "build the graph", command: "graft build" }]),
-    { label: "commit the map", command: 'git add graft .claude && git commit -m "add graft"' },
-    { label: "restart your agent", command: "the next session picks up the skill + statusline" },
+    { label: "restart your agent", command: "a new session picks up graft automatically" },
     {
-      label: "try it",
-      command: 'graft ask "where is auth handled?"',
-      extra: ["graft callers <function> · graft viz"],
+      label: "code as usual",
+      command: "ask your agent to fix a bug or explain a flow —",
+      extra: ["it now answers from the graph"],
+    },
+    {
+      label: "explore by hand",
+      command: 'graft ask "where is auth handled?" · graft callers <fn> · graft viz',
     },
   ];
 
@@ -69,5 +79,7 @@ export function formatInitEpilogue(opts: InitEpilogueOptions): string {
     }
   });
 
-  return [...wordmark, "", ...stepLines].join("\n");
+  const closing = `${indent}when it clicks: git add graft .claude && git commit — every teammate's agent gets the map`;
+
+  return [...wordmark, "", ...stepLines, "", closing].join("\n");
 }

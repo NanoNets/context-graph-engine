@@ -27,18 +27,38 @@ import { hostIds } from "./hosts/registry.js";
 import { contextDirFor } from "./context/node-file.js";
 import { loadGraphCached } from "./graph/load.js";
 import { formatInitEpilogue } from "./cli-epilogue.js";
+import { formatUpgradeReport, formatVersionReport, getNpmViewVersion, readCurrentVersion, runUpgrade } from "./cli-meta.js";
 
 const program = new Command();
+const currentVersion = readCurrentVersion(import.meta.url);
 
 program
   .name("graft")
   .description("Build a repo's context graph as linked markdown, and keep it in sync with the code.")
+  .version(currentVersion, "-v, --version")
   .option("--dir <path>", "context graph directory (default: <repo>/graft)");
 
 function engineFrom(): Graft {
   const opts = program.opts<{ dir?: string }>();
   return new Graft({ contextDir: opts.dir });
 }
+
+program
+  .command("version")
+  .description("Print the installed version and the latest published on npm")
+  .action(() => {
+    const latest = getNpmViewVersion();
+    console.log(formatVersionReport(currentVersion, latest));
+  });
+
+program
+  .command("upgrade")
+  .description("Upgrade the globally installed graft to the latest version on npm")
+  .action(() => {
+    const result = runUpgrade(import.meta.url);
+    console.log(formatUpgradeReport(result));
+    if (result.ran && !result.ok) process.exit(1);
+  });
 
 program
   .command("build")
