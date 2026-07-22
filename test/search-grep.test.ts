@@ -16,6 +16,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { grepGraph } from '../src/search/grep.js';
+import { zeroHitNote } from '../src/search/grep-cli.js';
 import { WALK_RELATIONS } from '../src/graph/relations.js';
 import { readGraph, wiringPath } from '../src/graph/write.js';
 import type { GraphV1, NodeV1 } from '../src/graph/types.js';
@@ -221,4 +222,22 @@ test('grepGraph: unreadable file is skipped and counted into truncated.files, no
   assert.equal(r.filesSearched, 2);
   assert.equal(r.truncated.files, 1);
   assert.equal(r.totalHits, 1);
+});
+
+test('zeroHitNote (grep-cli.ts): zero hits AND unreadable indexed files mentions the unreadable count, not just the zero-hit note', () => {
+  const d = mkdtempSync(join(tmpdir(), 'graft-grep-zero-unreadable-'));
+  writeFileSync(join(d, 'real.txt'), 'nothing interesting here\n');
+  // 'missing.txt' is indexed in the graph but does not exist on disk — the
+  // graph is stale (or the root is wrong) relative to what's on disk.
+  const graph = graphOf([fileNode('real.txt', 1), fileNode('missing.txt', 1)]);
+
+  const r = grepGraph(graph, d, 'NOPE_NOT_PRESENT');
+  assert.equal(r.totalHits, 0);
+  assert.equal(r.truncated.files, 1);
+
+  const note = zeroHitNote(r);
+  // The plain zero-hit wording must still be there...
+  assert.match(note, /no hits for "NOPE_NOT_PRESENT"/);
+  // ...but truncation is never silent: 1 unreadable file must be surfaced too.
+  assert.match(note, /1 indexed file.*could not be read/);
 });

@@ -60,9 +60,17 @@ export function formatGrepResult(result: GrepResult): string {
 
 /** Loud, actionable zero-hit note (never a bare empty result) — printed to
  * stderr; the caller still exits 0, since "no hits in the indexed graph" is
- * not an error, just a reason to fall back to a real grep. */
+ * not an error, just a reason to fall back to a real grep.
+ *
+ * Truncation is never silent, even on the zero-hit path: if some indexed
+ * files couldn't be read (`truncated.files > 0`), that's called out too —
+ * otherwise a zero-hit result on a stale graph or wrong root reads as "no
+ * matches" when really some files were never searched at all. */
 export function zeroHitNote(result: GrepResult): string {
-  return `no hits for "${result.pattern}" in ${result.filesSearched} indexed files — unindexed files (docs, configs, new files) aren't searched; try grep -rn "${result.pattern}" for those`;
+  const base = `no hits for "${result.pattern}" in ${result.filesSearched} indexed files — unindexed files (docs, configs, new files) aren't searched; try grep -rn "${result.pattern}" for those`;
+  const { files } = result.truncated;
+  if (files === 0) return base;
+  return `${base} — note: ${files} indexed file${files === 1 ? "" : "s"} could not be read (stale graph? run graft build)`;
 }
 
 /**
