@@ -42,7 +42,7 @@ export interface RepoMap {
   totals: { files: number; symbols: number; edges: number; languages: string[] };
   /** Sorted by symbol count desc (ties by path asc), capped at `maxDirs`. */
   dirs: DirEntry[];
-  /** Global top hubs by inDegree, ties by name asc. */
+  /** Global top hubs by inDegree, ties by name asc then path asc. */
   hotspots: Hub[];
   /** Directory groups beyond the `maxDirs` cap — never silently dropped. */
   dropped: number;
@@ -84,14 +84,14 @@ function computeInDegree(graph: GraphV1): Map<string, number> {
   return deg;
 }
 
-/** Top `cap` nodes by inDegree (ties broken by name asc for determinism),
- * dropping anything with zero inbound edges — a hub with no callers isn't a
- * hub. */
+/** Top `cap` nodes by inDegree (ties broken by name asc, then path asc, for
+ * full determinism regardless of the input nodes' array order), dropping
+ * anything with zero inbound edges — a hub with no callers isn't a hub. */
 function topHubs(nodes: NodeV1[], inDegree: Map<string, number>, cap: number): Hub[] {
   return nodes
     .map((n) => ({ name: n.name, kind: n.kind, path: n.path, span: n.span, inDegree: inDegree.get(n.id) ?? 0 }))
     .filter((h) => h.inDegree > 0)
-    .sort((a, b) => b.inDegree - a.inDegree || a.name.localeCompare(b.name))
+    .sort((a, b) => b.inDegree - a.inDegree || a.name.localeCompare(b.name) || a.path.localeCompare(b.path))
     .slice(0, cap);
 }
 
@@ -214,7 +214,7 @@ export function formatRepoMap(map: RepoMap): string {
   const lines: string[] = [header, ""];
   for (const d of map.dirs) lines.push(formatDirLine(d));
   if (map.dropped > 0) {
-    lines.push(`… +${map.dropped} more director${map.dropped === 1 ? "y" : "ies"} not shown (raise --max-dirs or use --json)`);
+    lines.push(`… +${map.dropped} more director${map.dropped === 1 ? "y" : "ies"} not shown (raise max-dirs to see more)`);
   }
   lines.push("");
   lines.push(`hotspots: ${map.hotspots.map(formatHotspot).join("  ")}`);

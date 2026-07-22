@@ -308,8 +308,9 @@ program
     "Token-budgeted repo orientation — directory clusters, per-directory hubs, and global hotspots from the wiring graph ($0, no LLM)",
   )
   .argument("[dir]", "repository root", ".")
+  .option("--max-dirs <n>", "max directory entries shown, rest counted into dropped (default 16)")
   .option("--json", "output as JSON")
-  .action(async (dir: string, opts: { json?: boolean }) => {
+  .action(async (dir: string, opts: { json?: boolean; maxDirs?: string }) => {
     const { buildRepoMap, formatRepoMap } = await import("./graph/map.js");
     const root = resolve(dir);
     const globalOpts = program.opts<{ dir?: string }>();
@@ -320,7 +321,17 @@ program
       process.exit(1);
       return;
     }
-    const map = buildRepoMap(graph);
+    let maxDirs: number | undefined;
+    if (opts.maxDirs !== undefined) {
+      const n = parseInt(opts.maxDirs, 10);
+      if (!Number.isFinite(n) || n <= 0) {
+        console.error(`✗ --max-dirs must be a positive integer, got "${opts.maxDirs}"`);
+        process.exit(1);
+        return;
+      }
+      maxDirs = n;
+    }
+    const map = buildRepoMap(graph, { maxDirs });
     if (opts.json) {
       console.log(JSON.stringify(map, null, 2));
       return;

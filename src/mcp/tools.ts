@@ -106,7 +106,12 @@ export const TOOLS: ToolDef[] = [
     name: 'graft_map',
     description:
       'Token-budgeted repo orientation — directory clusters, per-directory hubs, and global hotspots computed purely from the wiring graph ($0, no LLM). Use this to get oriented in an unfamiliar repo before diving into files.',
-    inputSchema: { type: 'object', properties: {} },
+    inputSchema: {
+      type: 'object',
+      properties: {
+        max_dirs: { type: 'number', description: 'max directory entries shown, rest counted into dropped (default 16)' },
+      },
+    },
   },
 ];
 
@@ -202,7 +207,8 @@ export function callTool(
       case 'graft_map': {
         const w = loadGraphCached(contextDirFor(root, dirOverride));
         if (!w) return { text: NO_GRAPH, isError: true };
-        const map = buildRepoMap(w);
+        const maxDirs = typeof args.max_dirs === 'number' && Number.isFinite(args.max_dirs) && args.max_dirs > 0 ? args.max_dirs : undefined;
+        const map = buildRepoMap(w, { maxDirs });
         return { text: formatRepoMap(map), isError: false };
       }
       default:

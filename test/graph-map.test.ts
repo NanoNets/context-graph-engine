@@ -183,6 +183,36 @@ test("buildRepoMap: hotspots rank globally by inDegree, ties broken by name asc,
   assert.equal(map.hotspots[1].name, "alpha", "remaining tie broken by name asc");
 });
 
+test("buildRepoMap: hub/hotspot order is identical regardless of node array order (final path-asc tie-break)", () => {
+  // Two symbols, same name, same inDegree, different paths — a same-name/
+  // same-inDegree tie that `name asc` alone can't resolve deterministically;
+  // without a final `path asc` tie-break the reported order depends on
+  // whichever happened to come first in `graph.nodes`.
+  const fileA = fileNode("alpha/a.ts");
+  const fileB = fileNode("beta/b.ts");
+  const symInAlpha = symNode("alpha/a.ts", "dup");
+  const symInBeta = symNode("beta/b.ts", "dup");
+  const callerFile = fileNode("callers/c.ts");
+  const edges = [
+    edge("callers/c.ts#caller1", "alpha/a.ts#dup"),
+    edge("callers/c.ts#caller2", "beta/b.ts#dup"),
+  ];
+
+  const forward = buildRepoMap(
+    graphOf([fileA, symInAlpha, fileB, symInBeta, callerFile], edges),
+  );
+  const reversed = buildRepoMap(
+    graphOf([callerFile, fileB, symInBeta, fileA, symInAlpha], edges),
+  );
+
+  assert.deepEqual(forward.hotspots, reversed.hotspots, "hotspot order must not depend on node array order");
+  assert.deepEqual(
+    forward.hotspots.map((h) => h.path),
+    ["alpha/a.ts", "beta/b.ts"],
+    "tied name+inDegree hotspots break the tie by path asc",
+  );
+});
+
 test("buildRepoMap: symbols with zero inbound edges are never listed as hubs or hotspots", () => {
   const nodes = [fileNode("lib/x.ts"), symNode("lib/x.ts", "lonely"), fileNode("other/y.ts")];
   const map = buildRepoMap(graphOf(nodes, []));
@@ -241,12 +271,32 @@ test("formatRepoMap: stays under the 6000-char budget and surfaces hub names", (
   }
 });
 
-test("formatRepoMap: notes dropped directories beyond the cap", () => {
+test("formatRepoMap: notes dropped directories beyond the cap, pointing only at options that actually exist", () => {
   const nodes: NodeV1[] = [];
   for (const dir of ["a", "b", "c", "d"]) nodes.push(fileNode(`${dir}/x.ts`));
   const map = buildRepoMap(graphOf(nodes, []), { maxDirs: 1 });
   const text = formatRepoMap(map);
   assert.match(text, /\+3 more directories not shown/);
+  // Regression: the old note said "raise --max-dirs or use --json" — no
+  // --max-dirs flag existed, and --json is capped identically (both go
+  // through the same `maxDirs`-sliced RepoMap), so dropped dirs were
+  // unreachable either way. The reworded note only promises a real escape
+  // hatch (the now-real `maxDirs` option) and drops the dead --json mention.
+  assert.match(text, /max-dirs/);
+  assert.doesNotMatch(text, /--json/);
+});
+
+test("buildRepoMap: a raised maxDirs opt actually surfaces previously-dropped dirs (the real --max-dirs escape hatch)", () => {
+  const nodes: NodeV1[] = [];
+  for (const dir of ["a", "b", "c", "d", "e"]) nodes.push(fileNode(`${dir}/x.ts`));
+
+  const capped = buildRepoMap(graphOf(nodes, []), { maxDirs: 2 });
+  assert.equal(capped.dirs.length, 2);
+  assert.equal(capped.dropped, 3);
+
+  const raised = buildRepoMap(graphOf(nodes, []), { maxDirs: 10 });
+  assert.equal(raised.dirs.length, 5, "raising maxDirs surfaces every dir");
+  assert.equal(raised.dropped, 0);
 });
 
 test("formatRepoMap: an empty repo map still renders a well-formed header", () => {

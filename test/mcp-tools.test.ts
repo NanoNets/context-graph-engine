@@ -59,6 +59,19 @@ function fileScopeRepo(): string {
   return d;
 }
 
+/** Five top-level dirs, one file each — enough groups that a small `max_dirs`
+ * actually drops some, so the `graft_map` `max_dirs` arg has something to
+ * prove it's wired through to `buildRepoMap`. */
+function multiDirRepo(): string {
+  const d = mkdtempSync(join(tmpdir(), 'graft-mcptools-multidir-'));
+  for (const dir of ['aaa', 'bbb', 'ccc', 'ddd', 'eee']) {
+    mkdirSync(join(d, dir), { recursive: true });
+    writeFileSync(join(d, dir, 'x.ts'), `export function ${dir}Fn(): number {\n  return 1;\n}\n`);
+  }
+  execFileSync(process.execPath, ['--import', 'tsx', 'src/cli.ts', 'build', d], { stdio: 'pipe' });
+  return d;
+}
+
 test('TOOLS lists all seven tools with schemas', () => {
   assert.deepEqual(TOOLS.map((t) => t.name), [
     'graft_ask',
@@ -231,6 +244,18 @@ test('graft_map: unbuilt repo is a soft isError with the no-graph message', () =
   const r = callTool(bare, 'graft_map', {});
   assert.equal(r.isError, true);
   assert.match(r.text, /graft build/);
+});
+
+test('graft_map: max_dirs arg is honored — the MCP escape hatch for dropped dirs', () => {
+  const d = multiDirRepo();
+
+  const capped = callTool(d, 'graft_map', { max_dirs: 1 });
+  assert.equal(capped.isError, false);
+  assert.match(capped.text, /\+4 more directories not shown/);
+
+  const raised = callTool(d, 'graft_map', { max_dirs: 10 });
+  assert.equal(raised.isError, false);
+  assert.doesNotMatch(raised.text, /more directories? not shown/);
 });
 
 test('callTool honors a dirOverride for a graph built in a non-default dir', () => {
