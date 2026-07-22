@@ -12,6 +12,7 @@ import type OpenAI from "openai";
 import { readFileSync, statSync, readdirSync, realpathSync } from "node:fs";
 import { resolve, relative, join, isAbsolute, sep } from "node:path";
 import { SKIP_DIRS, MAX_FILE_BYTES } from "../src/ingest/fs.js";
+import { ask, formatAsk, skeleton, formatSkeleton } from "../src/ask/ask.js";
 import { makeClient, AGENT_MODEL } from "./llm.js";
 
 export { AGENT_MODEL };
@@ -30,8 +31,12 @@ export interface RunAgentOptions {
   /** Directory the filesystem tools are confined to. */
   root: string;
   question: string;
-  /** When set (graph arm), this bundle is injected before the question. */
+  /** When set (graph/push arm), this bundle is injected before the question. */
   contextBundle?: string;
+  /** When set (pull arm), the agent additionally gets graft_ask/graft_skeleton
+   * tools over the prebuilt graph at this contextDir — nothing injected up
+   * front; the agent pays for graph context only when it asks for it. */
+  graft?: { contextDir: string };
   maxIterations?: number;
   client?: OpenAI;
 }
@@ -161,12 +166,56 @@ const TOOLS: OpenAI.Chat.Completions.ChatCompletionTool[] = [
   },
 ];
 
+/** Extra tools for the pull arm: the graft graph as an on-demand service. */
+const GRAFT_TOOLS: OpenAI.Chat.Completions.ChatCompletionTool[] = [
+  {
+    type: "function",
+    function: {
+      name: "graft_ask",
+      description:
+        "Query this repo's prebuilt context graph in plain words. Returns ranked symbols/concepts with exact file:line spans and the relevant source inlined — the cheapest way to locate and understand code. Prefer it over grep/read_file for orientation; use structural phrasings too ('who calls X').",
+      parameters: {
+        type: "object",
+        properties: {
+          query: { type: "string", description: "What you want to understand, in plain words" },
+          limit: { type: "integer", description: "Max results (default 5)" },
+          full: { type: "boolean", description: "Inline whole definition spans instead of crux excerpts" },
+        },
+        required: ["query"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "graft_skeleton",
+      description:
+        "Signatures-only view of one file — every definition's signature + line span, ~10× cheaper than reading the file.",
+      parameters: {
+        type: "object",
+        properties: { file: { type: "string", description: "Repo-relative file path" } },
+        required: ["file"],
+      },
+    },
+  },
+];
+
 const MAX_GREP_MATCHES = 100;
 const MAX_GLOB_RESULTS = 200;
 const MAX_READ_LINES = 400;
 
-function runTool(root: string, name: string, input: any): string {
+function runTool(root: string, name: string, input: any, graft?: { contextDir: string }): string {
   try {
+    if (graft && name === "graft_ask") {
+      const limit = typeof input.limit === "number" ? input.limit : 5;
+      const r = ask(root, String(input.query ?? ""), {
+        contextDir: graft.contextDir, limit, source: true, full: input.full === true,
+      });
+      return formatAsk(r);
+    }
+    if (graft && name === "graft_skeleton") {
+      return formatSkeleton(skeleton(root, String(input.file ?? ""), { contextDir: graft.contextDir }));
+    }
     if (name === "read_file") {
       const file = safePath(root, String(input.path));
       const lines = readFileSync(file, "utf8").split("\n");
@@ -245,8 +294,13 @@ export async function runAgent(opts: RunAgentOptions): Promise<AgentResult> {
   // prior transcript is a cache read rather than re-billed at full price —
   // which is how Claude Code actually runs, and what makes the token numbers fair.
   const cc = { type: "ephemeral" as const };
+  const systemText = opts.graft
+    ? SYSTEM_PROMPT +
+      " This repo also has a prebuilt context graph: the graft_ask and graft_skeleton tools query it and are much cheaper than grep/read_file for finding and understanding code."
+    : SYSTEM_PROMPT;
+  const tools = opts.graft ? [...TOOLS, ...GRAFT_TOOLS] : TOOLS;
   const messages: any[] = [
-    { role: "system", content: [{ type: "text", text: SYSTEM_PROMPT, cache_control: cc }] },
+    { role: "system", content: [{ type: "text", text: systemText, cache_control: cc }] },
     { role: "user", content: [{ type: "text", text: userText, cache_control: cc }] },
   ];
 
@@ -271,7 +325,7 @@ export async function runAgent(opts: RunAgentOptions): Promise<AgentResult> {
       model: AGENT_MODEL,
       max_tokens: 4096,
       messages,
-      tools: TOOLS,
+      tools,
     });
     const u: any = resp.usage ?? {};
     const cached = u.prompt_tokens_details?.cached_tokens ?? 0;
@@ -301,7 +355,7 @@ export async function runAgent(opts: RunAgentOptions): Promise<AgentResult> {
         /* leave input empty; runTool will error informatively */
       }
       toolLog.push({ name: tc.function.name, input });
-      const result = runTool(root, tc.function.name, input);
+      const result = runTool(root, tc.function.name, input, opts.graft);
       messages.push({ role: "tool", tool_call_id: tc.id, content: [{ type: "text", text: result }] });
     }
     slideCacheBreakpoint();

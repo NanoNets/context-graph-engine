@@ -79,6 +79,8 @@ export interface AskJson {
   hits: { kind: string; title: string; pointer: string; snippet: string; score: number; code?: string }[];
   /** Set by `ask --source`: whole size of the files these hits cover (baseline). */
   saved?: { files: number; baselineChars: number };
+  /** Lexical mode: share (0..1) of the query's distinct terms the top hit matched. */
+  coverage?: number;
 }
 
 function tokensOf(chars: number): number { return Math.round(chars / 4); }
@@ -95,7 +97,14 @@ function retrievalBody(hits: AskJson['hits']): string {
     if (h.code) b += `\n\`\`\`\n${h.code}\n\`\`\``;
     return b;
   });
-  return `[graft] retrieved context — read these spans, do not re-open the files:\n${blocks.join('\n')}`;
+  // Two pack shapes: with inlined code the pack is substitutive (read here, don't
+  // re-open); without code it is pointers-only — locators the agent may follow,
+  // pulling spans itself via `graft ask --source` (push→pull: per-prompt injected
+  // tokens are always fresh full-price input, so the pack stays tiny).
+  const header = hits.some((h) => h.code)
+    ? '[graft] retrieved context — read these spans, do not re-open the files:'
+    : '[graft] likely starting points — if relevant, open the pointer or run `graft ask "<task>" --source` for the code:';
+  return `${header}\n${blocks.join('\n')}`;
 }
 
 /** Tokens saved (baseline − this pack), or 0 when no honest estimate applies. */
@@ -120,6 +129,37 @@ export function formatRetrieval(ask: AskJson, cap = 5): string | null {
     `${tokensOf(body.length).toLocaleString()} tok vs reading the ${ask.saved!.files} file(s) whole ≈ ` +
     `${base.toLocaleString()} tok (estimate).`
   );
+}
+
+/** Coverage below this → skip the pack. A floor, not a classifier: lexical
+ * coverage can't reliably rank mid-range prompts, so the floor sits where it
+ * only rejects flagrantly off-repo prompts (chatter, greetings, unrelated
+ * asks — these probe well under 0.1) and never a genuinely on-repo task. The
+ * cost asymmetry justifies leaning low: a wrongly-skipped pack is recoverable
+ * (the agent pulls with `graft ask`), a wrongly-injected one is pure noise. */
+export const INJECT_MIN_COVERAGE = 0.15;
+
+/** How many recently-injected pointers the novelty gate remembers per session. */
+const INJECTED_POINTERS_CAP = 40;
+
+/** The per-prompt injection gate. Returns the pack text to inject, or null to
+ * stay silent. Mutates `s` to remember what was shown (caller persists it).
+ * Gates, in order:
+ *   1. relevance — lexical coverage below {@link INJECT_MIN_COVERAGE} → skip
+ *      (structural results carry no coverage; the intent match is the signal);
+ *   2. novelty — hits whose pointer was already injected this session are
+ *      dropped, and if none remain the whole pack is skipped. */
+export function relevantRetrieval(ask: AskJson, s: SessionState, cap = 3): string | null {
+  if (!(ask.hits ?? []).length) return null;
+  if (typeof ask.coverage === 'number' && ask.coverage < INJECT_MIN_COVERAGE) return null;
+  const seen = new Set(s.injectedPointers ?? []);
+  const fresh = ask.hits.filter((h) => !seen.has(h.pointer));
+  if (!fresh.length) return null;
+  const txt = formatRetrieval({ ...ask, hits: fresh }, cap);
+  if (!txt) return null;
+  s.injectedPointers = [...(s.injectedPointers ?? []), ...fresh.slice(0, cap).map((h) => h.pointer)]
+    .slice(-INJECTED_POINTERS_CAP);
+  return txt;
 }
 
 export function formatOrientation(indexMd: string, budgetBytes = 1500): string {

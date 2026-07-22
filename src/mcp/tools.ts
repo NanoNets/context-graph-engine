@@ -3,7 +3,7 @@
  * `callTool` never throws — hosts get soft errors as isError content.
  */
 import { Graft } from '../engine.js';
-import { formatAsk } from '../ask/ask.js';
+import { formatAsk, skeleton, formatSkeleton } from '../ask/ask.js';
 import { formatCheckReport } from '../context/check.js';
 import { formatGraphCheckReport } from '../graph/check.js';
 import { loadGraphCached } from '../graph/load.js';
@@ -37,8 +37,24 @@ export const TOOLS: ToolDef[] = [
       properties: {
         query: { type: 'string', description: 'what you want to understand, in plain words' },
         limit: { type: 'number', description: 'max results (default 5)' },
+        full: {
+          type: 'boolean',
+          description: 'inline whole definition spans instead of the default ≤8-line crux excerpts',
+        },
       },
       required: ['query'],
+    },
+  },
+  {
+    name: 'graft_skeleton',
+    description:
+      "Signatures-only view of one file — every definition's signature + line span, ~10× cheaper than reading the file ($0, no LLM).",
+    inputSchema: {
+      type: 'object',
+      properties: {
+        file: { type: 'string', description: 'repo-relative path (or unique basename) of the file' },
+      },
+      required: ['file'],
     },
   },
   {
@@ -113,8 +129,14 @@ export function callTool(
         if (!query) return { text: 'graft_ask requires a query', isError: true };
         const limit = typeof args.limit === 'number' ? args.limit : 5;
         const engine = new Graft();
-        const r = engine.ask(root, query, { limit, source: true });
+        const r = engine.ask(root, query, { limit, source: true, full: args.full === true });
         return { text: formatAsk(r), isError: false };
+      }
+      case 'graft_skeleton': {
+        const file = String(args.file ?? '');
+        if (!file) return { text: 'graft_skeleton requires a file', isError: true };
+        const r = skeleton(root, file);
+        return { text: formatSkeleton(r), isError: !r.entries.length && !!r.note };
       }
       case 'graft_check': {
         const engine = new Graft();

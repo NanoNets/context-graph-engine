@@ -79,19 +79,19 @@ covers:
     at: 'src/ai/synthesize.ts:L35-L37'
   - symbol: userContent
     kind: function
-    at: 'src/ai/synthesize.ts:L92-L97'
+    at: 'src/ai/synthesize.ts:L93-L98'
   - symbol: clean
     kind: function
-    at: 'src/ai/synthesize.ts:L100-L122'
+    at: 'src/ai/synthesize.ts:L101-L123'
   - symbol: OpenRouterSynthesizer
     kind: class
-    at: 'src/ai/synthesize.ts:L134-L163'
+    at: 'src/ai/synthesize.ts:L135-L164'
   - symbol: constructor
     kind: method
-    at: 'src/ai/synthesize.ts:L138-L141'
+    at: 'src/ai/synthesize.ts:L139-L142'
   - symbol: synthesize
     kind: method
-    at: 'src/ai/synthesize.ts:L143-L162'
+    at: 'src/ai/synthesize.ts:L144-L163'
 ---
 <!-- context:generated:start -->
 ## Summary

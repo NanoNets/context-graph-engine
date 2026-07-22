@@ -47,6 +47,7 @@ test('initialize → tools/list → tools/call round-trip', async () => {
   const list = rs.find((r) => r.id === 2);
   assert.deepEqual(list.result.tools.map((t: any) => t.name), [
     'graft_ask',
+    'graft_skeleton',
     'graft_check',
     'graft_blast_radius',
     'graft_callers',

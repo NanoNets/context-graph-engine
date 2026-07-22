@@ -33,31 +33,31 @@ generator:
 covers:
   - symbol: AgentResult
     kind: interface
-    at: 'bench/agent.ts:L19-L27'
+    at: 'bench/agent.ts:L20-L28'
   - symbol: RunAgentOptions
     kind: interface
-    at: 'bench/agent.ts:L29-L37'
+    at: 'bench/agent.ts:L30-L42'
   - symbol: safePath
     kind: function
-    at: 'bench/agent.ts:L46-L60'
+    at: 'bench/agent.ts:L51-L65'
   - symbol: listFiles
     kind: function
-    at: 'bench/agent.ts:L62-L89'
+    at: 'bench/agent.ts:L67-L94'
   - symbol: walk
     kind: function
-    at: 'bench/agent.ts:L64-L86'
+    at: 'bench/agent.ts:L69-L91'
   - symbol: globToRegExp
     kind: function
-    at: 'bench/agent.ts:L92-L106'
+    at: 'bench/agent.ts:L97-L111'
   - symbol: runTool
     kind: function
-    at: 'bench/agent.ts:L168-L228'
+    at: 'bench/agent.ts:L207-L277'
   - symbol: runAgent
     kind: function
-    at: 'bench/agent.ts:L230-L322'
+    at: 'bench/agent.ts:L279-L376'
   - symbol: slideCacheBreakpoint
     kind: function
-    at: 'bench/agent.ts:L254-L260'
+    at: 'bench/agent.ts:L308-L314'
   - symbol: Verdict
     kind: interface
     at: 'bench/judge.ts:L18-L24'
@@ -73,48 +73,57 @@ covers:
   - symbol: makeClient
     kind: function
     at: 'bench/llm.ts:L14-L18'
+  - symbol: Arm
+    kind: type
+    at: 'bench/report.ts:L6-L6'
   - symbol: Row
     kind: interface
-    at: 'bench/report.ts:L6-L26'
+    at: 'bench/report.ts:L8-L30'
   - symbol: costOf
     kind: function
-    at: 'bench/report.ts:L33-L38'
+    at: 'bench/report.ts:L37-L42'
   - symbol: mean
     kind: function
-    at: 'bench/report.ts:L40-L42'
+    at: 'bench/report.ts:L44-L46'
   - symbol: ArmAgg
     kind: interface
-    at: 'bench/report.ts:L44-L54'
+    at: 'bench/report.ts:L48-L58'
   - symbol: aggregate
     kind: function
-    at: 'bench/report.ts:L56-L68'
+    at: 'bench/report.ts:L60-L72'
   - symbol: pctDelta
     kind: function
-    at: 'bench/report.ts:L70-L74'
+    at: 'bench/report.ts:L74-L78'
   - symbol: fmt
     kind: function
-    at: 'bench/report.ts:L76-L78'
+    at: 'bench/report.ts:L80-L82'
+  - symbol: metricTable
+    kind: function
+    at: 'bench/report.ts:L88-L114'
+  - symbol: cells
+    kind: function
+    at: 'bench/report.ts:L93-L102'
+  - symbol: verdictFor
+    kind: function
+    at: 'bench/report.ts:L117-L127'
   - symbol: buildMarkdown
     kind: function
-    at: 'bench/report.ts:L80-L125'
+    at: 'bench/report.ts:L129-L175'
   - symbol: Args
     kind: interface
-    at: 'bench/run.ts:L29-L35'
+    at: 'bench/run.ts:L38-L44'
   - symbol: parseArgs
     kind: function
-    at: 'bench/run.ts:L37-L52'
+    at: 'bench/run.ts:L46-L66'
   - symbol: pool
     kind: function
-    at: 'bench/run.ts:L55-L66'
+    at: 'bench/run.ts:L69-L80'
   - symbol: worker
     kind: function
-    at: 'bench/run.ts:L58-L63'
-  - symbol: makeDocsWorkdir
-    kind: function
-    at: 'bench/run.ts:L69-L82'
+    at: 'bench/run.ts:L72-L77'
   - symbol: main
     kind: function
-    at: 'bench/run.ts:L84-L201'
+    at: 'bench/run.ts:L82-L202'
   - symbol: makeStubClient
     kind: function
     at: 'bench/selfcheck.ts:L19-L48'
@@ -123,13 +132,13 @@ covers:
     at: 'bench/selfcheck.ts:L50-L114'
   - symbol: repoPath
     kind: function
-    at: 'bench/tasks.ts:L26-L29'
+    at: 'bench/tasks.ts:L30-L33'
   - symbol: Task
     kind: interface
-    at: 'bench/tasks.ts:L31-L37'
+    at: 'bench/tasks.ts:L35-L45'
   - symbol: Corpus
     kind: interface
-    at: 'bench/tasks.ts:L39-L45'
+    at: 'bench/tasks.ts:L47-L53'
 ---
 <!-- context:generated:start -->
 ## Summary

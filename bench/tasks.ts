@@ -1,19 +1,23 @@
 /**
  * The benchmark corpus and task set. This file *is* the benchmark's validity:
- * every task must have a verifiable answer, and (for a fair cold-arm test)
- * require reading more than one file to answer confidently. Reference answers
- * here are grounded in the actual source (cited during authoring), not guessed.
+ * every task must have a verifiable answer, grounded in the actual source
+ * (cited during authoring), not guessed. Tasks carry a `locality` label so the
+ * report can split the verdict: multi-file questions are where graph context
+ * should help; localized single-file questions are where it is expected to be
+ * net overhead — the bench must measure both, not select for the winner.
  *
- * Corpora are real external repos expected as siblings of this one under the
- * same parent directory (override a path with BENCH_REPO_<ID_UPPER> if needed):
+ * Corpora: graft's own repo (context-engine — always present, self-contained),
+ * plus real external repos expected as siblings of this one under the same
+ * parent directory (override a path with BENCH_REPO_<ID_UPPER> if needed):
  *   - unified-accounts-login-server — the Nanonets unified auth service (Node/Express).
  *   - new-website — the Nanonets marketing site (Next.js App Router).
- * Plus the checked-in demo docs (northwind-docs) as a knowledge-folder data point.
+ * Plus the checked-in demo docs (northwind-docs) as a knowledge-folder data
+ * point (currently skipped: the wiring graph indexes code only).
  *
- * Note on fairness: ingestRepo summarizes only CODE files (CODE_EXTENSIONS), so
- * README/markdown/package.json/CSS do NOT enter the graph — while the cold agent
- * can read them. Questions therefore target multi-file *code* understanding,
- * where the graph bundle should actually help, not README/config lookups.
+ * Note on fairness: the wiring graph indexes only code files tree-sitter can
+ * parse, so README/markdown/package.json/CSS do NOT enter the graph — while
+ * the cold agent can read them. Code questions therefore target *code*
+ * understanding, not README/config lookups.
  */
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -34,6 +38,10 @@ export interface Task {
   referenceAnswer: string;
   /** Case-insensitive substrings the answer must contain (deterministic floor). */
   requiredKeywords: string[];
+  /** "localized" = answerable from one file (where graph context is expected to
+   * be net overhead — the hono-bench finding this bench must reproduce, not
+   * hide). Absent = "multi-file", the shape the original corpus was limited to. */
+  locality?: "localized" | "multi-file";
 }
 
 export interface Corpus {
@@ -277,4 +285,80 @@ const NORTHWIND_DOCS: Corpus = {
   ],
 };
 
-export const CORPORA: Corpus[] = [UNIFIED, NEW_WEBSITE, NORTHWIND_DOCS];
+/** graft's own repo: the one corpus that is always present, so the bench runs
+ * self-contained (the sibling Nanonets repos are often absent). Mixes localized
+ * single-file questions with multi-file traces, so the report can split the
+ * verdict by locality. Answers cited from source at authoring time. */
+const CONTEXT_ENGINE: Corpus = {
+  id: "context-engine",
+  kind: "repo",
+  path: repoRoot,
+  tasks: [
+    {
+      id: "orientation-budget",
+      question: "How many bytes of INDEX.md does the Claude SessionStart hook inject at most?",
+      referenceAnswer:
+        "1500 bytes — formatOrientation in src/claude/format.ts slices the INDEX.md text to a budgetBytes parameter that defaults to 1500.",
+      requiredKeywords: ["1500"],
+      locality: "localized",
+    },
+    {
+      id: "span-cap",
+      question: "How many source lines can `graft ask --source` inline per hit before truncating?",
+      referenceAnswer:
+        "80 lines — MAX_SPAN_LINES in src/ask/ask.ts; longer definitions are truncated with a marker naming the file:line range to open.",
+      requiredKeywords: ["80"],
+      locality: "localized",
+    },
+    {
+      id: "lock-freshness",
+      question: "When does acquireLock treat an existing sync lock file as stale?",
+      referenceAnswer:
+        "When the lock file's mtime is at least LOCK_STALE_MS = 300000 ms (5 minutes) old — then it is removed and re-created; a fresher lock makes acquireLock return false.",
+      requiredKeywords: ["300000"],
+      locality: "localized",
+    },
+    {
+      id: "link-verbs",
+      question: "Which relation verbs is the synthesis LLM allowed to use for links between concept nodes?",
+      referenceAnswer:
+        "Exactly seven: part_of, uses, depends_on, produces, configures, validates, implements — enforced both in the prompt and by an enum in the record_graph JSON schema.",
+      requiredKeywords: ["part_of", "configures", "validates"],
+      locality: "localized",
+    },
+    {
+      id: "cache-multipliers",
+      question: "What cache read/write cost multipliers does the bench's costOf function apply?",
+      referenceAnswer:
+        "Cache creation is billed at 1.25× the input rate and cache reads at 0.1×, on Sonnet-5 pricing of $3/MTok input and $15/MTok output.",
+      requiredKeywords: ["1.25", "0.1"],
+      locality: "localized",
+    },
+    {
+      id: "post-edit-flow",
+      question: "After Claude edits a source file, what does graft's PostToolUse hook do, end to end?",
+      referenceAnswer:
+        "handlePostEdit ignores edits under graft/, otherwise marks the stats dirty with a fresh staleCount from `graft check --json` and records the file basename, then reads the wiring graph and injects a blast-radius block (incoming edges from other files to symbols in the edited file, capped at 8) as PostToolUse additionalContext.",
+      requiredKeywords: ["blast radius", "dirty"],
+      locality: "multi-file",
+    },
+    {
+      id: "sidecar-consistency",
+      question: "How does graft guarantee the ask-index sidecar can never change ranking results versus live tokenization?",
+      referenceAnswer:
+        "tokenize/counts live only in src/ask/index-file.ts and both build-time indexing and query-time fallback import them, so both sides split text identically; at query time the sidecar is used only if its doc count matches the graph's node count and every node id is present, and the stored df plus live-tokenized concept bags reproduce exactly the idf that computeIdf would produce live — anything off falls back to live tokenization.",
+      requiredKeywords: ["tokenize"],
+      locality: "multi-file",
+    },
+    {
+      id: "tier2-recompute",
+      question: "When is a symbol's Tier-2 summary (crux/summary) recomputed versus reused from cache?",
+      referenceAnswer:
+        "Enrichment is keyed on the node's body_hash (sha256 of the definition text): buildGraph folds the prior wiring.json in as a cache, and enrichGraph re-summarizes a node only when its body_hash changed (or it was never summarized); unchanged bodies keep their summary, and a Tier-1-only run never wipes Tier-2 fields.",
+      requiredKeywords: ["body_hash"],
+      locality: "multi-file",
+    },
+  ],
+};
+
+export const CORPORA: Corpus[] = [CONTEXT_ENGINE, UNIFIED, NEW_WEBSITE, NORTHWIND_DOCS];

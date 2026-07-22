@@ -47,9 +47,10 @@ function fileScopeRepo(): string {
   return d;
 }
 
-test('TOOLS lists all five tools with schemas', () => {
+test('TOOLS lists all six tools with schemas', () => {
   assert.deepEqual(TOOLS.map((t) => t.name), [
     'graft_ask',
+    'graft_skeleton',
     'graft_check',
     'graft_blast_radius',
     'graft_callers',
@@ -173,4 +174,14 @@ test('graft_blast_radius: unknown symbol is a soft isError with the check-spelli
   assert.equal(r.isError, true);
   assert.match(r.text, /no symbol "noSuchSymbolAnywhere" in the graph/);
   assert.match(r.text, /check spelling/);
+});
+
+test('graft_skeleton returns signatures for a file, errors on unknown file', () => {
+  const d = builtRepo();
+  const r = callTool(d, 'graft_skeleton', { file: 'src/math.ts' });
+  assert.equal(r.isError, false);
+  assert.match(r.text, /graft skeleton — src\/math\.ts/);
+  assert.match(r.text, /function add {2}function add\(a: number, b: number\): number/);
+  const miss = callTool(d, 'graft_skeleton', { file: 'src/nope.ts' });
+  assert.equal(miss.isError, true);
 });

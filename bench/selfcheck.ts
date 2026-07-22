@@ -101,8 +101,8 @@ async function main() {
 
   // 4. Report renders.
   const rows: Row[] = [
-    { corpus: "demo", taskId: "t1", arm: "cold", trial: 1, tokensInput: 5000, tokensOutput: 800, tokensTotal: 5800, cacheRead: 0, cacheCreate: 0, toolCalls: 6, wallMs: 12000, correct: true, score: 0.9, keywordPass: true, judgeCorrect: true, iterations: 4, stopReason: "end_turn", answer: "a", reasoning: "r" },
-    { corpus: "demo", taskId: "t1", arm: "graph", trial: 1, tokensInput: 2000, tokensOutput: 400, tokensTotal: 2400, cacheRead: 0, cacheCreate: 0, toolCalls: 1, wallMs: 5000, correct: true, score: 0.92, keywordPass: true, judgeCorrect: true, iterations: 2, stopReason: "end_turn", answer: "a", reasoning: "r" },
+    { corpus: "demo", taskId: "t1", arm: "cold", trial: 1, locality: "multi-file", tokensInput: 5000, tokensOutput: 800, tokensTotal: 5800, cacheRead: 0, cacheCreate: 0, toolCalls: 6, wallMs: 12000, correct: true, score: 0.9, keywordPass: true, judgeCorrect: true, iterations: 4, stopReason: "end_turn", answer: "a", reasoning: "r" },
+    { corpus: "demo", taskId: "t1", arm: "graph", trial: 1, locality: "multi-file", tokensInput: 2000, tokensOutput: 400, tokensTotal: 2400, cacheRead: 0, cacheCreate: 0, toolCalls: 1, wallMs: 5000, correct: true, score: 0.92, keywordPass: true, judgeCorrect: true, iterations: 2, stopReason: "end_turn", answer: "a", reasoning: "r" },
   ];
   const md = buildMarkdown(rows);
   assert.ok(md.includes("## demo"));

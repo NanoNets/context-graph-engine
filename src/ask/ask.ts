@@ -53,6 +53,12 @@ export interface AskResult {
    * size of the distinct files these hits point into, i.e. the baseline cost of
    * reading them instead of this pack. Computed from file sizes stored at build. */
   saved?: { files: number; baselineChars: number };
+  /** Lexical mode only: share (0..1) of the query's distinct terms the TOP hit
+   * matched. A relevance signal for callers that inject packs unprompted (the
+   * Claude prompt hook): a low share means the query's words barely overlap the
+   * best result, i.e. the pack is probably noise for this prompt. Absent in
+   * structural mode — a resolved "who calls X" is itself the relevance signal. */
+  coverage?: number;
 }
 
 /** First real prose line of a node body (skips headings, markers, blanks). */
@@ -287,6 +293,35 @@ const GRAPH_WEIGHT = 0.5;
  * what surfaces the config/helper a task depends on but didn't name. */
 const RESCUE_FLOOR = 0.15;
 
+/** Term presence with plural folding — "packs" finds "pack" and vice versa, so
+ * a natural-language plural doesn't read as a miss against identifier tokens. */
+function hasTerm(f: Map<string, number>, t: string): boolean {
+  return f.has(t) || f.has(`${t}s`) || (t.endsWith("s") && f.has(t.slice(0, -1)));
+}
+
+/** Idf-weighted share (0..1) of the query a document matches: each query term
+ * counts by its rarity, so this separates task prompts from chatter in a way a
+ * raw term count can't. A conversational prompt's words are either off-corpus
+ * (rare → heavy, unmatched → sinks the ratio) or generic code words ("list",
+ * "write": common → near-weightless even when they collide with a symbol name);
+ * a task prompt matches exactly its rare, discriminating identifiers. Terms the
+ * corpus has never seen take `dfltIdf` (the df=0 weight). */
+function matchedIdfShare(
+  q: Map<string, number>,
+  fields: Array<Map<string, number>>,
+  idf: Map<string, number>,
+  dfltIdf: number,
+): number {
+  let matched = 0;
+  let total = 0;
+  for (const t of q.keys()) {
+    const w = idf.get(t) ?? dfltIdf;
+    total += w;
+    if (fields.some((f) => hasTerm(f, t))) matched += w;
+  }
+  return total > 0 ? matched / total : 0;
+}
+
 function lexical(query: string, corpus: Corpus, limit: number, graphRank: boolean): AskResult {
   // Binary query terms: a word repeated in a pasted issue body counts once, so a
   // ranty description can't linearly amplify an incidental word.
@@ -346,6 +381,16 @@ function lexical(query: string, corpus: Corpus, limit: number, graphRank: boolea
     ? computeIdfFromIndex(askIndex, conceptBags)
     : computeIdf([...conceptBags, ...symbolDocs.map((d) => new Set([...d.name.keys(), ...d.path.keys(), ...d.body.keys()]))]);
 
+  // Per-hit idf-weighted coverage, kept out of the public AskHit shape; only
+  // the top hit's value survives, as `coverage` on the result. The df=0 weight
+  // mirrors idfFromDf's formula at df=0 for whichever corpus size idf was
+  // computed from.
+  const nDocs = askIndex
+    ? askIndex.docCount + conceptBags.length
+    : conceptBags.length + symbolDocs.length;
+  const dfltIdf = Math.log(1 + nDocs);
+  const matchedOf = new Map<AskHit, number>();
+
   // ── Concepts (prose nodes; not in the wiring graph) ──
   const conceptHits: AskHit[] = [];
   let maxConcept = 0;
@@ -353,14 +398,16 @@ function lexical(query: string, corpus: Corpus, limit: number, graphRank: boolea
     const total = score(q, name, idf) * 3 + score(q, body, idf);
     if (total > 0) {
       maxConcept = Math.max(maxConcept, total);
-      conceptHits.push({
+      const hit: AskHit = {
         kind: "concept",
         title: c.name || c.slug,
         pointer: c.sources.join(", ") || c.slug,
         snippet: c.snippet,
         related: c.related,
         score: total,
-      });
+      };
+      matchedOf.set(hit, matchedIdfShare(q, [name, body], idf, dfltIdf));
+      conceptHits.push(hit);
     }
   }
 
@@ -401,6 +448,7 @@ function lexical(query: string, corpus: Corpus, limit: number, graphRank: boolea
   const candidates = new Set<string>(lex.keys());
   for (const [id, p] of pr) if (p >= RESCUE_FLOOR) candidates.add(id);
 
+  const docsById = new Map(symbolDocs.map((d) => [d.n.id, d]));
   const symbolHits: AskHit[] = [];
   for (const id of candidates) {
     const n = byId.get(id);
@@ -408,7 +456,7 @@ function lexical(query: string, corpus: Corpus, limit: number, graphRank: boolea
     const lexN = maxLex > 0 ? (lex.get(id) ?? 0) / maxLex : 0;
     const blended = lexN + GRAPH_WEIGHT * (pr.get(id) ?? 0);
     if (blended <= 0) continue;
-    symbolHits.push({
+    const hit: AskHit = {
       kind: "symbol",
       title: `${n.name} · ${n.kind}`,
       // A file node points at the whole file (locator, no span) so `--source`
@@ -416,7 +464,10 @@ function lexical(query: string, corpus: Corpus, limit: number, graphRank: boolea
       pointer: n.kind === "file" ? n.path : `${n.path}:${n.span}`,
       snippet: n.summary?.split("\n")[0].trim() ?? n.signature ?? "",
       score: blended,
-    });
+    };
+    const d = docsById.get(id);
+    matchedOf.set(hit, d ? matchedIdfShare(q, [d.name, d.path, d.body], idf, dfltIdf) : 0);
+    symbolHits.push(hit);
   }
 
   // Concepts and symbols live on comparable 0..~1.5 scales so they merge fairly:
@@ -430,6 +481,7 @@ function lexical(query: string, corpus: Corpus, limit: number, graphRank: boolea
     query,
     mode: scored.length ? "lexical" : "empty",
     hits: scored.slice(0, limit),
+    coverage: scored.length && q.size > 0 ? matchedOf.get(scored[0]) ?? 0 : undefined,
     note: scored.length ? undefined : "no matching nodes — try different words, or `graft build` if graft/ is empty",
   };
 }
@@ -444,6 +496,12 @@ export interface AskOptions {
    * wiring edges), demoting same-word collisions and rescuing strongly-connected
    * neighbours the query didn't name. On by default; set false for pure lexical. */
   graphRank?: boolean;
+  /** With `source`: inline each hit's WHOLE definition span (capped at
+   * {@link MAX_SPAN_LINES}) instead of the default crux-first slice. The
+   * default inlines the ≤8-line LLM-chosen crux when a node has one — the
+   * decision point, ~10× cheaper than the full span — and the pack marks each
+   * crux so the agent knows `--full` (or the file itself) has the rest. */
+  full?: boolean;
 }
 
 /** Parse a `path:Lx-Ly` pointer into its parts, or null if it isn't one
@@ -473,11 +531,25 @@ function sliceSpan(root: string, path: string, from: number, to: number): string
   }
 }
 
-/** Attach inlined source to every hit whose pointer is a real `path:span`. */
-function inlineSource(root: string, hits: AskHit[]): void {
+/** Attach inlined source to every hit whose pointer is a real `path:span`.
+ * Crux-first: when the graph carries an LLM-chosen crux for the hit's node and
+ * `full` is off, inline that ≤8-line excerpt (with an escalation marker) rather
+ * than the whole definition — most hits only need the decision point, and the
+ * marker tells the agent exactly how to get the rest when this one doesn't. */
+function inlineSource(root: string, hits: AskHit[], graph: GraphV1 | null, full: boolean): void {
+  const cruxByPointer = new Map<string, string>();
+  if (!full && graph) {
+    for (const n of graph.nodes)
+      if (n.crux?.code) cruxByPointer.set(`${n.path}:${n.span}`, n.crux.code);
+  }
   for (const h of hits) {
     const s = parseSpan(h.pointer);
     if (!s) continue;
+    const crux = cruxByPointer.get(h.pointer);
+    if (crux) {
+      h.code = `${crux}\n… (crux — full definition at ${h.pointer}; rerun with --full)`;
+      continue;
+    }
     const code = sliceSpan(root, s.path, s.from, s.to);
     if (code) h.code = code;
   }
@@ -541,12 +613,75 @@ export function ask(dir: string, query: string, opts: AskOptions = {}): AskResul
     result = lexical(query, corpus, limit, graphRank);
   }
   if (opts.source) {
-    inlineSource(root, result.hits);
+    inlineSource(root, result.hits, corpus.graph, opts.full ?? false);
     // The pack is truly substitutive only in retriever mode (spans inlined), so
     // the "vs reading whole files" estimate is only honest here.
     result.saved = baselineFor(result.hits, corpus.graph);
   }
   return result;
+}
+
+// ── Skeleton view ────────────────────────────────────────────────────────────
+
+export interface SkeletonEntry {
+  name: string;
+  kind: string;
+  span: string;
+  signature: string | null;
+  /** First line of the Tier-2 summary, when the node has one. */
+  summary?: string;
+}
+
+export interface SkeletonResult {
+  file: string;
+  entries: SkeletonEntry[];
+  note?: string;
+}
+
+/** Signatures-only view of one file, straight from the wiring graph — the
+ * cheapest way to understand a file's API surface (~10× less than reading it).
+ * `file` is matched as an exact repo-relative path, then as a basename. */
+export function skeleton(dir: string, file: string, opts: { contextDir?: string } = {}): SkeletonResult {
+  const outDir = contextDirFor(resolve(dir), opts.contextDir);
+  const graph = loadGraphCached(outDir);
+  if (!graph) return { file, entries: [], note: "no wiring graph — run `graft build` first" };
+
+  let defs = graph.nodes.filter((n) => n.kind !== "file" && n.path === file);
+  if (!defs.length) {
+    const matches = new Set(
+      graph.nodes.filter((n) => n.path === file || n.path.endsWith(`/${file}`)).map((n) => n.path),
+    );
+    if (matches.size > 1)
+      return { file, entries: [], note: `ambiguous — matches: ${[...matches].sort().join(", ")}` };
+    const [path] = matches;
+    if (path) defs = graph.nodes.filter((n) => n.kind !== "file" && n.path === path);
+  }
+  if (!defs.length) return { file, entries: [], note: "no definitions indexed for this file" };
+
+  const startLine = (span: string) => Number(span.match(/^L(\d+)/)?.[1] ?? 0);
+  defs.sort((a, b) => startLine(a.span) - startLine(b.span));
+  return {
+    file: defs[0].path,
+    entries: defs.map((n) => ({
+      name: n.name,
+      kind: n.kind,
+      span: n.span,
+      signature: n.signature,
+      summary: n.summary?.split("\n")[0].trim() || undefined,
+    })),
+  };
+}
+
+/** Render a {@link SkeletonResult} as compact markdown. */
+export function formatSkeleton(r: SkeletonResult): string {
+  const head = `graft skeleton — ${r.file}`;
+  if (!r.entries.length) return `${head}\n\n${r.note ?? "no definitions."}\n`;
+  const lines = r.entries.map((e) => {
+    const sig = e.signature ? `  ${e.signature}` : "";
+    const sum = e.summary ? ` — ${e.summary}` : "";
+    return `- ${e.span}  ${e.kind} ${e.name}${sig}${sum}`;
+  });
+  return `${head}\n${lines.join("\n")}\n`;
 }
 
 /** Rough tokens for a byte length (≈ 4 chars/token; good enough for an estimate). */

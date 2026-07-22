@@ -4,49 +4,63 @@
  *   npm run bench                       # full run: all corpora, all tasks, 3 trials
  *   npm run bench -- --smoke            # 1 corpus, 1 task, 1 trial (plumbing check)
  *   npm run bench -- --corpora context-engine --tasks 3 --trials 2
- *   npm run bench -- --arms graph       # one arm only
+ *   npm run bench -- --arms cold,pull   # subset of arms
  *
- * Needs OPENROUTER_API_KEY only — the agent (Sonnet 5), judge (Opus 4.8), and
- * graph extraction all run through OpenRouter. Override models with
- * BENCH_AGENT_MODEL / BENCH_JUDGE_MODEL.
+ * Three arms, identical agent loop:
+ *   cold  — filesystem tools only, from zero.
+ *   graph — same, plus a pre-computed `graft ask --source` bundle injected
+ *           up front (push: the bundle is paid whether or not it helps).
+ *   pull  — same tools plus graft_ask/graft_skeleton over the prebuilt graph;
+ *           nothing injected — graph context is paid only when requested.
+ *
+ * Needs OPENROUTER_API_KEY for the agent (Sonnet 5) and judge (Opus 4.8).
+ * The graph itself builds keyless (Tier-1 tree-sitter, $0) into a temp dir —
+ * corpora repos are never written to. Override models with BENCH_AGENT_MODEL /
+ * BENCH_JUDGE_MODEL.
  */
 import "dotenv/config";
-import { mkdtempSync, mkdirSync, writeFileSync, copyFileSync, readdirSync, rmSync } from "node:fs";
+import { existsSync, mkdtempSync, mkdirSync, writeFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join, dirname, resolve, basename } from "node:path";
+import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import { Graft } from "../src/index.js";
-import { DOC_EXTENSIONS } from "../src/ingest/fs.js";
-import { extractPdfText, isPdfPath } from "../src/ingest/pdf.js";
-import { CORPORA, type Corpus } from "./tasks.js";
+import { buildGraph } from "../src/graph/build.js";
+import { ask, formatAsk } from "../src/ask/ask.js";
+import { CORPORA } from "./tasks.js";
 import { runAgent } from "./agent.js";
 import { judge } from "./judge.js";
 import { makeClient } from "./llm.js";
-import { buildMarkdown, type Row } from "./report.js";
+import { buildMarkdown, type Row, type Arm } from "./report.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
+
+const ALL_ARMS: Arm[] = ["cold", "graph", "pull"];
 
 interface Args {
   corpora?: string[];
   tasks?: number;
   trials: number;
-  arms: Array<"cold" | "graph">;
+  arms: Arm[];
   concurrency: number;
 }
 
 function parseArgs(argv: string[]): Args {
-  const a: Args = { trials: 3, arms: ["cold", "graph"], concurrency: 6 };
+  const a: Args = { trials: 3, arms: [...ALL_ARMS], concurrency: 6 };
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
     if (arg === "--smoke") {
-      a.corpora = ["unified-accounts-login-server"]; // smallest corpus — cheapest plumbing check
+      a.corpora = ["context-engine"]; // self-contained — always present
       a.tasks = 1;
       a.trials = 1;
     } else if (arg === "--corpora" || arg === "--repos") a.corpora = argv[++i].split(",");
     else if (arg === "--tasks") a.tasks = Number(argv[++i]);
     else if (arg === "--trials") a.trials = Number(argv[++i]);
-    else if (arg === "--arms") a.arms = argv[++i].split(",") as Array<"cold" | "graph">;
+    else if (arg === "--arms") a.arms = argv[++i].split(",") as Arm[];
     else if (arg === "--concurrency") a.concurrency = Math.max(1, Number(argv[++i]));
+  }
+  const bad = a.arms.filter((x) => !ALL_ARMS.includes(x));
+  if (bad.length) {
+    console.error(`Unknown arm(s): ${bad.join(", ")}. Valid: ${ALL_ARMS.join(", ")}`);
+    process.exit(1);
   }
   return a;
 }
@@ -65,26 +79,10 @@ async function pool<T, R>(items: T[], n: number, fn: (item: T) => Promise<R>): P
   return results;
 }
 
-/** For a docs corpus, build a temp dir of plaintext the cold agent can read/grep (PDFs → .txt). */
-async function makeDocsWorkdir(corpus: Corpus): Promise<string> {
-  const dir = mkdtempSync(join(tmpdir(), "cge-bench-docs-"));
-  const files = readdirSync(corpus.path).filter((f) => DOC_EXTENSIONS.some((e) => f.toLowerCase().endsWith(e)));
-  for (const f of files) {
-    const src = join(corpus.path, f);
-    if (isPdfPath(f)) {
-      const text = await extractPdfText(src);
-      writeFileSync(join(dir, f.replace(/\.pdf$/i, ".txt")), text);
-    } else {
-      copyFileSync(src, join(dir, f));
-    }
-  }
-  return dir;
-}
-
 async function main() {
   const args = parseArgs(process.argv.slice(2));
   if (!process.env.OPENROUTER_API_KEY) {
-    console.error("Set OPENROUTER_API_KEY (agent, judge, and graph extraction all run through OpenRouter).");
+    console.error("Set OPENROUTER_API_KEY (agent and judge run through OpenRouter).");
     process.exit(1);
   }
   const client = makeClient();
@@ -96,91 +94,94 @@ async function main() {
   }
 
   const rows: Row[] = [];
-  const tmpDbDirs: string[] = [];
+  const tmpDirs: string[] = [];
 
   for (const corpus of corpora) {
-    const tasks = args.tasks ? corpus.tasks.slice(0, args.tasks) : corpus.tasks;
-    console.log(`\n=== corpus: ${corpus.id} (${corpus.kind}) — ${tasks.length} tasks × ${args.trials} trials ===`);
-
-    // Fresh temp-backed engine; ingest once and reuse for the whole corpus.
-    const dbDir = mkdtempSync(join(tmpdir(), "cge-bench-db-"));
-    tmpDbDirs.push(dbDir);
-    const engine = new Graft({ dbPath: join(dbDir, "graph.db") });
-
-    let agentRoot = corpus.path;
-    let docsWorkdir: string | undefined;
-
-    try {
-      const t0 = Date.now();
-      if (corpus.kind === "repo") {
-        const r = await engine.ingestRepo(corpus.path, {
-          onProgress: (p) => process.stdout.write(`\r  ingest: ${p.phase} ${p.index + 1}/${p.total}   `),
-        });
-        console.log(`\n  ingested repo: ${r.files} files (${r.summarized} summarized, ${r.cached} cached) in ${((Date.now() - t0) / 1000).toFixed(1)}s`);
-        if (r.errors.length) console.log(`  ingest errors: ${r.errors.length} (first: ${r.errors[0]})`);
-      } else {
-        docsWorkdir = await makeDocsWorkdir(corpus);
-        agentRoot = docsWorkdir;
-        const res = await engine.ingestDir(corpus.path);
-        console.log(`  ingested docs: ${res.length} files in ${((Date.now() - t0) / 1000).toFixed(1)}s`);
-      }
-      const stats = await engine.stats();
-      console.log(`  graph: ${stats.nodes} entities, ${stats.edges} relationships, ${stats.chunks} chunks`);
-
-      // Precompute each task's graph bundle once (reused across arms/trials). engine.read
-      // is fast and local; do it up front so the parallel pool below never touches the engine.
-      const bundles = new Map<string, string>();
-      for (const task of tasks) {
-        bundles.set(task.id, args.arms.includes("graph") ? (await engine.read(task.question)).prompt : "");
-      }
-
-      // Every (task, arm, trial) is an independent unit — run them through a bounded pool.
-      const units: Array<{ task: (typeof tasks)[number]; arm: "cold" | "graph"; trial: number }> = [];
-      for (const task of tasks) for (const arm of args.arms) for (let trial = 1; trial <= args.trials; trial++) units.push({ task, arm, trial });
-
-      let done = 0;
-      const total = units.length;
-      const corpusRows = await pool(units, args.concurrency, async ({ task, arm, trial }) => {
-        try {
-          const ar = await runAgent({
-            client,
-            root: agentRoot,
-            question: task.question,
-            contextBundle: arm === "graph" ? bundles.get(task.id) : undefined,
-          });
-          const v = await judge({
-            client,
-            question: task.question,
-            referenceAnswer: task.referenceAnswer,
-            agentAnswer: ar.answer,
-            requiredKeywords: task.requiredKeywords,
-          });
-          console.log(`  (${++done}/${total}) [${task.id}] ${arm} t${trial}: ${v.correct ? "✓" : "✗"} ${ar.tokens.total} tok, ${ar.toolCalls} tools, ${(ar.wallMs / 1000).toFixed(1)}s`);
-          return {
-            corpus: corpus.id, taskId: task.id, arm, trial,
-            tokensInput: ar.tokens.input, tokensOutput: ar.tokens.output, tokensTotal: ar.tokens.total,
-            cacheRead: ar.tokens.cacheRead, cacheCreate: ar.tokens.cacheCreate,
-            toolCalls: ar.toolCalls, wallMs: ar.wallMs,
-            correct: v.correct, score: v.score, keywordPass: v.keywordPass, judgeCorrect: v.judgeCorrect,
-            iterations: ar.iterations, stopReason: ar.stopReason, answer: ar.answer, reasoning: v.reasoning,
-          } as Row;
-        } catch (e) {
-          // Non-fatal: record the failure and keep going so one error can't sink the run.
-          console.log(`  (${++done}/${total}) [${task.id}] ${arm} t${trial}: ERROR ${e instanceof Error ? e.message : String(e)}`);
-          return {
-            corpus: corpus.id, taskId: task.id, arm, trial,
-            tokensInput: 0, tokensOutput: 0, tokensTotal: 0, cacheRead: 0, cacheCreate: 0,
-            toolCalls: 0, wallMs: 0, correct: false, score: 0, keywordPass: false,
-            judgeCorrect: false, iterations: 0, stopReason: "error", answer: "",
-            reasoning: `run error: ${e instanceof Error ? e.message : String(e)}`,
-          } as Row;
-        }
-      });
-      rows.push(...corpusRows);
-    } finally {
-      await engine.close();
-      if (docsWorkdir) rmSync(docsWorkdir, { recursive: true, force: true });
+    if (corpus.kind === "docs") {
+      console.log(`\n=== corpus: ${corpus.id} — SKIPPED (wiring graph indexes code only; no docs ingestion) ===`);
+      continue;
     }
+    if (!existsSync(corpus.path)) {
+      console.log(`\n=== corpus: ${corpus.id} — SKIPPED (path not found: ${corpus.path}) ===`);
+      continue;
+    }
+    const tasks = args.tasks ? corpus.tasks.slice(0, args.tasks) : corpus.tasks;
+    console.log(`\n=== corpus: ${corpus.id} — ${tasks.length} tasks × ${args.arms.length} arms × ${args.trials} trials ===`);
+
+    // Build the wiring graph once per corpus into a TEMP contextDir — Tier-1
+    // tree-sitter only ($0, keyless), and the corpus repo is never written to.
+    const graftDir = mkdtempSync(join(tmpdir(), "graft-bench-ctx-"));
+    tmpDirs.push(graftDir);
+    const t0 = Date.now();
+    const g = await buildGraph(corpus.path, {
+      contextDir: graftDir,
+      onProgress: (p) => process.stdout.write(`\r  build: ${p.phase} ${p.index + 1}/${p.total}   `),
+    });
+    console.log(`\n  graph: ${g.nodes} nodes / ${g.edges} edges in ${((Date.now() - t0) / 1000).toFixed(1)}s`);
+    if (g.errors.length) console.log(`  build errors: ${g.errors.length} (first: ${g.errors[0]})`);
+
+    // Precompute each task's push bundle once (reused across trials). `ask` is
+    // deterministic and local, so doing it up front keeps the pool self-contained.
+    const bundles = new Map<string, string>();
+    if (args.arms.includes("graph")) {
+      for (const task of tasks) {
+        bundles.set(task.id, formatAsk(ask(corpus.path, task.question, { contextDir: graftDir, source: true, limit: 5 })));
+      }
+    }
+
+    // Every (task, arm, trial) is an independent unit — run them through a bounded pool.
+    const units: Array<{ task: (typeof tasks)[number]; arm: Arm; trial: number }> = [];
+    for (const task of tasks) for (const arm of args.arms) for (let trial = 1; trial <= args.trials; trial++) units.push({ task, arm, trial });
+
+    let done = 0;
+    const total = units.length;
+    const corpusRows = await pool(units, args.concurrency, async ({ task, arm, trial }) => {
+      const base = {
+        corpus: corpus.id, taskId: task.id, arm, trial,
+        locality: task.locality ?? "multi-file",
+      };
+      try {
+        const ar = await runAgent({
+          client,
+          root: corpus.path,
+          question: task.question,
+          contextBundle: arm === "graph" ? bundles.get(task.id) : undefined,
+          graft: arm === "pull" ? { contextDir: graftDir } : undefined,
+        });
+        const v = await judge({
+          client,
+          question: task.question,
+          referenceAnswer: task.referenceAnswer,
+          agentAnswer: ar.answer,
+          requiredKeywords: task.requiredKeywords,
+        });
+        console.log(`  (${++done}/${total}) [${task.id}] ${arm} t${trial}: ${v.correct ? "✓" : "✗"} ${ar.tokens.total} tok, ${ar.toolCalls} tools, ${(ar.wallMs / 1000).toFixed(1)}s`);
+        return {
+          ...base,
+          tokensInput: ar.tokens.input, tokensOutput: ar.tokens.output, tokensTotal: ar.tokens.total,
+          cacheRead: ar.tokens.cacheRead, cacheCreate: ar.tokens.cacheCreate,
+          toolCalls: ar.toolCalls, wallMs: ar.wallMs,
+          correct: v.correct, score: v.score, keywordPass: v.keywordPass, judgeCorrect: v.judgeCorrect,
+          iterations: ar.iterations, stopReason: ar.stopReason, answer: ar.answer, reasoning: v.reasoning,
+        } as Row;
+      } catch (e) {
+        // Non-fatal: record the failure and keep going so one error can't sink the run.
+        console.log(`  (${++done}/${total}) [${task.id}] ${arm} t${trial}: ERROR ${e instanceof Error ? e.message : String(e)}`);
+        return {
+          ...base,
+          tokensInput: 0, tokensOutput: 0, tokensTotal: 0, cacheRead: 0, cacheCreate: 0,
+          toolCalls: 0, wallMs: 0, correct: false, score: 0, keywordPass: false,
+          judgeCorrect: false, iterations: 0, stopReason: "error", answer: "",
+          reasoning: `run error: ${e instanceof Error ? e.message : String(e)}`,
+        } as Row;
+      }
+    });
+    rows.push(...corpusRows);
+  }
+
+  if (rows.length === 0) {
+    console.error("\nNo runnable corpora (all skipped).");
+    process.exit(1);
   }
 
   // Write results + summary. Timestamp comes from Date (fine in a standalone script).
@@ -197,7 +198,7 @@ async function main() {
   console.log(`\nRaw rows → ${jsonPath}`);
   console.log(`Summary  → ${mdPath}`);
 
-  for (const d of tmpDbDirs) rmSync(d, { recursive: true, force: true });
+  for (const d of tmpDirs) rmSync(d, { recursive: true, force: true });
 }
 
 main().catch((err) => {
