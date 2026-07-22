@@ -8,6 +8,8 @@
  *   viz     serve the interactive graph viewer.
  *   mcp     serve the graph over MCP (stdio) for coding agents.
  *   callers / callees / impact   precise graph traversal for a symbol ($0, no LLM).
+ *   grep    regex search over indexed files, grouped by enclosing symbol, ranked by coupling ($0, no LLM).
+ *   map     token-budgeted repo orientation — dir clusters, hubs, hotspots ($0, no LLM).
  *   init    set up the Claude Code integration (.claude/ statusline + hooks) in this repo.
  *
  * Git is the sync: commit graft/ and anyone who clones the repo has the
@@ -233,7 +235,8 @@ program
   .action(async (dir: string) => {
     const { resolve } = await import("node:path");
     const { startMcpServer } = await import("./mcp/server.js");
-    startMcpServer(resolve(dir));
+    const globalOpts = program.opts<{ dir?: string }>();
+    startMcpServer(resolve(dir), globalOpts.dir);
   });
 
 function traverseAction(kind: import("./graph/traverse-cli.js").TraverseKind) {
@@ -271,6 +274,70 @@ program
   .option("--in <path>", "narrow matches to nodes whose path contains this substring")
   .option("--json", "output as JSON")
   .action(traverseAction("impact"));
+
+program
+  .command("grep")
+  .description("Regex search over indexed files, hits grouped by enclosing symbol and ranked by coupling ($0, no LLM)")
+  .argument("<pattern>", "regex pattern (or literal string with --fixed)")
+  .argument("[dir]", "repository root", ".")
+  .option("-i, --ignore-case", "case-insensitive match")
+  .option("--fixed", "treat pattern as a literal string, not a regex")
+  .option("--in <path>", "narrow to files whose path contains this substring")
+  .option("--json", "output as JSON")
+  .action(
+    async (
+      pattern: string,
+      dir: string,
+      opts: { ignoreCase?: boolean; fixed?: boolean; in?: string; json?: boolean },
+    ) => {
+      const { runGrepCommand } = await import("./search/grep-cli.js");
+      const globalOpts = program.opts<{ dir?: string }>();
+      runGrepCommand(pattern, dir, {
+        ignoreCase: opts.ignoreCase,
+        fixed: opts.fixed,
+        in: opts.in,
+        json: opts.json,
+        globalDir: globalOpts.dir,
+      });
+    },
+  );
+
+program
+  .command("map")
+  .description(
+    "Token-budgeted repo orientation — directory clusters, per-directory hubs, and global hotspots from the wiring graph ($0, no LLM)",
+  )
+  .argument("[dir]", "repository root", ".")
+  .option("--max-dirs <n>", "max directory entries shown, rest counted into dropped (default 16)")
+  .option("--json", "output as JSON")
+  .action(async (dir: string, opts: { json?: boolean; maxDirs?: string }) => {
+    const { buildRepoMap, formatRepoMap } = await import("./graph/map.js");
+    const root = resolve(dir);
+    const globalOpts = program.opts<{ dir?: string }>();
+    const contextDir = contextDirFor(root, globalOpts.dir);
+    const graph = loadGraphCached(contextDir);
+    if (!graph) {
+      console.error("✗ no graph — run graft build first");
+      process.exit(1);
+      return;
+    }
+    let maxDirs: number | undefined;
+    if (opts.maxDirs !== undefined) {
+      const n = parseInt(opts.maxDirs, 10);
+      if (!Number.isFinite(n) || n <= 0) {
+        console.error(`✗ --max-dirs must be a positive integer, got "${opts.maxDirs}"`);
+        process.exit(1);
+        return;
+      }
+      maxDirs = n;
+    }
+    const map = buildRepoMap(graph, { maxDirs });
+    if (opts.json) {
+      console.log(JSON.stringify(map, null, 2));
+      return;
+    }
+    process.stdout.write(formatRepoMap(map));
+  });
 
 program
   .command("init")

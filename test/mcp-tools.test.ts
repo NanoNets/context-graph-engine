@@ -32,6 +32,18 @@ function chainRepo(): string {
   return d;
 }
 
+/** Graph lives in a NON-default dir (`<repo>/customgraph`, not `<repo>/graft`)
+ * — exercises the `--dir` override threaded through to `contextDirFor`. */
+function customDirRepo(): { repo: string; graphDir: string } {
+  const d = mkdtempSync(join(tmpdir(), 'graft-mcptools-customdir-'));
+  mkdirSync(join(d, 'src'), { recursive: true });
+  writeFileSync(join(d, 'src', 'math.ts'),
+    'export function add(a: number, b: number): number {\n  return a + b;\n}\nexport function sub(a: number, b: number): number {\n  return add(a, -b);\n}\n');
+  const graphDir = join(d, 'customgraph');
+  execFileSync(process.execPath, ['--import', 'tsx', 'src/cli.ts', 'build', d, '--dir', graphDir], { stdio: 'pipe' });
+  return { repo: d, graphDir };
+}
+
 /** b.ts imports a.ts AND calls a function (`helper`) defined in a.ts. The
  * `imports` edge targets a.ts's FILE id; the `calls` edge targets `helper`'s
  * SYMBOL id — two different node ids, both "in" a.ts from a human's view. */
@@ -47,13 +59,28 @@ function fileScopeRepo(): string {
   return d;
 }
 
-test('TOOLS lists all five tools with schemas', () => {
+/** Five top-level dirs, one file each — enough groups that a small `max_dirs`
+ * actually drops some, so the `graft_map` `max_dirs` arg has something to
+ * prove it's wired through to `buildRepoMap`. */
+function multiDirRepo(): string {
+  const d = mkdtempSync(join(tmpdir(), 'graft-mcptools-multidir-'));
+  for (const dir of ['aaa', 'bbb', 'ccc', 'ddd', 'eee']) {
+    mkdirSync(join(d, dir), { recursive: true });
+    writeFileSync(join(d, dir, 'x.ts'), `export function ${dir}Fn(): number {\n  return 1;\n}\n`);
+  }
+  execFileSync(process.execPath, ['--import', 'tsx', 'src/cli.ts', 'build', d], { stdio: 'pipe' });
+  return d;
+}
+
+test('TOOLS lists all seven tools with schemas', () => {
   assert.deepEqual(TOOLS.map((t) => t.name), [
     'graft_ask',
     'graft_check',
     'graft_blast_radius',
     'graft_callers',
     'graft_callees',
+    'graft_grep',
+    'graft_map',
   ]);
   for (const t of TOOLS) {
     assert.ok(t.description.length > 0);
@@ -173,4 +200,79 @@ test('graft_blast_radius: unknown symbol is a soft isError with the check-spelli
   assert.equal(r.isError, true);
   assert.match(r.text, /no symbol "noSuchSymbolAnywhere" in the graph/);
   assert.match(r.text, /check spelling/);
+});
+
+test('graft_grep round-trips a hit on the built fixture, grouped by enclosing symbol', () => {
+  const d = builtRepo();
+  const r = callTool(d, 'graft_grep', { pattern: 'add' });
+  assert.equal(r.isError, false);
+  assert.match(r.text, /"add" — \d+ hits? in \d+ symbols? across \d+ files? \(searched \d+ indexed files\)/);
+  assert.match(r.text, /src\/math\.ts/);
+});
+
+test('graft_grep: no hits is a soft (non-error) result with the loud fallback note', () => {
+  const d = builtRepo();
+  const r = callTool(d, 'graft_grep', { pattern: 'noSuchPatternAnywhere' });
+  assert.equal(r.isError, false);
+  assert.match(r.text, /no hits for "noSuchPatternAnywhere"/);
+  assert.match(r.text, /grep -rn "noSuchPatternAnywhere"/);
+});
+
+test('graft_grep: missing pattern and unbuilt repo are soft errors', () => {
+  const d = builtRepo();
+  const r1 = callTool(d, 'graft_grep', {});
+  assert.equal(r1.isError, true);
+  assert.match(r1.text, /requires a pattern/);
+
+  const bare = mkdtempSync(join(tmpdir(), 'graft-mcptools-grep-bare-'));
+  const r2 = callTool(bare, 'graft_grep', { pattern: 'add' });
+  assert.equal(r2.isError, true);
+  assert.match(r2.text, /graft build/);
+});
+
+test('graft_map round-trips a repo orientation on the built fixture', () => {
+  const d = builtRepo();
+  const r = callTool(d, 'graft_map', {});
+  assert.equal(r.isError, false);
+  assert.match(r.text, /^repo map — \d+ files · \d+ symbols · \d+ edges/);
+  assert.match(r.text, /src/);
+  assert.match(r.text, /hotspots:/);
+});
+
+test('graft_map: unbuilt repo is a soft isError with the no-graph message', () => {
+  const bare = mkdtempSync(join(tmpdir(), 'graft-mcptools-map-bare-'));
+  const r = callTool(bare, 'graft_map', {});
+  assert.equal(r.isError, true);
+  assert.match(r.text, /graft build/);
+});
+
+test('graft_map: max_dirs arg is honored — the MCP escape hatch for dropped dirs', () => {
+  const d = multiDirRepo();
+
+  const capped = callTool(d, 'graft_map', { max_dirs: 1 });
+  assert.equal(capped.isError, false);
+  assert.match(capped.text, /\+4 more directories not shown/);
+
+  const raised = callTool(d, 'graft_map', { max_dirs: 10 });
+  assert.equal(raised.isError, false);
+  assert.doesNotMatch(raised.text, /more directories? not shown/);
+});
+
+test('callTool honors a dirOverride for a graph built in a non-default dir', () => {
+  const { repo, graphDir } = customDirRepo();
+
+  // With the override pointing at the actual graph location, tools find it.
+  const check = callTool(repo, 'graft_check', {}, graphDir);
+  assert.equal(check.isError, false);
+  assert.match(check.text, /graph check: OK/);
+
+  const callers = callTool(repo, 'graft_callers', { symbol: 'add' }, graphDir);
+  assert.equal(callers.isError, false);
+  assert.match(callers.text, /calls ← sub \(src\/math\.ts:/);
+
+  // Without the override, tools fall back to the default `<repo>/graft`,
+  // which doesn't exist here — must report no graph, not silently succeed.
+  const noOverride = callTool(repo, 'graft_callers', { symbol: 'add' });
+  assert.equal(noOverride.isError, true);
+  assert.match(noOverride.text, /graft build/);
 });

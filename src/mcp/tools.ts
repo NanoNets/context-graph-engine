@@ -10,6 +10,9 @@ import { loadGraphCached } from '../graph/load.js';
 import { contextDirFor } from '../context/node-file.js';
 import { resolveSymbol, callersOf, calleesOf, impactOf, impactOfFile, type EdgeHit } from '../graph/traverse.js';
 import { headerOf, hitLine, looseNoteFor, type TraverseKind } from '../graph/traverse-cli.js';
+import { grepGraph } from '../search/grep.js';
+import { formatGrepResult, zeroHitNote } from '../search/grep-cli.js';
+import { buildRepoMap, formatRepoMap } from '../graph/map.js';
 import type { NodeV1 } from '../graph/types.js';
 
 export interface ToolDef {
@@ -84,6 +87,32 @@ export const TOOLS: ToolDef[] = [
       required: ['symbol'],
     },
   },
+  {
+    name: 'graft_grep',
+    description:
+      'Regex search over the graph\'s indexed files, hits grouped by innermost enclosing symbol and ranked by incoming-edge count (coupling) — which hit matters, not just where it is.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        pattern: { type: 'string', description: 'regex pattern (or literal string with fixed: true)' },
+        in: { type: 'string', description: 'narrow to files whose path contains this substring' },
+        ignore_case: { type: 'boolean', description: 'case-insensitive match' },
+        fixed: { type: 'boolean', description: 'treat pattern as a literal string, not a regex' },
+      },
+      required: ['pattern'],
+    },
+  },
+  {
+    name: 'graft_map',
+    description:
+      'Token-budgeted repo orientation — directory clusters, per-directory hubs, and global hotspots computed purely from the wiring graph ($0, no LLM). Use this to get oriented in an unfamiliar repo before diving into files.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        max_dirs: { type: 'number', description: 'max directory entries shown, rest counted into dropped (default 16)' },
+      },
+    },
+  },
 ];
 
 /** Render every resolved match's header + edge report (or the loud zero-edge
@@ -105,6 +134,7 @@ export function callTool(
   root: string,
   name: string,
   args: Record<string, unknown>,
+  dirOverride?: string,
 ): { text: string; isError: boolean } {
   try {
     switch (name) {
@@ -112,12 +142,12 @@ export function callTool(
         const query = String(args.query ?? '');
         if (!query) return { text: 'graft_ask requires a query', isError: true };
         const limit = typeof args.limit === 'number' ? args.limit : 5;
-        const engine = new Graft();
+        const engine = new Graft({ contextDir: dirOverride });
         const r = engine.ask(root, query, { limit, source: true });
         return { text: formatAsk(r), isError: false };
       }
       case 'graft_check': {
-        const engine = new Graft();
+        const engine = new Graft({ contextDir: dirOverride });
         const r = engine.check(root);
         const g = engine.checkGraph(root);
         const parts = [formatCheckReport(r)];
@@ -127,7 +157,7 @@ export function callTool(
       case 'graft_blast_radius': {
         const query = String(args.symbol ?? args.file ?? '');
         if (!query) return { text: 'graft_blast_radius requires a file or symbol', isError: true };
-        const w = loadGraphCached(contextDirFor(root));
+        const w = loadGraphCached(contextDirFor(root, dirOverride));
         if (!w) return { text: NO_GRAPH, isError: true };
         const matches = resolveSymbol(w, query);
         if (matches.length === 0) return { text: unknownSymbolText(query), isError: true };
@@ -151,7 +181,7 @@ export function callTool(
       case 'graft_callees': {
         const symbol = String(args.symbol ?? '');
         if (!symbol) return { text: `${name} requires a symbol`, isError: true };
-        const w = loadGraphCached(contextDirFor(root));
+        const w = loadGraphCached(contextDirFor(root, dirOverride));
         if (!w) return { text: NO_GRAPH, isError: true };
         const inOpt = typeof args.in === 'string' && args.in ? { in: args.in } : {};
         const matches = resolveSymbol(w, symbol, inOpt);
@@ -160,6 +190,26 @@ export function callTool(
         const walk = kind === 'callers' ? callersOf : calleesOf;
         const text = renderMatches(kind, matches, (m) => walk(w, m));
         return { text, isError: false };
+      }
+      case 'graft_grep': {
+        const pattern = String(args.pattern ?? '');
+        if (!pattern) return { text: 'graft_grep requires a pattern', isError: true };
+        const w = loadGraphCached(contextDirFor(root, dirOverride));
+        if (!w) return { text: NO_GRAPH, isError: true };
+        const result = grepGraph(w, root, pattern, {
+          ignoreCase: typeof args.ignore_case === 'boolean' ? args.ignore_case : undefined,
+          fixed: typeof args.fixed === 'boolean' ? args.fixed : undefined,
+          in: typeof args.in === 'string' && args.in ? args.in : undefined,
+        });
+        if (result.totalHits === 0) return { text: zeroHitNote(result), isError: false };
+        return { text: formatGrepResult(result), isError: false };
+      }
+      case 'graft_map': {
+        const w = loadGraphCached(contextDirFor(root, dirOverride));
+        if (!w) return { text: NO_GRAPH, isError: true };
+        const maxDirs = typeof args.max_dirs === 'number' && Number.isFinite(args.max_dirs) && args.max_dirs > 0 ? args.max_dirs : undefined;
+        const map = buildRepoMap(w, { maxDirs });
+        return { text: formatRepoMap(map), isError: false };
       }
       default:
         return { text: `unknown tool: ${name}`, isError: true };
