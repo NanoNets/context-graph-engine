@@ -1,0 +1,199 @@
+import { test } from "node:test";
+import assert from "node:assert/strict";
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync, existsSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { buildGraph } from "../src/graph/build.js";
+import { writeGraph, wiringPath } from "../src/graph/write.js";
+import { contextDirFor } from "../src/context/node-file.js";
+import {
+  readWorkspace,
+  writeWorkspace,
+  loadWorkspaceGraphs,
+  coverageNote,
+  migrationNote,
+  splitWorkspace,
+  federateAsk,
+  federateCheck,
+  federateCallers,
+  federateGrep,
+  isWorkspaceBuildRoot,
+} from "../src/graph/workspace.js";
+import { formatAsk } from "../src/ask/ask.js";
+import type { GraphV1 } from "../src/graph/types.js";
+
+/** A parent dir with git children (each a `.git` dir + one source file). */
+function workspaceFx(children: Record<string, Record<string, string>>): string {
+  const parent = mkdtempSync(join(tmpdir(), "ws-"));
+  for (const [child, files] of Object.entries(children)) {
+    mkdirSync(join(parent, child, ".git"), { recursive: true });
+    for (const [name, content] of Object.entries(files)) {
+      writeFileSync(join(parent, child, name), content);
+    }
+  }
+  return parent;
+}
+
+/** Build every git child into its own graft/, then write the workspace index. */
+async function buildWorkspace(parent: string): Promise<{ children: string[]; migrated: boolean }> {
+  return splitWorkspace(parent, undefined, async (childDir) => {
+    await buildGraph(childDir);
+  });
+}
+
+const REPOS = {
+  repoA: { "a.ts": "export function alphaHandler() { return helperThing(); }\nfunction helperThing() { return 1; }\n" },
+  repoB: { "b.ts": "export function betaHandler() { return 2; }\n" },
+};
+
+test("isWorkspaceBuildRoot: ≥2 git children, no own .git → workspace", () => {
+  const p = workspaceFx(REPOS);
+  assert.equal(isWorkspaceBuildRoot(p), true);
+  rmSync(p, { recursive: true, force: true });
+});
+
+test("isWorkspaceBuildRoot: own .git (submodules) → NOT a workspace", () => {
+  const p = workspaceFx(REPOS);
+  mkdirSync(join(p, ".git"), { recursive: true });
+  assert.equal(isWorkspaceBuildRoot(p), false);
+  rmSync(p, { recursive: true, force: true });
+});
+
+test("child built via parent is byte-identical to building it standalone", async () => {
+  const p = workspaceFx(REPOS);
+  await buildWorkspace(p);
+  const childGraft = contextDirFor(join(p, "repoA"));
+  const viaParent = readFileSync(wiringPath(childGraft), "utf8");
+
+  // Rebuild the same child standalone — deterministic writer, same source.
+  rmSync(childGraft, { recursive: true, force: true });
+  await buildGraph(join(p, "repoA"));
+  const standalone = readFileSync(wiringPath(childGraft), "utf8");
+
+  assert.equal(viaParent, standalone);
+  rmSync(p, { recursive: true, force: true });
+});
+
+test("workspace.json lists both children; parent holds no mega-graph", async () => {
+  const p = workspaceFx(REPOS);
+  await buildWorkspace(p);
+  const ws = readWorkspace(p);
+  assert.deepEqual(ws, { version: 1, children: ["repoA", "repoB"] });
+  // Parent graft holds ONLY workspace.json — no .graph/wiring.json.
+  assert.equal(existsSync(wiringPath(contextDirFor(p))), false);
+  assert.equal(existsSync(join(contextDirFor(p), "workspace.json")), true);
+  rmSync(p, { recursive: true, force: true });
+});
+
+test("ask at the parent federates hits from both children, labeled <child>/", async () => {
+  const p = workspaceFx(REPOS);
+  await buildWorkspace(p);
+  const r = federateAsk(p, undefined, "handler", { limit: 8 });
+  const text = formatAsk(r);
+  assert.ok(text.includes("[repoA/]"), `expected repoA label:\n${text}`);
+  assert.ok(text.includes("[repoB/]"), `expected repoB label:\n${text}`);
+  // Pointers are child-prefixed so they open from the parent.
+  assert.ok(r.hits.some((h) => h.pointer.startsWith("repoA/")));
+  assert.ok(r.hits.some((h) => h.pointer.startsWith("repoB/")));
+  rmSync(p, { recursive: true, force: true });
+});
+
+test("ask inside a single child = standalone (no federation scopes)", async () => {
+  const p = workspaceFx(REPOS);
+  await buildWorkspace(p);
+  const { ask } = await import("../src/ask/ask.js");
+  const r = ask(join(p, "repoA"), "handler", {});
+  assert.equal(r.scopes, undefined); // single-scope repo → no scope labels
+  assert.ok(r.hits.length > 0);
+  assert.ok(!r.hits.some((h) => h.pointer.startsWith("repoA/"))); // paths are child-relative
+  rmSync(p, { recursive: true, force: true });
+});
+
+test("migration: mega-graph parent split → .graph removed, workspace.json written, exact note", async () => {
+  const p = workspaceFx(REPOS);
+  // Pre-seed a hand-built combined mega-graph at the parent.
+  const mega: GraphV1 = {
+    meta: { version: 1, nodeCount: 0, edgeCount: 0, languages: [] },
+    nodes: [],
+    edges: [],
+  };
+  writeGraph(mega, contextDirFor(p));
+  assert.equal(existsSync(wiringPath(contextDirFor(p))), true);
+
+  const { migrated } = await buildWorkspace(p);
+  assert.equal(migrated, true);
+  assert.equal(existsSync(wiringPath(contextDirFor(p))), false); // mega-graph gone
+  assert.equal(existsSync(join(contextDirFor(p), "workspace.json")), true);
+
+  assert.equal(
+    migrationNote(["repoA", "repoB"]),
+    "⚠ this folder contains 2 separate git repos — splitting: each repo now gets its own committable graft/ (repoA/graft/, repoB/graft/); the combined graph here is replaced by a workspace index. Queries from here now search all repos, fairly.",
+  );
+  rmSync(p, { recursive: true, force: true });
+});
+
+test("check federation: OK when all in sync, STALE + not-ok when a child drifts", async () => {
+  const p = workspaceFx(REPOS);
+  await buildWorkspace(p);
+
+  const fresh = federateCheck(p);
+  assert.equal(fresh.ok, true);
+  assert.ok(fresh.text.includes("repoA/: OK"));
+  assert.ok(fresh.text.includes("repoB/: OK"));
+
+  // Change repoA's code WITHOUT rebuilding → present-and-stale.
+  writeFileSync(join(p, "repoA", "a.ts"), "export function alphaHandler() { return 99; }\nexport function newlyAdded() { return 0; }\n");
+  const drifted = federateCheck(p);
+  assert.equal(drifted.ok, false);
+  assert.ok(drifted.text.includes("repoA/: STALE"));
+  rmSync(p, { recursive: true, force: true });
+});
+
+test("callers federation resolves a symbol per child, grouped", async () => {
+  const p = workspaceFx(REPOS);
+  await buildWorkspace(p);
+  const { text, found } = federateCallers(p, undefined, "helperThing", {});
+  assert.equal(found, true);
+  assert.ok(text.includes("## repoA/"));
+  rmSync(p, { recursive: true, force: true });
+});
+
+test("grep federation merges groups across children with child-prefixed paths", async () => {
+  const p = workspaceFx(REPOS);
+  await buildWorkspace(p);
+  const { result } = federateGrep(p, undefined, "Handler", { ignoreCase: true });
+  assert.ok(result.totalHits >= 2);
+  const paths = result.groups.map((g) => g.path);
+  assert.ok(paths.some((p) => p.startsWith("repoA/")));
+  assert.ok(paths.some((p) => p.startsWith("repoB/")));
+  rmSync(p, { recursive: true, force: true });
+});
+
+test("one unbuilt child is surfaced, not silently skipped", async () => {
+  const p = workspaceFx({
+    ...REPOS,
+    repoC: { "c.ts": "export function gammaHandler() { return 3; }\n" },
+  });
+  await buildWorkspace(p);
+  // Simulate repoC never having been built.
+  rmSync(contextDirFor(join(p, "repoC")), { recursive: true, force: true });
+
+  const wg = loadWorkspaceGraphs(p);
+  assert.deepEqual(wg.loaded.map((l) => l.child), ["repoA", "repoB"]);
+  assert.deepEqual(wg.missing, ["repoC"]);
+  assert.equal(
+    coverageNote(wg),
+    "2 of 3 workspace repos have graphs; run graft build to cover repoC",
+  );
+  rmSync(p, { recursive: true, force: true });
+});
+
+test("readWorkspace: rejects foreign/invalid json as not-a-workspace", () => {
+  const p = mkdtempSync(join(tmpdir(), "ws-"));
+  mkdirSync(contextDirFor(p), { recursive: true });
+  writeFileSync(join(contextDirFor(p), "workspace.json"), "{}");
+  assert.equal(readWorkspace(p), null);
+  writeWorkspace(p, { version: 1, children: ["x", "a"] });
+  assert.deepEqual(readWorkspace(p), { version: 1, children: ["a", "x"] });
+  rmSync(p, { recursive: true, force: true });
+});
