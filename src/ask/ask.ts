@@ -17,6 +17,7 @@ import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import matter from "gray-matter";
 import { contextDirFor } from "../context/node-file.js";
+import { savingsFooter, savingsFor, type Savings } from "../context/savings.js";
 import { loadGraphCached, loadAskIndexCached } from "../graph/load.js";
 import { resolveSymbol } from "../graph/traverse.js";
 import type { EdgeV1, GraphV1, NodeV1, Relation } from "../graph/types.js";
@@ -573,19 +574,7 @@ function hitFiles(hits: AskHit[]): Set<string> {
  * (a pre-upgrade index) — the caller then just omits the estimate. */
 function baselineFor(hits: AskHit[], graph: GraphV1 | null): AskResult["saved"] | undefined {
   if (!graph) return undefined;
-  const size = new Map<string, number>();
-  for (const n of graph.nodes)
-    if (n.kind === "file" && typeof n.chars === "number") size.set(n.path, n.chars);
-
-  let baselineChars = 0;
-  let files = 0;
-  for (const path of hitFiles(hits)) {
-    const c = size.get(path);
-    if (c === undefined) continue;
-    baselineChars += c;
-    files++;
-  }
-  return files > 0 ? { files, baselineChars } : undefined;
+  return savingsFor(graph, hitFiles(hits));
 }
 
 /** Answer a query from the graft/ graph at `dir`. Deterministic, $0. */
@@ -636,6 +625,8 @@ export interface SkeletonResult {
   file: string;
   entries: SkeletonEntry[];
   note?: string;
+  /** Tokens-saved baseline: this file read whole vs the signatures-only view. */
+  saved?: Savings;
 }
 
 /** Signatures-only view of one file, straight from the wiring graph — the
@@ -669,6 +660,7 @@ export function skeleton(dir: string, file: string, opts: { contextDir?: string 
       signature: n.signature,
       summary: n.summary?.split("\n")[0].trim() || undefined,
     })),
+    saved: savingsFor(graph, [defs[0].path]),
   };
 }
 
@@ -681,7 +673,8 @@ export function formatSkeleton(r: SkeletonResult): string {
     const sum = e.summary ? ` — ${e.summary}` : "";
     return `- ${e.span}  ${e.kind} ${e.name}${sig}${sum}`;
   });
-  return `${head}\n${lines.join("\n")}\n`;
+  const body = `${head}\n${lines.join("\n")}`;
+  return body + savingsFooter(body, r.saved) + "\n";
 }
 
 /** Rough tokens for a byte length (≈ 4 chars/token; good enough for an estimate). */
@@ -727,7 +720,7 @@ export function formatAsk(r: AskResult): string {
     });
   }
   const body = lines.join("\n").trimEnd();
-  return body + savingsFooter(r, body) + escalationNudge(r) + "\n";
+  return body + askSavingsFooter(r, body) + escalationNudge(r) + "\n";
 }
 
 /** When a lexical `ask` returns thin/no results, the productive next move is a
@@ -747,7 +740,7 @@ function escalationNudge(r: AskResult): string {
 /** The one-line token-saving estimate `ask` appends in retriever mode, so the
  * agent gets the number for free in the tool output — no extra work on its end.
  * `packChars` is measured from the rendered body: exactly what the agent reads. */
-function savingsFooter(r: AskResult, body: string): string {
+function askSavingsFooter(r: AskResult, body: string): string {
   if (!r.saved || r.saved.baselineChars <= 0) return "";
   const pack = toTokens(body.length);
   const base = toTokens(r.saved.baselineChars);

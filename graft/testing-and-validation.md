@@ -160,10 +160,10 @@ covers:
     at: 'test/graph-resolve-typed.test.ts:L6-L10'
   - symbol: builtRepo
     kind: function
-    at: 'test/graph-traverse-cli.test.ts:L16-L27'
+    at: 'test/graph-traverse-cli.test.ts:L17-L28'
   - symbol: runCli
     kind: function
-    at: 'test/graph-traverse-cli.test.ts:L29-L40'
+    at: 'test/graph-traverse-cli.test.ts:L30-L41'
 ---
 <!-- context:generated:start -->
 ## Summary

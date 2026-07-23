@@ -31,9 +31,10 @@ same understanding costs thousands.
   ask is top-N and WILL miss instances; grep is the tool for "find them all".
 - **A file's whole API surface** → \`graft skeleton <file>\` — every signature in
   ~200 tokens. One call beats several asks when you just need "what's in here".
-- **Who uses / what breaks if I change X** → \`graft callers <symbol>\` or
-  \`graft impact <symbol>\`; what X itself depends on → \`graft callees <symbol>\`.
-  Run one of these before editing a symbol.
+- **Who uses / what breaks if I change X** → \`graft callers <symbol>\` (add
+  \`--depth N\` to walk transitively for the full blast radius); what X itself
+  depends on → \`graft callers <symbol> --direction out\`. Run one before
+  editing a symbol.
 - **First contact with an unfamiliar repo** → \`graft map\` — token-budgeted
   orientation (dir clusters, hubs, hotspots). Read the hub cards it names rather
   than asking per subsystem.
@@ -62,13 +63,19 @@ exhaustive where it matters, so reach for them first.
   that is expected, not a graft failure.
 
 **Precise graph modes** — for structural questions, skip ranking and go
-straight to precomputed edges:
+straight to precomputed edges. It's all one command, \`graft callers\`:
 
-- \`graft callers <symbol>\` / \`graft callees <symbol>\` — who breaks if this
-  changes / what does this call — precomputed edges, exact answers; structural
-  phrasing inside ask ("who calls X") routes here too.
-- \`graft impact <symbol> [-d N]\` — BFS over incoming edges out to depth N: the
-  full blast radius of a change.
+- \`graft callers <symbol>\` — who calls/references this (exact edges, not text);
+  structural phrasing inside ask ("who calls X") routes here too.
+- \`graft callers <symbol> --direction out\` — the reverse: what this symbol
+  itself calls/depends on (the old \`callees\`).
+- \`graft callers <symbol> --depth N\` — walk transitively out to depth N for the
+  full blast radius of a change (the old \`impact\`).
+
+When the graft MCP server is connected, the same operations are exposed as
+tools — \`graft_ask\`, \`graft_callers\` (with \`direction\`/\`depth\`),
+\`graft_grep\`, \`graft_skeleton\`, \`graft_map\` — prefer whichever surface is
+available.
 
 If a returned span is truncated ("+N more lines"), open the file at that exact
 range before finalizing.
