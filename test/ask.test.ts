@@ -489,6 +489,126 @@ test("ask --in on the multi-scope fixture: filtering to one scope carries no sco
   }
 });
 
+// ── Review fix: `--in` must not blind the sidecar's per-doc body bags ──────
+
+/** A term that appears ONLY in a function's body (never its name/signature),
+ * same shape as the pre-existing body-indexing test — but the node lives
+ * inside a directory that IS the `--in` prefix, so this catches the sidecar
+ * bypass bug: a build writes `body_text` into `.cache/ask-index.json` and
+ * then strips it from `wiring.json` (see `write.ts`), so a graph loaded from
+ * disk has NO other source for body tokens. Disabling the sidecar under
+ * `--in` (rather than just its global df/avgdl) silently empties every
+ * node's body bag, making a body-only term unfindable everywhere, including
+ * under its own directory. */
+test("ask --in: a body-only term is still found when filtered to its own directory (sidecar body bags must survive --in)", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "graft-ask-in-body-"));
+  try {
+    mkdirSync(join(dir, "widgets"), { recursive: true });
+    writeFileSync(
+      join(dir, "widgets", "pay.ts"),
+      `export function checkout(amount: number): string {\n` +
+        `  const token = createStripeCharge(amount);\n` +
+        `  return token;\n` +
+        `}\n`,
+    );
+    await buildGraph(dir);
+    // Unfiltered: sanity-check the term is findable at all (pins the existing
+    // body-indexing contract this test's fixture depends on).
+    const unfiltered = ask(dir, "stripe");
+    assert.ok(unfiltered.hits.some((h) => h.title.startsWith("checkout")), "sanity: findable unfiltered");
+
+    const r = ask(dir, "stripe", { in: "widgets" });
+    const hit = r.hits.find((h) => h.title.startsWith("checkout"));
+    assert.ok(hit, "checkout must still be findable via its body-only term when --in filters to its OWN directory");
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+// ── Review fix: `--in` accepts a trailing slash ─────────────────────────────
+
+test("ask --in: a trailing slash is accepted — `--in frontend/` behaves exactly like `--in frontend`", async () => {
+  const dir = multiScopeFixture();
+  try {
+    await buildGraph(dir);
+    const withSlash = ask(dir, "how are errors handled", { limit: 10, in: "frontend/" });
+    const withoutSlash = ask(dir, "how are errors handled", { limit: 10, in: "frontend" });
+    assert.ok(withSlash.hits.length > 0, "the tool's own suggested `--in scope/` (with slash) must not come up empty");
+    assert.deepEqual(
+      withSlash.hits.map((h) => h.pointer),
+      withoutSlash.hits.map((h) => h.pointer),
+      "trailing slash must not change which hits are returned",
+    );
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+// ── Review fix: `--in` must also narrow structural queries, not silently no-op ──
+
+/** Same symbol NAME (`handle`) defined independently in two directories, each
+ * with its own distinct caller — `resolveSymbol` matches both by name alone,
+ * so without `--in` a structural query's subject is ambiguous (both nodes),
+ * and both callers show up. `--in` must narrow the SUBJECT resolution to the
+ * one under the prefix (same "narrow resolveSymbol" semantics
+ * `callers`/`callees`/`impact --in` already have), not just filter docs. */
+function duplicateNameFixture(): string {
+  const dir = mkdtempSync(join(tmpdir(), "graft-ask-in-structural-"));
+  mkdirSync(join(dir, "frontend"), { recursive: true });
+  mkdirSync(join(dir, "backend"), { recursive: true });
+  writeFileSync(
+    join(dir, "frontend", "a.ts"),
+    `export function handle(): number {\n  return 1;\n}\n\n` +
+      `export function frontendCaller(): number {\n  return handle();\n}\n`,
+  );
+  writeFileSync(
+    join(dir, "backend", "b.ts"),
+    `export function handle(): number {\n  return 2;\n}\n\n` +
+      `export function backendCaller(): number {\n  return handle();\n}\n`,
+  );
+  return dir;
+}
+
+test("ask --in: structural queries narrow the resolved subject by prefix, not just the lexical docs", async () => {
+  const dir = duplicateNameFixture();
+  try {
+    await buildGraph(dir);
+
+    const unfiltered = ask(dir, "who calls handle");
+    assert.equal(unfiltered.mode, "structural");
+    assert.ok(unfiltered.hits.some((h) => h.title === "frontendCaller"), "sanity: both callers show up unfiltered");
+    assert.ok(unfiltered.hits.some((h) => h.title === "backendCaller"), "sanity: both callers show up unfiltered");
+
+    const r = ask(dir, "who calls handle", { in: "frontend" });
+    assert.equal(r.mode, "structural", "still resolves structurally once narrowed to frontend's handle");
+    assert.ok(r.hits.some((h) => h.title === "frontendCaller"), "frontend's caller must be found");
+    assert.ok(
+      !r.hits.some((h) => h.title === "backendCaller"),
+      "backend's handle/caller must not leak in when --in=frontend",
+    );
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("ask --in: a structural subject that exists ONLY outside the prefix falls through loudly, never a silent no-op", async () => {
+  const dir = duplicateNameFixture();
+  try {
+    await buildGraph(dir);
+    // "handle" only resolves under backend/ once frontend/ is filtered out via
+    // an --in that excludes it entirely (a prefix with no "handle" at all).
+    mkdirSync(join(dir, "docs"), { recursive: true });
+    writeFileSync(join(dir, "docs", "readme.ts"), `export function docsOnly(): number {\n  return 0;\n}\n`);
+    await buildGraph(dir);
+    const r = ask(dir, "who calls handle", { in: "docs" });
+    assert.notEqual(r.mode, "structural", "no `handle` under docs/ — must fall through, not silently return nothing");
+    assert.ok(r.note, "a fallthrough note must be set");
+    assert.match(r.note!, /structural index: no entries for 'handle'/);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
 /** The regression pin Task 7's cross-version gate relies on: on a single-scope
  * graph the fusion code paths must be completely inert. `meta.scopes` hand-set
  * to the canonical single form vs deleted (an old graph) must produce

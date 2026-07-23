@@ -213,11 +213,21 @@ function subjectWords(query: string): string[] {
  * last regardless of outcome, so a caller can name *something* in a fallthrough
  * note even when nothing resolved (e.g. `subjects.length === 0`). This is what
  * makes a qualified/dotted subject like `Cache.get` resolve, where the old
- * plain name-equality lookup (`findSubject`) never matched it. */
-function findSubjectNodes(query: string, graph: GraphV1): { nodes: NodeV1[]; tried: string } {
+ * plain name-equality lookup (`findSubject`) never matched it.
+ *
+ * `inPrefix`, when given, filters each word's `resolveSymbol` matches down to
+ * nodes under that path prefix BEFORE checking whether any survived — same
+ * "narrow the subject resolution" semantics `callers`/`callees`/`impact --in`
+ * already have (segment-aware here, via `pathUnderPrefix`). A word that
+ * resolves globally but has nothing under the prefix does NOT count as a
+ * match; the next (shorter) word is tried instead, same as an unresolved word
+ * today — and if nothing survives for ANY word, `subjects.length === 0`
+ * naturally falls through to the existing loud fallthrough note. */
+function findSubjectNodes(query: string, graph: GraphV1, inPrefix?: string): { nodes: NodeV1[]; tried: string } {
   const words = subjectWords(query).sort((a, b) => b.length - a.length);
   for (const w of words) {
-    const nodes = resolveSymbol(graph, w);
+    let nodes = resolveSymbol(graph, w);
+    if (inPrefix) nodes = nodes.filter((n) => pathUnderPrefix(n.path, inPrefix));
     if (nodes.length > 0) return { nodes, tried: w };
   }
   return { nodes: [], tried: words[0] ?? query };
@@ -238,12 +248,12 @@ function fallthroughNoteFor(subject: string): string {
   );
 }
 
-function structural(query: string, graph: GraphV1, limit: number): StructuralOutcome {
+function structural(query: string, graph: GraphV1, limit: number, inPrefix?: string): StructuralOutcome {
   const wantsIn = INCOMING.test(query);
   const wantsOut = OUTGOING.test(query);
   if (!wantsIn && !wantsOut) return null;
 
-  const { nodes: subjects, tried } = findSubjectNodes(query, graph);
+  const { nodes: subjects, tried } = findSubjectNodes(query, graph, inPrefix);
   if (subjects.length === 0) return { fallthroughNote: fallthroughNoteFor(tried) };
 
   const ids = new Set(subjects.map((n) => n.id));
@@ -358,11 +368,21 @@ function lexical(query: string, corpus: Corpus, limit: number, graphRank: boolea
   // mismatched set, e.g. a hand-edited or corrupt sidecar). Anything short of
   // that — missing, unparseable, unknown version, wrong count, mismatched ids —
   // falls back to live tokenization so results never depend on the sidecar
-  // existing; see `readAskIndex`'s own null-on-anything-off contract. `--in` also
-  // forces the live path: the sidecar's `df`/`avgBodyLen` are corpus-global, and
-  // a narrowed query needs idf/avgdl computed from ONLY the filtered doc set.
+  // existing; see `readAskIndex`'s own null-on-anything-off contract.
+  //
+  // `--in` does NOT disable the sidecar here: `writeGraph` strips `body_text`
+  // from every node it serializes (see `write.ts`) — the sidecar's per-doc
+  // `docs[].body` bags are the ONLY place a symbol's body tokens survive on a
+  // graph loaded from disk. Bypassing the sidecar under `--in` would silently
+  // empty out `body` for every node (falling back to `n.body_text ?? ""`,
+  // always `""` post-slim-serialization), losing every body-only match under
+  // the filtered prefix. What DOES need bypassing under `--in` is the
+  // sidecar's GLOBAL `df`/`docCount`/`avgBodyLen` — those cover the whole
+  // corpus, not the filtered subset — so each read of those three fields below
+  // is separately gated on `!inPrefix`, while the per-doc bags (used to build
+  // `symbolDocs` right after this) are used unconditionally.
   let docById: Map<string, AskIndexDoc> | null = null;
-  if (!inPrefix && corpus.askIndex && graph && corpus.askIndex.docs.length === graph.nodes.length) {
+  if (corpus.askIndex && graph && corpus.askIndex.docs.length === graph.nodes.length) {
     const map = new Map(corpus.askIndex.docs.map((d) => [d.id, d]));
     if (graph.nodes.every((n) => map.has(n.id))) docById = map;
   }
@@ -399,15 +419,19 @@ function lexical(query: string, corpus: Corpus, limit: number, graphRank: boolea
   // IDF must see the SAME inputs either way: with a sidecar, its `df` (stored
   // WITHOUT concepts) plus these live concept bags reproduces exactly what
   // `computeIdf` below would compute from concept+symbol bags tokenized live.
-  const idf = askIndex
+  // `askIndex.df` is a corpus-GLOBAL count, so `--in` can't use it — the
+  // filtered doc set needs its own idf, computed from (already-filtered)
+  // `symbolDocs`' own bags, regardless of where those bags came from.
+  const idf = askIndex && !inPrefix
     ? computeIdfFromIndex(askIndex, conceptBags)
     : computeIdf([...conceptBags, ...symbolDocs.map((d) => new Set([...d.name.keys(), ...d.path.keys(), ...d.body.keys()]))]);
 
   // Per-hit idf-weighted coverage, kept out of the public AskHit shape; only
   // the top hit's value survives, as `coverage` on the result. The df=0 weight
   // mirrors idfFromDf's formula at df=0 for whichever corpus size idf was
-  // computed from.
-  const nDocs = askIndex
+  // computed from. Same `--in` reasoning as `idf` above: `askIndex.docCount`
+  // is global.
+  const nDocs = askIndex && !inPrefix
     ? askIndex.docCount + conceptBags.length
     : conceptBags.length + symbolDocs.length;
   const dfltIdf = Math.log(1 + nDocs);
@@ -521,9 +545,12 @@ function lexical(query: string, corpus: Corpus, limit: number, graphRank: boolea
     if (fusion.federated.length > 1 || fusion.alsoMatched.length > 0)
       scopeMeta = { federated: fusion.federated, alsoMatched: fusion.alsoMatched };
   } else {
-  // Single-scope: the pre-scopes ranking path, byte-identical output. Kept at
-  // its original indentation on purpose — the git diff proves it untouched.
-  const avgBodyLen = askIndex
+  // Single-scope: the pre-scopes ranking path, byte-identical output when
+  // `--in` is absent (Task 3's regression guarantee: `askIndex && !inPrefix`
+  // reduces to plain `askIndex` when `inPrefix` is undefined, so this line is
+  // a no-op change for every non-`--in` caller). Under `--in`, `askIndex`'s
+  // `avgBodyLen` is corpus-global and must not be reused for the filtered set.
+  const avgBodyLen = askIndex && !inPrefix
     ? askIndex.avgBodyLen
     : symbolDocs.length
       ? symbolDocs.reduce((a, d) => a + bodyLen(d.body), 0) / symbolDocs.length
@@ -713,24 +740,29 @@ export function ask(dir: string, query: string, opts: AskOptions = {}): AskResul
   const limit = opts.limit ?? 8;
   const corpus = loadCorpus(outDir);
   const graphRank = opts.graphRank ?? true;
+  // Trailing slash(es) stripped ONCE, up front, and this normalized value used
+  // everywhere below (validation, filtering, structural). `ask --in frontend/`
+  // must work exactly like `--in frontend` — `scopeLabel`/the footer's own
+  // `--in <scope>/` suggestion always includes the slash, so rejecting it
+  // would make the tool's own suggested next command fail.
+  const inPrefix = opts.in ? opts.in.replace(/\/+$/, "") : undefined;
 
-  // `--in` validated up front, before either mode runs: a prefix matching no
+  // `--in` validated up front, before any mode runs: a prefix matching no
   // indexed node is a caller mistake (typo, wrong sub-project), not a
   // legitimate zero-hit query, so it's a loud error rather than an empty pack.
-  if (opts.in && corpus.graph && !corpus.graph.nodes.some((n) => pathUnderPrefix(n.path, opts.in!))) {
-    const disp = opts.in.replace(/\/+$/, "");
+  if (inPrefix && corpus.graph && !corpus.graph.nodes.some((n) => pathUnderPrefix(n.path, inPrefix))) {
     throw new Error(
-      `nothing indexed under "${disp}/"${scopesHereClause(scopesOfGraph(corpus.graph))} (or any path prefix)`,
+      `nothing indexed under "${inPrefix}/"${scopesHereClause(scopesOfGraph(corpus.graph))} (or any path prefix)`,
     );
   }
 
   let result: AskResult;
   if (corpus.graph) {
-    const outcome = structural(query, corpus.graph, limit);
+    const outcome = structural(query, corpus.graph, limit, inPrefix);
     if (outcome && "result" in outcome) {
       result = outcome.result;
     } else {
-      result = lexical(query, corpus, limit, graphRank, opts.in);
+      result = lexical(query, corpus, limit, graphRank, inPrefix);
       // A structural-intent query that couldn't be answered structurally still
       // gets a prominent note on the lexical fallback result — never silent.
       if (outcome && "fallthroughNote" in outcome) {
@@ -738,7 +770,7 @@ export function ask(dir: string, query: string, opts: AskOptions = {}): AskResul
       }
     }
   } else {
-    result = lexical(query, corpus, limit, graphRank, opts.in);
+    result = lexical(query, corpus, limit, graphRank, inPrefix);
   }
   if (opts.source) {
     inlineSource(root, result.hits, corpus.graph, opts.full ?? false);
