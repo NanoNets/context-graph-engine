@@ -18,8 +18,10 @@ import { join, resolve } from "node:path";
 import matter from "gray-matter";
 import { contextDirFor } from "../context/node-file.js";
 import { loadGraphCached, loadAskIndexCached } from "../graph/load.js";
+import { scopeOf, scopesOfGraph } from "../graph/scopes.js";
 import { resolveSymbol } from "../graph/traverse.js";
 import type { EdgeV1, GraphV1, NodeV1, Relation } from "../graph/types.js";
+import { rankScopesAndFuse } from "./fuse.js";
 import { personalizedPageRank } from "./graphrank.js";
 import { counts, tokenize, type AskIndex, type AskIndexDoc } from "./index-file.js";
 
@@ -36,6 +38,10 @@ export interface AskHit {
    * This is what makes `ask` substitutive — the agent reads the span here
    * instead of opening the file, so no source read happens on top of the query. */
   code?: string;
+  /** Multi-scope repos only: the ranking scope (path prefix, "" = root) this
+   * hit was ranked within — answers "which sub-project is this from?". Drives
+   * the `[scope/] ` label in formatAsk. Absent on single-scope repos. */
+  scope?: string;
 }
 
 /** Max source lines to inline per hit — a definition longer than this is
@@ -59,6 +65,11 @@ export interface AskResult {
    * best result, i.e. the pack is probably noise for this prompt. Absent in
    * structural mode — a resolved "who calls X" is itself the relevance signal. */
   coverage?: number;
+  /** Multi-scope lexical results only: which scopes federated into the fused
+   * ranking, plus scopes that matched too weakly to federate (with their best
+   * doc id). Drives formatAsk's `matched in:` / `also matched:` footer.
+   * Absent on single-scope repos — zero output change there. */
+  scopes?: { federated: string[]; alsoMatched: { scope: string; bestId: string }[] };
 }
 
 /** First real prose line of a node body (skips headings, markers, blanks). */
@@ -418,6 +429,86 @@ function lexical(query: string, corpus: Corpus, limit: number, graphRank: boolea
     for (const v of m.values()) s += v;
     return s;
   };
+  const docsById = new Map(symbolDocs.map((d) => [d.n.id, d]));
+  const symbolHits: AskHit[] = [];
+  // The single-vs-multi-scope branch keys on `scopesOfGraph` ONLY: one scope
+  // (or no graph) takes the existing path below completely untouched — that
+  // branch is a byte-level regression guarantee for single-scope repos.
+  const scopes = graph ? scopesOfGraph(graph) : null;
+  let scopeMeta: AskResult["scopes"];
+  if (scopes && scopes.length > 1) {
+    // ── Multi-scope repo: rank each sub-project against its OWN corpus (its
+    // IDF, its BM25 length prior, its subgraph walk), then fuse the per-scope
+    // orderings by reciprocal rank — the big scope can't drown the small one.
+    // Same scoring functions and blend as the single-scope path, just fed
+    // per-scope inputs; the fusion itself lives in fuse.ts. ──
+    const byScope = new Map<string, typeof symbolDocs>();
+    for (const d of symbolDocs) {
+      const s = scopeOf(d.n.path, scopes).prefix;
+      const list = byScope.get(s);
+      if (list) list.push(d);
+      else byScope.set(s, [d]);
+    }
+    const idfOf = new Map<string, { idf: Map<string, number>; dflt: number }>();
+    const fusion = rankScopesAndFuse(
+      [...byScope.keys()].sort(),
+      {
+        lex: (s) => {
+          const docs = byScope.get(s)!;
+          // Per-scope IDF/BM25 stats: concepts are repo-level so their bags
+          // fold in everywhere, symbol bags come from this scope only. (The
+          // build sidecar's df/avgBodyLen are corpus-global, so multi-scope
+          // always computes these live — from the sidecar's own token maps.)
+          const sIdf = computeIdf([
+            ...conceptBags,
+            ...docs.map((d) => new Set([...d.name.keys(), ...d.path.keys(), ...d.body.keys()])),
+          ]);
+          idfOf.set(s, { idf: sIdf, dflt: Math.log(1 + conceptBags.length + docs.length) });
+          const avg = docs.reduce((a, d) => a + bodyLen(d.body), 0) / docs.length;
+          const out = new Map<string, number>();
+          for (const { n, name, path, body } of docs) {
+            const total =
+              score(q, name, sIdf) * 3 +
+              score(q, path, sIdf) * 2 +
+              bm25(q, body, sIdf, bodyLen(body), avg);
+            if (total > 0) out.set(n.id, total);
+          }
+          return out;
+        },
+        walk: (s, seeds) =>
+          graphRank
+            ? personalizedPageRank(graph!, seeds, {
+                nodeFilter: (id) => scopeOf(byId.get(id)?.path ?? "", scopes).prefix === s,
+              })
+            : new Map<string, number>(),
+      },
+      GRAPH_WEIGHT,
+      RESCUE_FLOOR,
+    );
+    for (const rd of fusion.ranked) {
+      const n = byId.get(rd.id);
+      if (!n) continue;
+      const hit: AskHit = {
+        kind: "symbol",
+        title: `${n.name} · ${n.kind}`,
+        pointer: n.kind === "file" ? n.path : `${n.path}:${n.span}`,
+        snippet: n.summary?.split("\n")[0].trim() ?? n.signature ?? "",
+        score: rd.score,
+        scope: rd.scope,
+      };
+      const d = docsById.get(rd.id);
+      const si = idfOf.get(rd.scope);
+      matchedOf.set(hit, d && si ? matchedIdfShare(q, [d.name, d.path, d.body], si.idf, si.dflt) : 0);
+      symbolHits.push(hit);
+    }
+    // Label + footer only when federation actually happened (or a scope was
+    // gated out and is worth mentioning) — a query matching one scope of a
+    // multi-scope repo reads exactly like today.
+    if (fusion.federated.length > 1 || fusion.alsoMatched.length > 0)
+      scopeMeta = { federated: fusion.federated, alsoMatched: fusion.alsoMatched };
+  } else {
+  // Single-scope: the pre-scopes ranking path, byte-identical output. Kept at
+  // its original indentation on purpose — the git diff proves it untouched.
   const avgBodyLen = askIndex
     ? askIndex.avgBodyLen
     : symbolDocs.length
@@ -448,8 +539,6 @@ function lexical(query: string, corpus: Corpus, limit: number, graphRank: boolea
   const candidates = new Set<string>(lex.keys());
   for (const [id, p] of pr) if (p >= RESCUE_FLOOR) candidates.add(id);
 
-  const docsById = new Map(symbolDocs.map((d) => [d.n.id, d]));
-  const symbolHits: AskHit[] = [];
   for (const id of candidates) {
     const n = byId.get(id);
     if (!n) continue;
@@ -469,6 +558,7 @@ function lexical(query: string, corpus: Corpus, limit: number, graphRank: boolea
     matchedOf.set(hit, d ? matchedIdfShare(q, [d.name, d.path, d.body], idf, dfltIdf) : 0);
     symbolHits.push(hit);
   }
+  }
 
   // Concepts and symbols live on comparable 0..~1.5 scales so they merge fairly:
   // concept scores are normalized to their own max, symbol scores are the
@@ -481,6 +571,7 @@ function lexical(query: string, corpus: Corpus, limit: number, graphRank: boolea
     query,
     mode: scored.length ? "lexical" : "empty",
     hits: scored.slice(0, limit),
+    scopes: scopeMeta,
     coverage: scored.length && q.size > 0 ? matchedOf.get(scored[0]) ?? 0 : undefined,
     note: scored.length ? undefined : "no matching nodes — try different words, or `graft build` if graft/ is empty",
   };
@@ -718,13 +809,17 @@ export function formatAsk(r: AskResult): string {
     }
   } else {
     r.hits.forEach((h, i) => {
-      lines.push(`${i + 1}. ${h.title}  [${h.kind}]`);
+      // Multi-scope results label each hit with its sub-project (root scope
+      // "" stays unlabeled) so a reviewer can tell WHICH codebase answered.
+      const label = r.scopes && h.scope ? `[${h.scope}/] ` : "";
+      lines.push(`${i + 1}. ${label}${h.title}  [${h.kind}]`);
       lines.push(`   ${h.pointer}`);
       if (h.snippet) lines.push(`   ${h.snippet}`);
       if (h.related?.length) lines.push(`   related: ${h.related.join(", ")}`);
       if (h.code) lines.push("", "```", h.code, "```");
       lines.push("");
     });
+    lines.push(...scopeFooterLines(r));
   }
   const body = lines.join("\n").trimEnd();
   return body + savingsFooter(r, body) + "\n";
@@ -745,4 +840,24 @@ function savingsFooter(r: AskResult, body: string): string {
     `${pack.toLocaleString()} tok vs reading the ${r.saved.files} source file(s) whole ≈ ` +
     `${base.toLocaleString()} tok. Estimate (baseline = those files read in full).`
   );
+}
+
+/** Multi-scope footer: answers a reviewer's two questions — "which
+ * sub-projects did this pack come from?" (`matched in:`, displayed-hit counts,
+ * biggest first) and "did anything else match that I should know about?"
+ * (`also matched:` for scopes gated out of fusion, with the flag to narrow).
+ * Empty (zero output) whenever the result isn't a federated multi-scope one. */
+function scopeFooterLines(r: AskResult): string[] {
+  if (!r.scopes) return [];
+  const label = (s: string) => (s === "" ? "(root)" : `${s}/`);
+  const perScope = new Map<string, number>();
+  for (const h of r.hits)
+    if (h.scope !== undefined) perScope.set(h.scope, (perScope.get(h.scope) ?? 0) + 1);
+  const parts = [...perScope]
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+    .map(([s, c]) => `${label(s)} (${c})`);
+  const out = parts.length ? [`matched in: ${parts.join(" · ")}`] : [];
+  for (const m of r.scopes.alsoMatched)
+    out.push(`also matched: ${label(m.scope)} — narrow with --in ${label(m.scope)}`);
+  return out;
 }

@@ -6,7 +6,7 @@
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { mkdtempSync, writeFileSync, rmSync } from "node:fs";
+import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { readFileSync } from "node:fs";
@@ -261,6 +261,91 @@ test("formatAsk: the structural fallthrough note prints prominently, before any 
     assert.ok(noteIdx > 0, "the note is rendered");
     const firstHitIdx = out.search(/\n1\.\s/); // lexical hit numbering starts at "1. "
     assert.ok(firstHitIdx === -1 || noteIdx < firstHitIdx, "the note prints before any hit");
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+// ── Scope-aware ranking: per-scope rank + RRF fusion (multi-scope repos) ────
+
+/** Two sub-projects under one root: `frontend/` (ts, ~6 symbols) and
+ * `backend/` (py, ~30 symbols — 5× bigger), each with its own project marker
+ * so scope discovery splits them, and each with error-handling symbols so a
+ * "how are errors handled" query matches in BOTH scopes. Without fusion the
+ * backend's sheer size drowns the frontend's hits. */
+function multiScopeFixture(): string {
+  const dir = mkdtempSync(join(tmpdir(), "graft-ask-scopes-"));
+  mkdirSync(join(dir, "frontend", "src"), { recursive: true });
+  mkdirSync(join(dir, "backend"), { recursive: true });
+  writeFileSync(join(dir, "frontend", "package.json"), "{}\n");
+  writeFileSync(join(dir, "backend", "pyproject.toml"), `[project]\nname = "backend"\n`);
+  writeFileSync(
+    join(dir, "frontend", "src", "errors.ts"),
+    `export function handleErrors(err: Error): string {\n` +
+      `  // errors from the ui are handled with a banner\n` +
+      `  return renderBanner(err.message);\n` +
+      `}\n\n` +
+      `export function renderBanner(msg: string): string {\n` +
+      `  return "banner: " + msg;\n` +
+      `}\n\n` +
+      `export function reportErrors(err: Error): string {\n` +
+      `  // handled errors are also reported upstream\n` +
+      `  return handleErrors(err);\n` +
+      `}\n\n` +
+      `export function clearBanner(): string {\n  return "";\n}\n\n` +
+      `export function bannerVisible(): boolean {\n  return false;\n}\n\n` +
+      `export function resetUi(): string {\n  return "reset";\n}\n`,
+  );
+  let py =
+    `def handle_errors(exc):\n` +
+    `    """errors are handled by returning a serialized problem response"""\n` +
+    `    return {"error": str(exc)}\n\n\n` +
+    `def wrap_errors(fn):\n` +
+    `    """errors raised by route handlers get handled and logged here"""\n` +
+    `    return fn\n\n\n`;
+  for (let i = 0; i < 28; i++) py += `def route_${i}(payload):\n    return payload\n\n\n`;
+  writeFileSync(join(dir, "backend", "app.py"), py);
+  return dir;
+}
+
+test("ask on a multi-scope repo: top hits federate both scopes, labeled, with a matched-in footer", async () => {
+  const dir = multiScopeFixture();
+  try {
+    await buildGraph(dir);
+    const r = ask(dir, "how are errors handled", { limit: 10 });
+    const scopesHit = new Set(r.hits.map((h) => h.scope));
+    assert.ok(scopesHit.has("frontend"), "top-10 contains a frontend/ hit despite backend being 5× bigger");
+    assert.ok(scopesHit.has("backend"), "top-10 contains a backend/ hit");
+    assert.ok(r.scopes, "multi-scope result carries fusion telemetry");
+    const out = formatAsk(r);
+    assert.match(out, /\[frontend\/\] /, "frontend hits carry a scope label");
+    assert.match(out, /\[backend\/\] /, "backend hits carry a scope label");
+    assert.match(out, /matched in: .*frontend\/ \(\d+\)/, "footer reports frontend's hit count");
+    assert.match(out, /matched in: .*backend\/ \(\d+\)/, "footer reports backend's hit count");
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+/** The regression pin Task 7's cross-version gate relies on: on a single-scope
+ * graph the fusion code paths must be completely inert. `meta.scopes` hand-set
+ * to the canonical single form vs deleted (an old graph) must produce
+ * byte-identical `formatAsk` output — the early branch keys on
+ * `scopesOfGraph(graph).length <= 1`, and both forms take it. */
+test("regression pin: single-scope ask output is byte-equal with canonical meta.scopes vs no meta.scopes", async () => {
+  const dir = makeFixture();
+  try {
+    await buildGraph(dir);
+    const p = join(dir, "graft", ".graph", "wiring.json");
+    const g = JSON.parse(readFileSync(p, "utf8"));
+    delete g.meta.scopes;
+    writeFileSync(p, JSON.stringify(g));
+    const absent = formatAsk(ask(dir, "addNumbers", { source: true }));
+    g.meta.scopes = [{ prefix: "", label: "", markers: [] }];
+    writeFileSync(p, JSON.stringify(g));
+    const canonical = formatAsk(ask(dir, "addNumbers", { source: true }));
+    assert.equal(canonical, absent, "single-scope output must not drift by a byte");
+    assert.doesNotMatch(absent, /matched in:|also matched:|\[\w+\/\] /, "zero new output on single-scope");
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
