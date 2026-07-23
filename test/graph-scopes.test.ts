@@ -110,6 +110,39 @@ test("literal (non-glob) workspace entry resolves as a workspace match", () => {
   rmSync(d, { recursive: true, force: true });
 });
 
+test("workspace-under-workspace collapses to the shallower scope (packages/**)", () => {
+  const d = fx({
+    "pnpm-workspace.yaml": "packages:\n  - 'packages/**'\n",
+    "packages/a/package.json": "{}",
+    "packages/a/b/package.json": "{}",
+  });
+  const prefixes = discoverScopes(d).map((s) => s.prefix).sort();
+  assert.deepEqual(prefixes, ["packages/a"]);
+  rmSync(d, { recursive: true, force: true });
+});
+
+test("workspace-under-workspace collapse also sweeps markerless dirs under a **-glob", () => {
+  const d = fx({
+    "pnpm-workspace.yaml": "packages:\n  - 'packages/**'\n",
+    "packages/a/package.json": "{}",
+    "packages/a/src/utils/x.ts": "export const x = 1;",
+  });
+  const prefixes = discoverScopes(d).map((s) => s.prefix).sort();
+  assert.deepEqual(prefixes, ["packages/a"]); // no markerless packages/a/src* survives
+  rmSync(d, { recursive: true, force: true });
+});
+
+test("literal + glob workspace overlap collapses to the shallower literal entry", () => {
+  const d = fx({
+    "package.json": JSON.stringify({ workspaces: ["apps", "apps/*"] }),
+    "apps/package.json": "{}",
+    "apps/web/package.json": "{}",
+  });
+  const prefixes = discoverScopes(d).map((s) => s.prefix).sort();
+  assert.deepEqual(prefixes, ["apps"]);
+  rmSync(d, { recursive: true, force: true });
+});
+
 test("discoverWorkspaceChildren finds immediate git children only", () => {
   const d = fx({ "repoA/x.ts": "1", "repoB/y.py": "1", "plain/z.go": "1" });
   mkdirSync(join(d, "repoA/.git"), { recursive: true });

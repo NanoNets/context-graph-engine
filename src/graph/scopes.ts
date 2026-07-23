@@ -234,12 +234,17 @@ export function discoverScopes(root: string): ScopeV1[] {
   //     Applying them produces the "post-glob-resolution" stable set.
   //
   //   Pass B — plain nesting collapse (uses the POST-A set, NOT the original
-  //     frozen set): for every remaining NON-workspace candidate, find its
-  //     nearest ancestor in the post-A set; if one exists, queue the deeper
-  //     candidate for deletion (keep the shallower ancestor). Workspace
-  //     candidates are never deletion targets here — Pass A already resolved
-  //     a workspace match's relationship to its blocking parent, so it always
-  //     survives regardless of any remaining (grand)ancestor.
+  //     frozen set): for every remaining candidate, find its nearest ancestor
+  //     in the post-A set; if one exists, the deeper candidate is queued for
+  //     deletion (keep the shallower ancestor) UNLESS it's a workspace match
+  //     whose ancestor is NOT itself a workspace match — that's the one case
+  //     Pass A already grants immunity to ("workspace beats a non-workspace
+  //     parent"). Rule 4's workspace exception does NOT extend to a workspace
+  //     candidate nested under ANOTHER workspace candidate (e.g. a recursive
+  //     `packages/**` glob matching both `packages/a` and `packages/a/b`, or a
+  //     `packages/**` glob sweeping every markerless dir under a real package)
+  //     — that pair falls back to the plain rule, same as any other nested
+  //     pair: keep the shallower, drop the deeper.
   //
   // Running Pass B against the post-A set (rather than the frozen one) is
   // what makes a Pass-A deletion visible downstream: a candidate whose only
@@ -271,8 +276,15 @@ export function discoverScopes(root: string): ScopeV1[] {
   const postA: ReadonlyMap<string, Candidate> = new Map(candidates);
   const passBDeletes = new Set<string>();
   for (const [prefix, entry] of postA) {
-    if (prefix === "" || entry.isWorkspace) continue;
-    if (findNearestAncestorCandidate(prefix, postA)) passBDeletes.add(prefix);
+    if (prefix === "") continue;
+    const ancestor = findNearestAncestorCandidate(prefix, postA);
+    if (!ancestor) continue;
+    const ancestorEntry = postA.get(ancestor)!;
+    // Keep only a workspace candidate whose nearest surviving ancestor is
+    // NOT itself a workspace match (Pass A's exemption). Every other nested
+    // pair — non-workspace child under anything, or workspace child under an
+    // ALSO-workspace ancestor — collapses to the shallower one here.
+    if (!entry.isWorkspace || ancestorEntry.isWorkspace) passBDeletes.add(prefix);
   }
   for (const prefix of passBDeletes) candidates.delete(prefix);
 
