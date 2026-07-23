@@ -44,6 +44,10 @@ export const TOOLS: ToolDef[] = [
           type: 'boolean',
           description: 'inline whole definition spans instead of the default ≤8-line crux excerpts',
         },
+        in: {
+          type: 'string',
+          description: 'narrow to nodes under this path prefix, filtered before scoring (segment-aware, like scopeOf)',
+        },
       },
       required: ['query'],
     },
@@ -159,7 +163,8 @@ export function callTool(
         if (!query) return { text: 'graft_ask requires a query', isError: true };
         const limit = typeof args.limit === 'number' ? args.limit : 5;
         const engine = new Graft({ contextDir: dirOverride });
-        const r = engine.ask(root, query, { limit, source: true, full: args.full === true });
+        const inArg = typeof args.in === 'string' && args.in ? args.in : undefined;
+        const r = engine.ask(root, query, { limit, source: true, full: args.full === true, in: inArg });
         return { text: formatAsk(r), isError: false };
       }
       case 'graft_skeleton': {

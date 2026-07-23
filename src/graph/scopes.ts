@@ -317,6 +317,31 @@ export function scopeOf(path: string, scopes: ScopeV1[]): ScopeV1 {
   return scopes.find((s) => s.prefix === "") ?? { prefix: "", label: "", markers: [] };
 }
 
+/** Display form of a scope prefix: "" reads as "(root)", everything else gets
+ * a trailing slash. Shared by ask's `matched in:`/`also matched:` footer, the
+ * `--in` no-match error, and the multi-scope zero-hit note. */
+export function scopeLabel(prefix: string): string {
+  return prefix === "" ? "(root)" : `${prefix}/`;
+}
+
+/** " — scopes here: a/ · b/" when `scopes` is genuinely multi-scope (>1
+ * entries), else "" — the shared clause `ask` appends to its zero-hit note
+ * and its `--in` no-match error, so a caller is always told what IS indexed
+ * rather than getting a bare miss. */
+export function scopesHereClause(scopes: ScopeV1[]): string {
+  if (scopes.length <= 1) return "";
+  return ` — scopes here: ${scopes.map((s) => scopeLabel(s.prefix)).join(" · ")}`;
+}
+
+/** Segment-aware "is `path` at or under `prefix`?" — a plain `path.startsWith`
+ * would wrongly let "frontend" match "frontend-utils"; this requires an exact
+ * segment boundary, same rule `scopeOf` uses for its own prefix match. Root
+ * (`""`) matches every path. Used to filter ask's doc/node set for
+ * `--in <path-prefix>`. */
+export function pathUnderPrefix(path: string, prefix: string): boolean {
+  return prefix === "" || path === prefix || path.startsWith(`${prefix}/`);
+}
+
 /** Immediate subdirs of `root` that are themselves git repos (have `.git`).
  * Used by workspace federation (Task 5). */
 export function discoverWorkspaceChildren(root: string): string[] {

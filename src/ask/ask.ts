@@ -18,7 +18,7 @@ import { join, resolve } from "node:path";
 import matter from "gray-matter";
 import { contextDirFor } from "../context/node-file.js";
 import { loadGraphCached, loadAskIndexCached } from "../graph/load.js";
-import { scopeOf, scopesOfGraph } from "../graph/scopes.js";
+import { pathUnderPrefix, scopeLabel, scopeOf, scopesHereClause, scopesOfGraph } from "../graph/scopes.js";
 import { resolveSymbol } from "../graph/traverse.js";
 import type { EdgeV1, GraphV1, NodeV1, Relation } from "../graph/types.js";
 import { rankScopesAndFuse } from "./fuse.js";
@@ -333,19 +333,24 @@ function matchedIdfShare(
   return total > 0 ? matched / total : 0;
 }
 
-function lexical(query: string, corpus: Corpus, limit: number, graphRank: boolean): AskResult {
+function lexical(query: string, corpus: Corpus, limit: number, graphRank: boolean, inPrefix?: string): AskResult {
   // Binary query terms: a word repeated in a pasted issue body counts once, so a
   // ranty description can't linearly amplify an incidental word.
   const q = new Map([...counts(tokenize(query)).keys()].map((t) => [t, 1]));
   const graph = corpus.graph;
 
   // ── Pass 1: tokenize every scored field once, and collect per-document token
-  // bags so IDF can down-weight words that occur across the whole corpus. ──
-  const conceptDocs = corpus.concepts.map((c) => ({
-    c,
-    name: counts(tokenize(c.name)),
-    body: counts(tokenize(c.text)),
-  }));
+  // bags so IDF can down-weight words that occur across the whole corpus. `--in`
+  // drops a concept unless at least one of its sources falls under the prefix —
+  // filtering happens here, before any scoring, so a narrowed query never sees
+  // an unrelated concept from outside the prefix. ──
+  const conceptDocs = corpus.concepts
+    .filter((c) => !inPrefix || c.sources.some((p) => pathUnderPrefix(p, inPrefix)))
+    .map((c) => ({
+      c,
+      name: counts(tokenize(c.name)),
+      body: counts(tokenize(c.text)),
+    }));
 
   // A build-time sidecar (`.cache/ask-index.json`) is usable only when it covers
   // every node in the current graph: `docs.length === graph.nodes.length` is a
@@ -353,9 +358,11 @@ function lexical(query: string, corpus: Corpus, limit: number, graphRank: boolea
   // mismatched set, e.g. a hand-edited or corrupt sidecar). Anything short of
   // that — missing, unparseable, unknown version, wrong count, mismatched ids —
   // falls back to live tokenization so results never depend on the sidecar
-  // existing; see `readAskIndex`'s own null-on-anything-off contract.
+  // existing; see `readAskIndex`'s own null-on-anything-off contract. `--in` also
+  // forces the live path: the sidecar's `df`/`avgBodyLen` are corpus-global, and
+  // a narrowed query needs idf/avgdl computed from ONLY the filtered doc set.
   let docById: Map<string, AskIndexDoc> | null = null;
-  if (corpus.askIndex && graph && corpus.askIndex.docs.length === graph.nodes.length) {
+  if (!inPrefix && corpus.askIndex && graph && corpus.askIndex.docs.length === graph.nodes.length) {
     const map = new Map(corpus.askIndex.docs.map((d) => [d.id, d]));
     if (graph.nodes.every((n) => map.has(n.id))) docById = map;
   }
@@ -364,8 +371,12 @@ function lexical(query: string, corpus: Corpus, limit: number, graphRank: boolea
   // Symbols AND file nodes are scored: a symbol's body_text is its definition;
   // a file's body_text is the module-level residual (imports/constants not in
   // any symbol). Including files closes the recall gap where a gold file's only
-  // query-relevant text lives outside every function/class.
-  const symbolDocs = (graph?.nodes ?? []).map((n) => {
+  // query-relevant text lives outside every function/class. `--in` filters the
+  // node set here, at the very top, before any scoring — every downstream stat
+  // (idf, avgdl, candidates, the per-scope partition below) then naturally
+  // reflects only the filtered set with no other code needing to know about it.
+  const graphNodes = inPrefix ? (graph?.nodes ?? []).filter((n) => pathUnderPrefix(n.path, inPrefix)) : (graph?.nodes ?? []);
+  const symbolDocs = graphNodes.map((n) => {
     const d = docById?.get(n.id);
     if (d) return { n, name: new Map(d.name), path: new Map(d.path), body: new Map(d.body) };
     return {
@@ -478,7 +489,10 @@ function lexical(query: string, corpus: Corpus, limit: number, graphRank: boolea
         walk: (s, seeds) =>
           graphRank
             ? personalizedPageRank(graph!, seeds, {
-                nodeFilter: (id) => scopeOf(byId.get(id)?.path ?? "", scopes).prefix === s,
+                nodeFilter: (id) => {
+                  const path = byId.get(id)?.path ?? "";
+                  return scopeOf(path, scopes).prefix === s && (!inPrefix || pathUnderPrefix(path, inPrefix));
+                },
               })
             : new Map<string, number>(),
       },
@@ -530,8 +544,11 @@ function lexical(query: string, corpus: Corpus, limit: number, graphRank: boolea
   }
 
   // ── Graph-rank: let connectivity to the matched set reorder and rescue ──
+  // `--in` restricts the walk itself, not just the seeds: without a nodeFilter
+  // here, a RESCUE_FLOOR-qualifying neighbour OUTSIDE the prefix could still
+  // surface, defeating the "filters before scoring" contract.
   const pr = graphRank && graph && lex.size > 0
-    ? personalizedPageRank(graph, lex)
+    ? personalizedPageRank(graph, lex, inPrefix ? { nodeFilter: (id) => pathUnderPrefix(byId.get(id)?.path ?? "", inPrefix) } : {})
     : new Map<string, number>();
 
   // Candidate symbols = everything the query word-matched, plus nodes the walk
@@ -573,7 +590,11 @@ function lexical(query: string, corpus: Corpus, limit: number, graphRank: boolea
     hits: scored.slice(0, limit),
     scopes: scopeMeta,
     coverage: scored.length && q.size > 0 ? matchedOf.get(scored[0]) ?? 0 : undefined,
-    note: scored.length ? undefined : "no matching nodes — try different words, or `graft build` if graft/ is empty",
+    // Zero hits on a genuinely multi-scope graph names the scopes that exist,
+    // so a query that missed everywhere still tells the caller where to look.
+    note: scored.length
+      ? undefined
+      : `no matching nodes — try different words, or \`graft build\` if graft/ is empty${scopesHereClause(scopes ?? [])}`,
   };
 }
 
@@ -593,6 +614,12 @@ export interface AskOptions {
    * decision point, ~10× cheaper than the full span — and the pack marks each
    * crux so the agent knows `--full` (or the file itself) has the rest. */
   full?: boolean;
+  /** Narrow the doc/node set to this path prefix BEFORE scoring (segment-aware,
+   * like `scopeOf` — "frontend" never matches "frontend-utils"). Per-scope
+   * IDF/BM25/walk come free: the filtered set is usually one scope, so the
+   * existing multi-scope machinery degrades to its single-scope passthrough
+   * with no scope labels. A prefix matching nothing indexed throws. */
+  in?: string;
 }
 
 /** Parse a `path:Lx-Ly` pointer into its parts, or null if it isn't one
@@ -687,13 +714,23 @@ export function ask(dir: string, query: string, opts: AskOptions = {}): AskResul
   const corpus = loadCorpus(outDir);
   const graphRank = opts.graphRank ?? true;
 
+  // `--in` validated up front, before either mode runs: a prefix matching no
+  // indexed node is a caller mistake (typo, wrong sub-project), not a
+  // legitimate zero-hit query, so it's a loud error rather than an empty pack.
+  if (opts.in && corpus.graph && !corpus.graph.nodes.some((n) => pathUnderPrefix(n.path, opts.in!))) {
+    const disp = opts.in.replace(/\/+$/, "");
+    throw new Error(
+      `nothing indexed under "${disp}/"${scopesHereClause(scopesOfGraph(corpus.graph))} (or any path prefix)`,
+    );
+  }
+
   let result: AskResult;
   if (corpus.graph) {
     const outcome = structural(query, corpus.graph, limit);
     if (outcome && "result" in outcome) {
       result = outcome.result;
     } else {
-      result = lexical(query, corpus, limit, graphRank);
+      result = lexical(query, corpus, limit, graphRank, opts.in);
       // A structural-intent query that couldn't be answered structurally still
       // gets a prominent note on the lexical fallback result — never silent.
       if (outcome && "fallthroughNote" in outcome) {
@@ -701,7 +738,7 @@ export function ask(dir: string, query: string, opts: AskOptions = {}): AskResul
       }
     }
   } else {
-    result = lexical(query, corpus, limit, graphRank);
+    result = lexical(query, corpus, limit, graphRank, opts.in);
   }
   if (opts.source) {
     inlineSource(root, result.hits, corpus.graph, opts.full ?? false);
@@ -849,15 +886,14 @@ function savingsFooter(r: AskResult, body: string): string {
  * Empty (zero output) whenever the result isn't a federated multi-scope one. */
 function scopeFooterLines(r: AskResult): string[] {
   if (!r.scopes) return [];
-  const label = (s: string) => (s === "" ? "(root)" : `${s}/`);
   const perScope = new Map<string, number>();
   for (const h of r.hits)
     if (h.scope !== undefined) perScope.set(h.scope, (perScope.get(h.scope) ?? 0) + 1);
   const parts = [...perScope]
     .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
-    .map(([s, c]) => `${label(s)} (${c})`);
+    .map(([s, c]) => `${scopeLabel(s)} (${c})`);
   const out = parts.length ? [`matched in: ${parts.join(" · ")}`] : [];
   for (const m of r.scopes.alsoMatched)
-    out.push(`also matched: ${label(m.scope)} — narrow with --in ${label(m.scope)}`);
+    out.push(`also matched: ${scopeLabel(m.scope)} — narrow with --in ${scopeLabel(m.scope)}`);
   return out;
 }

@@ -174,10 +174,18 @@ program
   .option("-n, --limit <n>", "max results", "8")
   .option("--source", "inline the source at each file:line hit (retriever mode — the pack IS the answer, no need to re-open files)")
   .option("--full", "with --source: inline whole definition spans instead of the default ≤8-line crux excerpts")
+  .option("--in <path>", "narrow to nodes under this path prefix, filtered before scoring (segment-aware, like scopeOf)")
   .option("--json", "output the result as JSON")
-  .action(async (query: string, dir: string, opts: { limit: string; source?: boolean; full?: boolean; json?: boolean }) => {
+  .action(async (query: string, dir: string, opts: { limit: string; source?: boolean; full?: boolean; in?: string; json?: boolean }) => {
     const engine = engineFrom();
-    const r = engine.ask(dir, query, { limit: Number(opts.limit), source: opts.source, full: opts.full });
+    let r;
+    try {
+      r = engine.ask(dir, query, { limit: Number(opts.limit), source: opts.source, full: opts.full, in: opts.in });
+    } catch (err) {
+      console.error(`✗ ${err instanceof Error ? err.message : String(err)}`);
+      process.exit(1);
+      return;
+    }
     if (opts.json) {
       console.log(JSON.stringify(r, null, 2));
     } else {

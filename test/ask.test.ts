@@ -10,6 +10,7 @@ import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { readFileSync } from "node:fs";
+import { execFileSync } from "node:child_process";
 import { buildGraph } from "../src/graph/build.js";
 import { ask, formatAsk, skeleton, formatSkeleton } from "../src/ask/ask.js";
 
@@ -322,6 +323,167 @@ test("ask on a multi-scope repo: top hits federate both scopes, labeled, with a 
     assert.match(out, /\[backend\/\] /, "backend hits carry a scope label");
     assert.match(out, /matched in: .*frontend\/ \(\d+\)/, "footer reports frontend's hit count");
     assert.match(out, /matched in: .*backend\/ \(\d+\)/, "footer reports backend's hit count");
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+// ── `--in <path-prefix>`: filter docs before scoring ────────────────────────
+
+/** `prefix/docA.ts` + `prefix-sibling/docB.ts` — a plain `path.startsWith`
+ * would wrongly let "prefix" match "prefix-sibling" too; segment-aware
+ * matching (same rule as `scopeOf`) must not. */
+function siblingPrefixFixture(): string {
+  const dir = mkdtempSync(join(tmpdir(), "graft-ask-in-sibling-"));
+  mkdirSync(join(dir, "widgets"), { recursive: true });
+  mkdirSync(join(dir, "widgets-extra"), { recursive: true });
+  writeFileSync(join(dir, "widgets", "a.ts"), `export function needlefind(): number {\n  return 1;\n}\n`);
+  writeFileSync(join(dir, "widgets-extra", "b.ts"), `export function needlefind2(): number {\n  return 2;\n}\n`);
+  return dir;
+}
+
+test("ask --in: filters to nodes under the prefix, segment-aware ('widgets' must not match 'widgets-extra')", async () => {
+  const dir = siblingPrefixFixture();
+  try {
+    await buildGraph(dir);
+    const r = ask(dir, "needlefind", { in: "widgets", limit: 20 });
+    assert.ok(r.hits.length > 0, "the widgets/ hit is still found");
+    assert.ok(
+      r.hits.every((h) => h.pointer.startsWith("widgets/")),
+      `every hit must be under widgets/, got: ${r.hits.map((h) => h.pointer).join(", ")}`,
+    );
+    assert.ok(
+      !r.hits.some((h) => h.pointer.startsWith("widgets-extra/")),
+      "widgets-extra/ must NOT be pulled in by a naive substring/prefix match",
+    );
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+/** `filler/` (30 files) all define `zzzcommonword`, making it common GLOBALLY
+ * (low idf); `proj/` has `zzzraretoken` (+ a duplicate, so it's the common
+ * term LOCALLY once filler/ is filtered out) and `zzzcommonword_b` (rare
+ * locally, once filler/ is gone). This flips which one outranks the other
+ * between the unfiltered and `--in`-filtered corpora — proof `--in` recomputes
+ * idf over the filtered set rather than reusing the global one. */
+function idfShiftFixture(): string {
+  const dir = mkdtempSync(join(tmpdir(), "graft-ask-in-idf-"));
+  mkdirSync(join(dir, "filler"), { recursive: true });
+  mkdirSync(join(dir, "proj"), { recursive: true });
+  for (let i = 0; i < 30; i++) {
+    writeFileSync(join(dir, "filler", `f${i}.ts`), `export function zzzcommonword(): number {\n  return ${i};\n}\n`);
+  }
+  writeFileSync(join(dir, "proj", "docA.ts"), `export function zzzraretoken(): number {\n  return 1;\n}\n`);
+  writeFileSync(join(dir, "proj", "docC.ts"), `export function zzzraretoken_dup(): number {\n  return 2;\n}\n`);
+  writeFileSync(join(dir, "proj", "docB.ts"), `export function zzzcommonword_b(): number {\n  return 3;\n}\n`);
+  return dir;
+}
+
+test("ask --in: per-scope idf differs from global — a term's rank flips relative to another between filtered and unfiltered", async () => {
+  const dir = idfShiftFixture();
+  try {
+    await buildGraph(dir);
+    const query = "zzzraretoken zzzcommonword";
+    const rankOf = (r: ReturnType<typeof ask>["hits"], title: string) => r.findIndex((h) => h.title.startsWith(title));
+
+    const global = ask(dir, query, { limit: 40 });
+    const rareGlobal = rankOf(global.hits, "zzzraretoken ");
+    const commonBGlobal = rankOf(global.hits, "zzzcommonword_b");
+    assert.ok(rareGlobal >= 0 && commonBGlobal >= 0, "both candidates present globally");
+    assert.ok(rareGlobal < commonBGlobal, "globally, the rare term (high idf) outranks the diluted common term");
+
+    const filtered = ask(dir, query, { limit: 40, in: "proj" });
+    const rareFiltered = rankOf(filtered.hits, "zzzraretoken ");
+    const commonBFiltered = rankOf(filtered.hits, "zzzcommonword_b");
+    assert.ok(rareFiltered >= 0 && commonBFiltered >= 0, "both candidates present filtered");
+    assert.ok(
+      commonBFiltered < rareFiltered,
+      "filtered to proj/, zzzcommonword_b (now the locally-rare term) overtakes zzzraretoken (now locally-common)",
+    );
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("ask --in: unknown/no-match prefix throws a scope-enumerating error", async () => {
+  const dir = multiScopeFixture();
+  try {
+    await buildGraph(dir);
+    assert.throws(
+      () => ask(dir, "how are errors handled", { in: "wrong" }),
+      /nothing indexed under "wrong\/" — scopes here: .*frontend\/.*backend\/.* \(or any path prefix\)/,
+    );
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("ask --in: unknown prefix on a single-scope repo throws without a scopes-here clause", async () => {
+  const dir = makeFixture();
+  try {
+    await buildGraph(dir);
+    assert.throws(() => ask(dir, "addNumbers", { in: "nosuchdir" }), /nothing indexed under "nosuchdir\/"/);
+    assert.throws(() => ask(dir, "addNumbers", { in: "nosuchdir" }), (err: unknown) => {
+      assert.ok(err instanceof Error);
+      assert.doesNotMatch(err.message, /scopes here:/);
+      assert.match(err.message, /\(or any path prefix\)/);
+      return true;
+    });
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("CLI: `graft ask --in <unknown>` exits 1 with the scope-enumerating error on stderr", async () => {
+  const dir = multiScopeFixture();
+  try {
+    await buildGraph(dir);
+    let threw: (Error & { status?: number; stderr?: string }) | undefined;
+    try {
+      execFileSync(
+        process.execPath,
+        ["--import", "tsx", "src/cli.ts", "ask", "how are errors handled", dir, "--in", "wrong"],
+        { encoding: "utf8", stdio: "pipe" },
+      );
+    } catch (err) {
+      threw = err as Error & { status?: number; stderr?: string };
+    }
+    assert.ok(threw, "the CLI must exit non-zero");
+    assert.equal(threw!.status, 1);
+    assert.match(threw!.stderr ?? "", /✗ nothing indexed under "wrong\/"/);
+    assert.match(threw!.stderr ?? "", /scopes here:.*frontend\/.*backend\//);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("ask: a zero-hit query on a multi-scope graph appends scope enumeration to the empty note", async () => {
+  const dir = multiScopeFixture();
+  try {
+    await buildGraph(dir);
+    const r = ask(dir, "zzzznomatchatallxyz");
+    assert.equal(r.mode, "empty");
+    assert.match(r.note ?? "", /no matching nodes — try different words/);
+    assert.match(r.note ?? "", /scopes here: .*frontend\/.*backend\//);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("ask --in on the multi-scope fixture: filtering to one scope carries no scope labels, even though the repo is multi-scope", async () => {
+  const dir = multiScopeFixture();
+  try {
+    await buildGraph(dir);
+    const r = ask(dir, "how are errors handled", { limit: 10, in: "frontend" });
+    assert.ok(r.hits.length > 0);
+    assert.ok(
+      r.hits.every((h) => h.scope === "frontend"),
+      "only frontend/ hits survive the filter",
+    );
+    assert.equal(r.scopes, undefined, "single scope remaining under the prefix — no fusion metadata");
+    const out = formatAsk(r);
+    assert.doesNotMatch(out, /\[frontend\/\] |\[backend\/\] |matched in:|also matched:/);
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
