@@ -38,6 +38,12 @@ export interface DirEntry {
   symbols: number;
   languages: string[];
   hubs: Hub[];
+  /** True when the >60% split refinement bottomed out on a file that sits
+   * directly in the split directory (no deeper subdirectory to split into —
+   * see `dirKey`'s doc). In that case `path` IS a file's own full path, not
+   * a directory, so `formatDirLine` must not append a trailing "/". False
+   * for every real directory group (the overwhelming majority). */
+  isFile: boolean;
 }
 
 /** One scope's own directory breakdown — same shape a single-scope `buildRepoMap`
@@ -191,12 +197,20 @@ function computeDirEntries(
   const fullPath = (relKey: string): string =>
     stripPrefix === "" ? relKey : relKey === "" ? stripPrefix : `${stripPrefix}/${relKey}`;
 
+  // A group's key is a FILE's own path (not a directory) exactly when the
+  // split-refinement's depth-2 grouping had nowhere deeper to go and
+  // `dirKey` degenerated to the file's full relative path verbatim — see
+  // `dirKey`'s doc. Detecting that by membership (rather than re-deriving
+  // depth here) stays correct regardless of which pass produced the key.
+  const fileRelPaths = new Set(fileNodes.map((f) => relPath(f.path)));
+
   const dirEntries: DirEntry[] = [...groups.entries()].map(([relKey, g]) => ({
     path: fullPath(relKey),
     files: g.files.length,
     symbols: g.symbols.length,
     languages: sortedLanguages(g.files.map((f) => f.path)),
     hubs: topHubs(g.symbols, inDegree, hubsPerDir),
+    isFile: fileRelPaths.has(relKey),
   }));
 
   dirEntries.sort((a, b) => b.symbols - a.symbols || a.path.localeCompare(b.path));
@@ -280,7 +294,11 @@ function formatDirHub(h: Hub): string {
 }
 
 function formatDirLine(d: DirEntry): string {
-  const label = `${d.path}/`.padEnd(DIR_COL_WIDTH);
+  // `d.path` is only ever a real directory unless the >60% split refinement
+  // bottomed out on a file with nowhere deeper to split into (`d.isFile`) —
+  // only then is the trailing "/" wrong (it would glue onto the file's own
+  // extension, e.g. "auth.ts/").
+  const label = (d.isFile ? d.path : `${d.path}/`).padEnd(DIR_COL_WIDTH);
   const counts = `${d.files} files · ${d.symbols} symbols`;
   const hubs = d.hubs.length ? `   hubs: ${d.hubs.map(formatDirHub).join(", ")}` : "";
   return `${label}${counts}${hubs}`;

@@ -146,6 +146,44 @@ test("buildRepoMap: a segment at or below 60% is not split", () => {
   assert.ok(map.dirs.some((d) => d.path === "src"), "60% exactly must not trigger the split");
 });
 
+test("buildRepoMap: a file sitting directly in a >60% split dir collapses to a file-level entry, rendered with no trailing slash", () => {
+  // src/ holds 5 of 8 files (62.5% > 60%) → split one level deeper. Four of
+  // those five files nest under src/ask and src/graph (clean sub-dirs), but
+  // src/auth.ts sits directly in src/ itself — depth-2 grouping has nothing
+  // deeper to split it into, so `dirKey` degenerates to the file's own full
+  // path ("src/auth.ts"), and that path is a FILE, not a directory.
+  const nodes = [
+    fileNode("src/auth.ts"),
+    fileNode("src/ask/a1.ts"),
+    fileNode("src/ask/a2.ts"),
+    fileNode("src/graph/g1.ts"),
+    fileNode("src/graph/g2.ts"),
+    fileNode("tests/t1.ts"),
+    fileNode("tests/t2.ts"),
+    fileNode("tests/t3.ts"),
+  ];
+  const map = buildRepoMap(graphOf(nodes, []));
+  const paths = map.dirs.map((d) => d.path);
+
+  assert.ok(!paths.includes("src"), "the over-threshold group itself must not survive unsplit");
+  assert.ok(paths.includes("src/auth.ts"), "the file that couldn't split deeper reports its own full path");
+  assert.ok(paths.includes("src/ask"));
+  assert.ok(paths.includes("src/graph"));
+
+  const authEntry = map.dirs.find((d) => d.path === "src/auth.ts")!;
+  assert.equal(authEntry.files, 1);
+
+  const text = formatRepoMap(map);
+  // Exact rendered line: file path padded to the 20-col width, no trailing
+  // "/" glued onto it — never "src/auth.ts/1 files" or "src/auth.ts/        ".
+  const expectedLine = "src/auth.ts".padEnd(20) + "1 files · 0 symbols";
+  assert.ok(
+    text.includes(expectedLine),
+    `expected exact line "${expectedLine}" in:\n${text}`,
+  );
+  assert.doesNotMatch(text, /auth\.ts\//, "no slash glued onto the file path");
+});
+
 // ── hub ordering ─────────────────────────────────────────────────────────
 
 test("buildRepoMap: hubs within a dir are ranked by inDegree desc, ties broken by name asc", () => {
