@@ -17,7 +17,7 @@ import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import matter from "gray-matter";
 import { contextDirFor } from "../context/node-file.js";
-import { savingsFooter, savingsFor, type Savings } from "../context/savings.js";
+import { savingsFooter, savingsFor, SAVINGS_TURN_NUDGE, type Savings } from "../context/savings.js";
 import { loadGraphCached, loadAskIndexCached } from "../graph/load.js";
 import { pathUnderPrefix, scopeLabel, scopeOf, scopesHereClause, scopesOfGraph } from "../graph/scopes.js";
 import { resolveSymbol } from "../graph/traverse.js";
@@ -963,7 +963,8 @@ function askSavingsFooter(r: AskResult, body: string): string {
   return (
     `\n\n[graft] tokens saved ≈ ${saved.toLocaleString()} (${pct}%) — this pack ≈ ` +
     `${pack.toLocaleString()} tok vs reading the ${r.saved.files} source file(s) whole ≈ ` +
-    `${base.toLocaleString()} tok. Estimate (baseline = those files read in full).`
+    `${base.toLocaleString()} tok. Estimate (baseline = those files read in full).` +
+    SAVINGS_TURN_NUDGE
   );
 }
 

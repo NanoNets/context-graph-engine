@@ -4,8 +4,9 @@ import { existsSync, mkdtempSync, mkdirSync, writeFileSync, readFileSync } from 
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { underGraft, main, lastFileScopeHint } from '../src/claude/hooks.js';
-import { readStats } from '../src/claude/state.js';
+import { readStats, readSession } from '../src/claude/state.js';
 import { runSync } from '../src/claude/sync-run.js';
+import { savingsFooter } from '../src/context/savings.js';
 import { writeStats, emptyStats, acquireLock } from '../src/claude/state.js';
 
 test('underGraft detects edits inside graft/', () => {
@@ -360,4 +361,82 @@ test('prompt branch stays silent and writes no session when graft is not built',
   }
   assert.equal(chunks.join(''), '', 'no stdout when graft ask unavailable (no dist/cli.js in temp dir)');
   assert.equal(existsSync(join(d, 'graft', '.cache', 'session', 'p1.json')), false, 'no session file on no-op');
+});
+
+test('tool-savings sums the [graft] footer into the session total, keyed by session_id', async () => {
+  const d = mkdtempSync(join(tmpdir(), 'graft-savings-'));
+  process.env.CLAUDE_PROJECT_DIR = d;
+  try {
+    // A graft tool result the agent just read (shape mirrors a Bash tool_response).
+    const stdin = JSON.stringify({
+      session_id: 's1',
+      tool_name: 'Bash',
+      tool_response: { stdout: 'skeleton …\n\n[graft] tokens saved ≈ 2,181 (89%) — this output ≈ 258 tok …' },
+    });
+    await runWithStdin(stdin, () => main('tool-savings'));
+    assert.equal(readSession(d, 's1').savedTokens, 2181);
+
+    // A second graft call in the same session accumulates.
+    const again = JSON.stringify({
+      session_id: 's1',
+      tool_response: { stdout: '[graft] tokens saved ≈ 7,510 (99%) — this output ≈ 57 tok …' },
+    });
+    await runWithStdin(again, () => main('tool-savings'));
+    assert.equal(readSession(d, 's1').savedTokens, 2181 + 7510);
+
+    // A different session keeps its own tally.
+    assert.equal(readSession(d, 's2').savedTokens, 0);
+  } finally {
+    delete process.env.CLAUDE_PROJECT_DIR;
+  }
+});
+
+test('tool-savings sums every footer when one payload carries several', async () => {
+  const d = mkdtempSync(join(tmpdir(), 'graft-savings-'));
+  process.env.CLAUDE_PROJECT_DIR = d;
+  try {
+    const stdin = JSON.stringify({
+      session_id: 'multi',
+      tool_response: {
+        stdout:
+          'graft callers …\n[graft] tokens saved ≈ 100 (90%) — …\n' +
+          'graft map …\n[graft] tokens saved ≈ 1,000 (99%) — …',
+      },
+    });
+    await runWithStdin(stdin, () => main('tool-savings'));
+    assert.equal(readSession(d, 'multi').savedTokens, 1100);
+  } finally {
+    delete process.env.CLAUDE_PROJECT_DIR;
+  }
+});
+
+test('tool-savings is a no-op (no session file) when the tool output has no graft footer', async () => {
+  const d = mkdtempSync(join(tmpdir(), 'graft-savings-'));
+  process.env.CLAUDE_PROJECT_DIR = d;
+  try {
+    const stdin = JSON.stringify({
+      session_id: 'nofooter',
+      tool_name: 'Bash',
+      tool_response: { stdout: 'total 12\ndrwxr-xr-x  ...' },
+    });
+    await runWithStdin(stdin, () => main('tool-savings'));
+    assert.equal(existsSync(join(d, 'graft', '.cache', 'session', 'nofooter.json')), false, 'no write without a footer');
+  } finally {
+    delete process.env.CLAUDE_PROJECT_DIR;
+  }
+});
+
+test('tool-savings counts a REAL savingsFooter (with the turn nudge) exactly once', async () => {
+  const d = mkdtempSync(join(tmpdir(), 'graft-savings-real-'));
+  process.env.CLAUDE_PROJECT_DIR = d;
+  try {
+    // body ≈ 10 tok, baseline ≈ 2000 tok → footer claims ≈ 1990 saved. The nudge
+    // (with its "🌱 graft saved ~N tokens" example) must NOT be double-counted.
+    const footer = savingsFooter('x'.repeat(40), { files: 2, baselineChars: 8000 });
+    const stdin = JSON.stringify({ session_id: 'real', tool_response: { stdout: `callers …${footer}` } });
+    await runWithStdin(stdin, () => main('tool-savings'));
+    assert.equal(readSession(d, 'real').savedTokens, 1990);
+  } finally {
+    delete process.env.CLAUDE_PROJECT_DIR;
+  }
 });

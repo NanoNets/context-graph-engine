@@ -11,5 +11,6 @@ Handles various events related to the Graft system, including session management
 - emit · function · L53-L55 — Outputs a JSON object to standard output for event tracking.
 - handlePostEdit · function · L57-L63 — Handles post-edit events by updating stats and emitting relevant information.
 - lastFileScopeHint · function · L80-L105 — function lastFileScopeHint(dir: string, lastFile: string | null | undefined): string | null
-- handleStop · function · L107-L121 — Handles the stop event by syncing state if necessary.
-- main · function · L123-L166 — Main entry point for handling various events and orchestrating the application logic.
+- handleToolSavings · function · L113-L123 — function handleToolSavings(input: any, dir: string): void
+- handleStop · function · L125-L139 — Handles the stop event by syncing state if necessary.
+- main · function · L141-L186 — Main entry point for handling various events and orchestrating the application logic.

@@ -106,16 +106,16 @@ covers:
     at: 'test/claude-format.test.ts:L105-L105'
   - symbol: runWithStdin
     kind: function
-    at: 'test/claude-hooks.test.ts:L38-L41'
+    at: 'test/claude-hooks.test.ts:L39-L42'
   - symbol: fakeBuild
     kind: function
-    at: 'test/claude-hooks.test.ts:L84-L87'
+    at: 'test/claude-hooks.test.ts:L85-L88'
   - symbol: writeMultiScopeWiring
     kind: function
-    at: 'test/claude-hooks.test.ts:L126-L145'
+    at: 'test/claude-hooks.test.ts:L127-L146'
   - symbol: writeAskArgsStub
     kind: function
-    at: 'test/claude-hooks.test.ts:L247-L258'
+    at: 'test/claude-hooks.test.ts:L248-L259'
   - symbol: fresh
     kind: function
     at: 'test/claude-init.test.ts:L10-L10'
@@ -181,10 +181,10 @@ covers:
     at: 'test/graph-map.test.ts:L66-L70'
   - symbol: twoScopeFixture
     kind: function
-    at: 'test/graph-map.test.ts:L249-L264'
+    at: 'test/graph-map.test.ts:L287-L302'
   - symbol: bigFixture
     kind: function
-    at: 'test/graph-map.test.ts:L381-L400'
+    at: 'test/graph-map.test.ts:L419-L438'
   - symbol: 'n'
     kind: function
     at: 'test/graph-resolve-typed.test.ts:L6-L10'

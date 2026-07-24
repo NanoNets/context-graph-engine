@@ -104,6 +104,24 @@ export function lastFileScopeHint(dir: string, lastFile: string | null | undefin
   }
 }
 
+/** PostToolUse on a graft retrieval tool. Its rendered output carries one (or
+ * more) `[graft] tokens saved ≈ N` footers — the same numbers the agent just
+ * read. Sum them and add to the session's running total so the statusline's
+ * `~N tok saved` reflects what graft saved this session, across CLI and MCP.
+ * Pure parse of the payload the hook already received (no re-run), and a no-op
+ * unless a footer is present — so it stays cheap on unrelated Bash calls. */
+function handleToolSavings(input: any, dir: string): void {
+  const blob = JSON.stringify(input?.tool_response ?? input ?? '');
+  let total = 0;
+  for (const m of blob.matchAll(/\[graft\] tokens saved ≈ ([\d,]+)/g))
+    total += Number(m[1].replace(/,/g, '')) || 0;
+  if (total <= 0) return;
+  const id = input?.session_id || 'default';
+  const s = readSession(dir, id);
+  s.savedTokens = (s.savedTokens ?? 0) + total;
+  writeSession(dir, id, s);
+}
+
 function handleStop(dir: string): void {
   // sync-run.js ships next to this module inside the package, so it resolves in
   // any repo that installs graft (not just graft's own). Defensive existsSync:
@@ -133,6 +151,8 @@ export async function main(event: string): Promise<void> {
   }
 
   if (event === 'post-edit') { await handlePostEdit(input, dir); return; }
+
+  if (event === 'tool-savings') { handleToolSavings(input, dir); return; }
 
   if (event === 'stop') { handleStop(dir); return; }
 

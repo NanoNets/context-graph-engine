@@ -13,6 +13,11 @@ test('empty settings gets the full Graft blocks', () => {
   for (const e of ['PostToolUse', 'UserPromptSubmit', 'SessionStart', 'Stop']) {
     assert.ok(merged.hooks[e][0].hooks[0].command.includes('graft-hooks.cjs'), `${e} wired`);
   }
+  // PostToolUse carries a second graft block: the tokens-saved accumulator over
+  // the retrieval tools (Bash `graft …` + the graft_* MCP tools).
+  const savings = merged.hooks.PostToolUse[1];
+  assert.equal(savings.matcher, 'Bash|mcp__graft__');
+  assert.ok(savings.hooks[0].command.includes('tool-savings'), 'savings hook wired');
   assert.ok(merged.footerLinksRegexes.includes('graft/[\\w./-]+\\.md'));
   assert.deepEqual(warnings, []);
 });
@@ -27,15 +32,17 @@ test('foreign statusLine is preserved with a warning; Graft not forced in', () =
 test('existing foreign hooks are preserved; Graft appended', () => {
   const existing = { hooks: { PostToolUse: [{ matcher: 'Bash', hooks: [{ type: 'command', command: 'mine.sh' }] }] } };
   const { merged } = mergeGraftSettings(existing);
-  assert.equal(merged.hooks.PostToolUse.length, 2);
+  // foreign block + graft's two PostToolUse blocks (post-edit, tool-savings).
+  assert.equal(merged.hooks.PostToolUse.length, 3);
   assert.equal(merged.hooks.PostToolUse[0].hooks[0].command, 'mine.sh');
   assert.ok(merged.hooks.PostToolUse[1].hooks[0].command.includes('graft-hooks.cjs'));
+  assert.ok(merged.hooks.PostToolUse[2].hooks[0].command.includes('graft-hooks.cjs'));
 });
 
 test('re-running is idempotent (no duplicate Graft entries or footer)', () => {
   const once = mergeGraftSettings({}).merged;
   const twice = mergeGraftSettings(once).merged;
-  assert.equal(twice.hooks.PostToolUse.length, 1);
+  assert.equal(twice.hooks.PostToolUse.length, 2); // post-edit + tool-savings, not duplicated
   assert.equal(twice.hooks.Stop.length, 1);
   assert.equal(twice.footerLinksRegexes.filter((r: string) => r === 'graft/[\\w./-]+\\.md').length, 1);
 });

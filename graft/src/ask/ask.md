@@ -37,5 +37,5 @@ This module provides a mechanism to process natural language queries and return 
 - toTokens · function · L890-L892 — Converts a character count into a token count, facilitating the processing of text for queries.
 - formatAsk · function · L895-L937 — Formats the results of an ask query into a string for presentation, ensuring clarity and usability.
 - escalationNudge · function · L944-L951 — function escalationNudge(r: AskResult): string
-- askSavingsFooter · function · L956-L968 — function askSavingsFooter(r: AskResult, body: string): string
-- scopeFooterLines · function · L975-L987 — function scopeFooterLines(r: AskResult): string[]
+- askSavingsFooter · function · L956-L969 — function askSavingsFooter(r: AskResult, body: string): string
+- scopeFooterLines · function · L976-L988 — function scopeFooterLines(r: AskResult): string[]

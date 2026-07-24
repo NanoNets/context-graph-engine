@@ -7,12 +7,19 @@ const ALLOW_ENTRIES = ['Bash(graft:*)', 'Bash(npx graft:*)'];
 function hookCmd(arg: string): string {
   return `node "\${CLAUDE_PROJECT_DIR:-.}/.claude/helpers/graft-hooks.cjs" ${arg}`;
 }
-function graftBlocks(): Record<string, Json> {
+function graftBlocks(): Record<string, Json[]> {
   return {
-    PostToolUse: { matcher: 'Write|Edit|MultiEdit', hooks: [{ type: 'command', command: hookCmd('post-edit'), timeout: 10000 }] },
-    UserPromptSubmit: { hooks: [{ type: 'command', command: hookCmd('prompt'), timeout: 8000 }] },
-    SessionStart: { hooks: [{ type: 'command', command: hookCmd('session-start'), timeout: 8000 }] },
-    Stop: { hooks: [{ type: 'command', command: hookCmd('stop'), timeout: 8000 }] },
+    PostToolUse: [
+      { matcher: 'Write|Edit|MultiEdit', hooks: [{ type: 'command', command: hookCmd('post-edit'), timeout: 10000 }] },
+      // A retrieval tool (CLI `graft …` via Bash, or the `graft_*` MCP tools) prints a
+      // `[graft] tokens saved ≈ N` footer; this hook sums it into the session total the
+      // statusline shows. Broad matcher, but the handler no-ops instantly unless a footer
+      // is actually present, so non-graft Bash calls cost only a stdin read.
+      { matcher: 'Bash|mcp__graft__', hooks: [{ type: 'command', command: hookCmd('tool-savings'), timeout: 8000 }] },
+    ],
+    UserPromptSubmit: [{ hooks: [{ type: 'command', command: hookCmd('prompt'), timeout: 8000 }] }],
+    SessionStart: [{ hooks: [{ type: 'command', command: hookCmd('session-start'), timeout: 8000 }] }],
+    Stop: [{ hooks: [{ type: 'command', command: hookCmd('stop'), timeout: 8000 }] }],
   };
 }
 function isGraftHookEntry(entry: Json): boolean {
@@ -32,10 +39,10 @@ export function mergeGraftSettings(existing: Json): { merged: Json; warnings: st
     warnings.push('Existing subagentStatusLine left untouched.');
 
   merged.hooks = { ...(merged.hooks ?? {}) };
-  for (const [event, block] of Object.entries(graftBlocks())) {
+  for (const [event, blocks] of Object.entries(graftBlocks())) {
     const prior = Array.isArray(merged.hooks[event]) ? merged.hooks[event] : [];
     const foreign = prior.filter((e: Json) => !isGraftHookEntry(e)); // drop old Graft entries → idempotent
-    merged.hooks[event] = [...foreign, block];
+    merged.hooks[event] = [...foreign, ...blocks];
   }
 
   const footer = Array.isArray(merged.footerLinksRegexes) ? [...merged.footerLinksRegexes] : [];

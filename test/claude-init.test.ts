@@ -58,7 +58,7 @@ test('runInit is idempotent', () => {
   runInit(d, { build: false });
   runInit(d, { build: false });
   const s = JSON.parse(readFileSync(join(d, '.claude', 'settings.json'), 'utf8'));
-  assert.equal(s.hooks.PostToolUse.length, 1);
+  assert.equal(s.hooks.PostToolUse.length, 2); // post-edit + tool-savings, not duplicated on re-init
   assert.deepEqual(s.permissions.allow, ['Bash(graft:*)', 'Bash(npx graft:*)']);
 });
 

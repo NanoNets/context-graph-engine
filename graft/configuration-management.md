@@ -32,13 +32,13 @@ covers:
     at: 'src/claude/settings-merge.ts:L7-L9'
   - symbol: graftBlocks
     kind: function
-    at: 'src/claude/settings-merge.ts:L10-L17'
+    at: 'src/claude/settings-merge.ts:L10-L24'
   - symbol: isGraftHookEntry
     kind: function
-    at: 'src/claude/settings-merge.ts:L18-L20'
+    at: 'src/claude/settings-merge.ts:L25-L27'
   - symbol: mergeGraftSettings
     kind: function
-    at: 'src/claude/settings-merge.ts:L22-L55'
+    at: 'src/claude/settings-merge.ts:L29-L62'
 ---
 <!-- context:generated:start -->
 ## Summary

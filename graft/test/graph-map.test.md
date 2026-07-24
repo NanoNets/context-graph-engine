@@ -7,5 +7,5 @@ This file contains tests for the `buildRepoMap` and `formatRepoMap` functions, e
 - edge · function · L51-L53 — Defines a connection between two nodes in the graph, representing relationships such as function calls.
 - graphOf · function · L55-L61 — Constructs a graph structure from nodes and edges, serving as the foundational data for repository mapping.
 - graphOfWithScopes · function · L66-L70 — function graphOfWithScopes(nodes: NodeV1[], edges: EdgeV1[], scopes: ScopeV1[]): GraphV1
-- twoScopeFixture · function · L249-L264 — function twoScopeFixture(): GraphV1
-- bigFixture · function · L381-L400 — Creates a large fixture graph for testing, simulating a repository with multiple directories and symbols.
+- twoScopeFixture · function · L287-L302 — function twoScopeFixture(): GraphV1
+- bigFixture · function · L419-L438 — Creates a large fixture graph for testing, simulating a repository with multiple directories and symbols.

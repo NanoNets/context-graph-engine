@@ -84,6 +84,15 @@ available.
 If a returned span is truncated ("+N more lines"), open the file at that exact
 range before finalizing.
 
+**Report what graft saved — every turn.** Each retrieval tool ends its output
+with a \`[graft] tokens saved ≈ N\` line: the estimated tokens that one call
+saved versus reading the files it covers whole. Whenever you used any graft tool
+in a turn, close your reply with a one-line tally that sums those numbers across
+every graft call you made — e.g. \`🌱 graft saved ~12,400 tokens this turn (3
+calls)\`. A call with no footer (tiny files, where the pointers cost as much as
+the source) saved nothing — skip it. This is the per-turn figure; the statusline
+carries the running session total.
+
 If a node genuinely lacks a detail you need, ask for a more specific node, and
 if it still lacks it, read the source — at the exact file:line the node points
 to, not the whole file. Reading whole source files to build understanding is
