@@ -2,6 +2,8 @@
 
 <img src="assets/graft-hero.png" alt="Graft — open-source context layer for large codebases" width="100%"/>
 
+### Turbocharge Claude Code, Cursor, Codex, Gemini & every coding agent: faster, cheaper, with contextual understanding specific to your codebase.
+
 **Your coding agent reads 30 files to change 3.**
 **Graft gives it the map it should have read first.**
 
@@ -24,8 +26,6 @@
 | Tool calls | **46% fewer** |
 | Latency | **60% lower** |
 | Correctness | equal |
-
-Same agent, same file tools, only the context differs. Pull the graph through the MCP tools instead of pushing it up front and correctness climbs **+5 points over cold** — the strongest result in the sweep. Full method → [Benchmark](#benchmark).
 
 </div>
 
