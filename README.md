@@ -38,17 +38,18 @@ Same agent, same file tools, only the context differs. Pull the graph through th
 ## Contents
 
 - [Quick start](#quick-start)
-- [Agent integration](#agent-integration) — [MCP server](#mcp-server) · [Claude Code (deep integration)](#claude-code-deep-integration)
 - [The problem](#the-problem)
 - [What Graft does](#what-graft-does)
 - [How the graph gets built](#how-the-graph-gets-built)
 - [What's in a node](#whats-in-a-node)
 - [What runs where](#what-runs-where)
+- [Agent integration](#agent-integration) — [MCP server](#mcp-server) · [Claude Code (deep integration)](#claude-code-deep-integration)
 - [CLI](#cli)
 - [Search & orient](#search--orient-graft-grep--graft-map) (`graft grep` / `graft map`)
 - [Monorepos & multi-repo folders](#monorepos--multi-repo-folders)
 - [Visualize it](#visualize-it-graft-viz) (`graft viz`)
 - [Benchmark](#benchmark)
+- [Tested on your popular repos](#tested-on-your-popular-repos)
 - [Development](#development)
 - [License](#license)
 
@@ -70,60 +71,6 @@ git add .claude && git commit -m "wire in graft"
 ```
 
 Prefer not to install globally? `npx @nanonets/graft init` works the same way.
-
----
-
-## Agent integration
-
-One command wires Graft into the coding agents you use:
-
-```bash
-npx @nanonets/graft init
-# detects your agents and writes each one's native instruction file;
-# Claude Code additionally gets the live statusline + hooks below
-```
-
-`init` auto-detects which agents are present (via their config directories) and writes a marker-fenced Graft section into each one's shared instruction file — `AGENTS.md`, `GEMINI.md`, `.github/copilot-instructions.md` — or a wholly-owned rule file for the agents that use one — `.cursor/rules/graft.mdc`, `.kiro/steering/graft.md`, `.windsurf/rules/graft.md`. Re-running only updates Graft's own section (or replaces the owned file) and never touches the rest of your content.
-
-| Flag | Effect |
-|---|---|
-| `--agents <ids...>` | wire only these — ids: `agents`, `cursor`, `gemini`, `copilot`, `kiro`, `windsurf`, `claude` |
-| `--all-agents` | write instruction files for every known agent, detected or not |
-| `--no-agents` | Claude Code wiring only; skip other agents |
-| `--list-agents` | print the known agent ids and exit |
-| `--no-mcp` | skip MCP server registration |
-| `--no-hooks` | skip hook installation |
-
-### MCP server
-
-`graft init` also registers Graft's MCP server with agents that support it, so these six tools appear natively, no shell required. Claude Code gets this too: `graft init` writes the server into the project's `.mcp.json` (restart Claude Code to load it). Skip with `--no-mcp`; run it manually with `graft mcp [dir]`.
-
-| Tool | Takes | What it's for |
-|---|---|---|
-| `graft_ask` | a question | Ranked nodes with file:line, source inlined — usually the full answer, no follow-up read needed. |
-| `graft_skeleton` | a file path | Every signature in that file, no bodies — the API surface for a tenth of the tokens. |
-| `graft_callers` | a symbol | Who depends on it, or what it depends on with `direction: out`, N levels deep for blast radius. |
-| `graft_grep` | a regex | Every hit, grouped by enclosing symbol, ranked by how coupled that symbol is. |
-| `graft_map` | nothing | A first look at an unfamiliar repo: directory clusters, hubs, hotspots. |
-| `graft_check` | nothing | Whether the local graph has drifted from the code. |
-
-Register it by hand if your agent needs it explicit:
-
-```json
-{ "mcpServers": { "graft": { "command": "npx", "args": ["-y", "@nanonets/graft", "mcp"] } } }
-```
-
-Where a CLI agent supports user-level `hooks.json`, `init` also installs Graft's post-edit hook — blast-radius warnings and automatic `$0` graph re-sync after edits (skip with `--no-hooks`).
-
-### Claude Code (deep integration)
-
-`graft init` always wires up Claude Code, and Claude Code gets more than an instruction file. From then on, any Claude Code session opened in the repo gets:
-
-- **a live statusline** — graph size, % enriched, and a `⚠ N stale` warning when the code has moved ahead of the graph
-- **auto-sync** — after you edit code, Graft rebuilds the graph in the background at the end of the turn (structural, `$0` — it never calls the LLM on its own)
-- **context on tap** — each prompt pulls the matching nodes into the session; editing a file surfaces what depends on it ("blast radius"); new sessions start with the repo map
-
-`graft init` is idempotent and never clobbers your existing `.claude/settings.json` — it merges its blocks and leaves the rest alone. Want the LLM summaries too? Run `graft build --deep` (with a key) whenever you like; auto-sync will never do it for you.
 
 ---
 
@@ -202,6 +149,60 @@ _Summary, sources, links, and notes ship today in markdown nodes. The crux ships
 - **No telemetry** and no analytics — the only network calls are the LLM requests you configured.
 
 See [`.env.example`](.env.example) for the full list of settings (model, base URL, graph directory).
+
+---
+
+## Agent integration
+
+One command wires Graft into the coding agents you use:
+
+```bash
+npx @nanonets/graft init
+# detects your agents and writes each one's native instruction file;
+# Claude Code additionally gets the live statusline + hooks below
+```
+
+`init` auto-detects which agents are present (via their config directories) and writes a marker-fenced Graft section into each one's shared instruction file — `AGENTS.md`, `GEMINI.md`, `.github/copilot-instructions.md` — or a wholly-owned rule file for the agents that use one — `.cursor/rules/graft.mdc`, `.kiro/steering/graft.md`, `.windsurf/rules/graft.md`. Re-running only updates Graft's own section (or replaces the owned file) and never touches the rest of your content.
+
+| Flag | Effect |
+|---|---|
+| `--agents <ids...>` | wire only these — ids: `agents`, `cursor`, `gemini`, `copilot`, `kiro`, `windsurf`, `claude` |
+| `--all-agents` | write instruction files for every known agent, detected or not |
+| `--no-agents` | Claude Code wiring only; skip other agents |
+| `--list-agents` | print the known agent ids and exit |
+| `--no-mcp` | skip MCP server registration |
+| `--no-hooks` | skip hook installation |
+
+### MCP server
+
+`graft init` also registers Graft's MCP server with agents that support it, so these six tools appear natively, no shell required. Claude Code gets this too: `graft init` writes the server into the project's `.mcp.json` (restart Claude Code to load it). Skip with `--no-mcp`; run it manually with `graft mcp [dir]`.
+
+| Tool | Takes | What it's for |
+|---|---|---|
+| `graft_ask` | a question | Ranked nodes with file:line, source inlined — usually the full answer, no follow-up read needed. |
+| `graft_skeleton` | a file path | Every signature in that file, no bodies — the API surface for a tenth of the tokens. |
+| `graft_callers` | a symbol | Who depends on it, or what it depends on with `direction: out`, N levels deep for blast radius. |
+| `graft_grep` | a regex | Every hit, grouped by enclosing symbol, ranked by how coupled that symbol is. |
+| `graft_map` | nothing | A first look at an unfamiliar repo: directory clusters, hubs, hotspots. |
+| `graft_check` | nothing | Whether the local graph has drifted from the code. |
+
+Register it by hand if your agent needs it explicit:
+
+```json
+{ "mcpServers": { "graft": { "command": "npx", "args": ["-y", "@nanonets/graft", "mcp"] } } }
+```
+
+Where a CLI agent supports user-level `hooks.json`, `init` also installs Graft's post-edit hook — blast-radius warnings and automatic `$0` graph re-sync after edits (skip with `--no-hooks`).
+
+### Claude Code (deep integration)
+
+`graft init` always wires up Claude Code, and Claude Code gets more than an instruction file. From then on, any Claude Code session opened in the repo gets:
+
+- **a live statusline** — graph size, % enriched, and a `⚠ N stale` warning when the code has moved ahead of the graph
+- **auto-sync** — after you edit code, Graft rebuilds the graph in the background at the end of the turn (structural, `$0` — it never calls the LLM on its own)
+- **context on tap** — each prompt pulls the matching nodes into the session; editing a file surfaces what depends on it ("blast radius"); new sessions start with the repo map
+
+`graft init` is idempotent and never clobbers your existing `.claude/settings.json` — it merges its blocks and leaves the rest alone. Want the LLM summaries too? Run `graft build --deep` (with a key) whenever you like; auto-sync will never do it for you.
 
 ---
 
@@ -353,6 +354,60 @@ The harness ran three variants of the same Claude Sonnet 5 agent with the same f
 | Correctness | 93% | 93% (equal) |
 
 Graft never answered worse than cold, on any corpus. The pull variant gave up most of that speed for something bigger: correctness jumped to 98%, +5 points over cold, the strongest single result in the sweep. Push when speed is what you need; pull when being right matters more.
+
+---
+
+## Tested on your popular repos
+
+The sweep above measures the mechanism. The real test is whether graft helps an agent **ship real changes**, not just answer questions about code. So we're running it against widely-used open-source repos on the work that actually matters: real merged pull requests, re-implemented from scratch. First up: **[PocketBase](https://github.com/pocketbase/pocketbase)** (Go, ~350 files).
+
+15 tasks, weighted toward real implementation: **5 merged pull requests** re-implemented from their base commit and scored against the files the maintainers actually changed, plus **10 questions** a developer would genuinely ask while working in the repo. Same agent (Claude Opus), same file tools; the only difference is whether graft is wired in.
+
+| Aggregate over 15 tasks | Standard Claude Code | With graft |
+|---|---|---|
+| Cost | $13.91 | **$11.02 (−21%)** |
+| Wall-clock | 2,044s | **1,762s (−14%)** |
+| PRs reproduced | 5 / 5 | **5 / 5 (same files as the maintainers)** |
+
+Cheaper and faster with no loss of correctness: graft reproduced all five merged PRs, touching the same files the maintainers did. The gap is widest on cross-file understanding — "how does auth work across OAuth2 providers" dropped from $2.19 to $0.84.
+
+<details>
+<summary><b>The 10 questions we asked</b></summary>
+
+1. **Orientation** — Give me a map of PocketBase's architecture: the main subsystems and how an HTTP request flows through to the database.
+2. **Entry-point trace** — Trace end-to-end what happens when a client creates a record via the REST API, from route handler to database write.
+3. **Feature location** — I want to add a brand-new collection field type. Where do I hook it in, and which pieces must change?
+4. **Bug localization** — Realtime subscriptions silently stop delivering events after a while. Where would you start looking, and why?
+5. **Blast radius** — If I change the signature of the record-validation logic, what depends on it and what could break?
+6. **Cross-file synthesis** — How does auth work across OAuth2 providers: where are tokens issued, validated, stored, and refreshed?
+7. **Extensibility** — How do I use PocketBase as a Go framework to register a custom route plus an on-record-create hook?
+8. **Security discovery** — Where is user input validated, and where are collection API access rules enforced before a query runs?
+9. **Public API** — As an external app, how do I authenticate and then list and filter records over the REST API?
+10. **Test verification** — Where are the tests for the record CRUD API, and what do they assert about access rules?
+
+</details>
+
+<details>
+<summary><b>The 5 merged PRs we re-implemented</b></summary>
+
+Each PR was reset to its base commit; graft's diff was scored against the files the merged PR changed.
+
+| PR | Type | What it does | Files the maintainers touched |
+|---|---|---|---|
+| [#6744](https://github.com/pocketbase/pocketbase/pull/6744) | feat | Generate & serve WebP thumbnails | `apis/file.go`, `tools/filesystem/filesystem.go` |
+| [#6947](https://github.com/pocketbase/pocketbase/pull/6947) | fix | Uniform char distribution in regex random strings | `tools/security/random_by_regex.go` |
+| [#6690](https://github.com/pocketbase/pocketbase/pull/6690) | refactor | Patreon OAuth2 to use `x/oauth2/endpoints` | `tools/auth/patreon.go` |
+| [#2726](https://github.com/pocketbase/pocketbase/pull/2726) | perf | Drop a redundant admin-count query on a hot middleware path | `apis/middlewares.go` |
+| [#3192](https://github.com/pocketbase/pocketbase/pull/3192) | fix | Restore prior API rules on automigration rollback | `plugins/migratecmd/templates.go` |
+
+</details>
+
+<details>
+<summary><b>Method</b></summary>
+
+Two clones of PocketBase at the same commit: one wired with `graft init`, one untouched and verified graft-free. Each task run headless (`claude -p`, Claude Opus) with an empty MCP config. Understanding questions were graded by whether the answer pointed to the right files and functions; PR tasks were scored on whether the agent's diff touched the same files as the merged PR. Every transcript was audited to confirm graft was actually used in the graft arm and absent from the standard arm.
+
+</details>
 
 ---
 
