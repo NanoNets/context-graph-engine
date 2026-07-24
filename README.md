@@ -11,6 +11,7 @@
   <img src="https://img.shields.io/badge/TypeScript-strict-3178C6?style=for-the-badge&logo=typescript&logoColor=white" />
   <img src="https://img.shields.io/badge/License-MIT-20C997?style=for-the-badge" />
   <img src="https://img.shields.io/badge/telemetry-none-546FFF?style=for-the-badge" />
+  <a href="https://scorecard.dev/viewer/?uri=github.com/NanoNets/Graft"><img src="https://img.shields.io/ossf-scorecard/github.com/NanoNets/Graft?style=for-the-badge&label=openssf%20scorecard" /></a>
 </p>
 
 <!-- numbers from a 162-run benchmark (2026-07-22, 2 repos, 3 arms) — see Benchmark below -->
